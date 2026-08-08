@@ -1,0 +1,9 @@
+{
+  "name":"PriceEdge Trading Assistant",
+  "short_name":"PriceEdge",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#080d19",
+  "theme_color":"#0b1020",
+  "icons":[]
+}
