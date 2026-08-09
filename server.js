@@ -18,8 +18,6 @@ const PORT = process.env.PORT || 3000;
 
 const SECRET = process.env.JWT_SECRET || "CHANGE_ME";
 
-// Use an absolute path so Render always finds the public folder
-
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const DB_PATH = path.join(__dirname, "priceedge.db");
@@ -30,51 +28,61 @@ app.use(cors());
 
 app.use(express.json());
 
-// Serve frontend files from /public
-
 app.use(express.static(PUBLIC_DIR));
+
+/* =========================
+
+   DATABASE
+
+========================= */
 
 db.exec(`
 
 CREATE TABLE IF NOT EXISTS users(
 
- id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
 
- email TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
 
- password_hash TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
 
- created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 
 );
 
 CREATE TABLE IF NOT EXISTS trades(
 
- id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
 
- user_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
 
- pair TEXT NOT NULL,
+  pair TEXT NOT NULL,
 
- side TEXT NOT NULL,
+  side TEXT NOT NULL,
 
- entry REAL,
+  entry REAL,
 
- stop REAL,
+  stop REAL,
 
- target REAL,
+  target REAL,
 
- result REAL DEFAULT 0,
+  result REAL DEFAULT 0,
 
- notes TEXT,
+  notes TEXT,
 
- created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
- FOREIGN KEY(user_id) REFERENCES users(id)
+  FOREIGN KEY(user_id) REFERENCES users(id)
 
 );
 
 `);
+
+/* =========================
+
+   AUTHENTICATION
+
+========================= */
 
 function tokenFor(user) {
 
@@ -102,9 +110,9 @@ function tokenFor(user) {
 
 function auth(req, res, next) {
 
-  const h = req.headers.authorization || "";
+  const header = req.headers.authorization || "";
 
-  if (!h.startsWith("Bearer ")) {
+  if (!header.startsWith("Bearer ")) {
 
     return res.status(401).json({
 
@@ -116,11 +124,11 @@ function auth(req, res, next) {
 
   try {
 
-    req.user = jwt.verify(h.slice(7), SECRET);
+    req.user = jwt.verify(header.slice(7), SECRET);
 
     next();
 
-  } catch (e) {
+  } catch (error) {
 
     return res.status(401).json({
 
@@ -132,11 +140,11 @@ function auth(req, res, next) {
 
 }
 
-// =========================
+/* =========================
 
-// USER REGISTRATION
+   REGISTER
 
-// =========================
+========================= */
 
 app.post("/api/register", async (req, res) => {
 
@@ -176,7 +184,7 @@ app.post("/api/register", async (req, res) => {
 
     };
 
-    res.json({
+    return res.json({
 
       token: tokenFor(user),
 
@@ -184,9 +192,9 @@ app.post("/api/register", async (req, res) => {
 
     });
 
-  } catch (e) {
+  } catch (error) {
 
-    res.status(409).json({
+    return res.status(409).json({
 
       error: "An account with that email already exists"
 
@@ -196,11 +204,11 @@ app.post("/api/register", async (req, res) => {
 
 });
 
-// =========================
+/* =========================
 
-// USER LOGIN
+   LOGIN
 
-// =========================
+========================= */
 
 app.post("/api/login", async (req, res) => {
 
@@ -230,7 +238,7 @@ app.post("/api/login", async (req, res) => {
 
   }
 
-  res.json({
+  return res.json({
 
     token: tokenFor(user),
 
@@ -246,11 +254,11 @@ app.post("/api/login", async (req, res) => {
 
 });
 
-// =========================
+/* =========================
 
-// CURRENT USER
+   CURRENT USER
 
-// =========================
+========================= */
 
 app.get("/api/me", auth, (req, res) => {
 
@@ -268,35 +276,33 @@ app.get("/api/me", auth, (req, res) => {
 
 });
 
-// =========================
+/* =========================
 
-// GET TRADES
+   GET TRADES
 
-// =========================
+========================= */
 
 app.get("/api/trades", auth, (req, res) => {
 
-  res.json(
+  const trades = db
 
-    db
+    .prepare(
 
-      .prepare(
+      "SELECT * FROM trades WHERE user_id=? ORDER BY created_at DESC"
 
-        "SELECT * FROM trades WHERE user_id=? ORDER BY created_at DESC"
+    )
 
-      )
+    .all(req.user.id);
 
-      .all(req.user.id)
-
-  );
+  res.json(trades);
 
 });
 
-// =========================
+/* =========================
 
-// CREATE TRADE
+   CREATE TRADE
 
-// =========================
+========================= */
 
 app.post("/api/trades", auth, (req, res) => {
 
@@ -376,25 +382,23 @@ app.post("/api/trades", auth, (req, res) => {
 
     );
 
-  res.json(
+  const trade = db
 
-    db
+    .prepare("SELECT * FROM trades WHERE id=?")
 
-      .prepare("SELECT * FROM trades WHERE id=?")
+    .get(info.lastInsertRowid);
 
-      .get(info.lastInsertRowid)
-
-  );
+  res.json(trade);
 
 });
 
-// =========================
+/* =========================
 
-// LIVE MARKET DATA
+   LIVE XAU/USD MARKET DATA
 
-// =========================
+========================= */
 
-app.get("/api/candles", async (req,res)=>{
+app.get("/api/candles", async (req, res) => {
 
   const symbol = req.query.symbol || "XAU/USD";
 
@@ -406,7 +410,9 @@ app.get("/api/candles", async (req,res)=>{
 
     return res.status(503).json({
 
-      error: "TWELVE_DATA_API_KEY is missing from Render environment variables"
+      error:
+
+        "TWELVE_DATA_API_KEY is missing from Render environment variables"
 
     });
 
@@ -418,21 +424,33 @@ app.get("/api/candles", async (req,res)=>{
 
       "https://api.twelvedata.com/time_series" +
 
-      "?symbol=" + encodeURIComponent(symbol) +
+      "?symbol=" +
 
-      "&interval=" + encodeURIComponent(interval) +
+      encodeURIComponent(symbol) +
+
+      "&interval=" +
+
+      encodeURIComponent(interval) +
 
       "&outputsize=120" +
 
       "&format=JSON" +
 
-      "&apikey=" + encodeURIComponent(key);
+      "&apikey=" +
+
+      encodeURIComponent(key);
 
     const response = await fetch(url);
 
     const data = await response.json();
 
-    console.log("Twelve Data response:", JSON.stringify(data).slice(0,1000));
+    console.log(
+
+      "Twelve Data response:",
+
+      JSON.stringify(data).slice(0, 1000)
+
+    );
 
     if (!response.ok) {
 
@@ -448,7 +466,11 @@ app.get("/api/candles", async (req,res)=>{
 
       return res.status(502).json({
 
-        error: data.message || "Twelve Data returned an error"
+        error:
+
+          data.message ||
+
+          "Twelve Data returned an error"
 
       });
 
@@ -458,13 +480,15 @@ app.get("/api/candles", async (req,res)=>{
 
       return res.status(502).json({
 
-        error: "Market-data provider returned no candle values"
+        error:
+
+          "Market-data provider returned no candle values"
 
       });
 
     }
 
-    res.json({
+    return res.json({
 
       status: "ok",
 
@@ -474,55 +498,19 @@ app.get("/api/candles", async (req,res)=>{
 
   } catch (error) {
 
-    console.error("Candle API error:", error);
+    console.error(
 
-    res.status(502).json({
+      "Candle API error:",
 
-      error: "Unable to reach market-data provider"
+      error
 
-    });
+    );
 
-  }
+    return res.status(502).json({
 
-})
+      error:
 
-  }
-
-  try {
-
-    const url =
-
-      `https://api.twelvedata.com/time_series` +
-
-      `?symbol=${encodeURIComponent(symbol)}` +
-
-      `&interval=${encodeURIComponent(interval)}` +
-
-      `&outputsize=120` +
-
-      `&apikey=${encodeURIComponent(key)}`;
-
-    const r = await fetch(url);
-
-    const data = await r.json();
-
-    if (data.status === "error") {
-
-      return res.status(502).json({
-
-        error: data.message || "Market-data provider error"
-
-      });
-
-    }
-
-    res.json(data);
-
-  } catch (e) {
-
-    res.status(502).json({
-
-      error: "Unable to reach market-data provider"
+        "Unable to reach market-data provider"
 
     });
 
@@ -530,15 +518,11 @@ app.get("/api/candles", async (req,res)=>{
 
 });
 
-// =========================
+/* =========================
 
-// FRONTEND FALLBACK
+   FRONTEND FALLBACK
 
-// =========================
-
-// Send index.html for frontend routes.
-
-// API routes above are handled first.
+========================= */
 
 app.use((req, res, next) => {
 
@@ -548,18 +532,26 @@ app.use((req, res, next) => {
 
   }
 
-  res.sendFile(path.join(PUBLIC_DIR, "index.html"));
+  res.sendFile(
+
+    path.join(PUBLIC_DIR, "index.html")
+
+  );
 
 });
 
-// =========================
+/* =========================
 
-// START SERVER
+   START SERVER
 
-// =========================
+========================= */
 
 app.listen(PORT, () => {
 
-  console.log(`PriceEdge running on port ${PORT}`);
+  console.log(
+
+    `PriceEdge running on port ${PORT}`
+
+  );
 
 });
