@@ -2712,21 +2712,15 @@ async function loadMarket(){
 
 /* RESIZE */
 
-window.addEventListener(
+window.addEventListener("resize", () => {
 
-  "resize",
+  if (candles.length > 0) {
 
-  ()=>{
-
-    if(candles.length)
-
-      analyze();
+    drawChart();
 
   }
 
-);
-
-/* START */
+});
 
 updateAccount();
 
@@ -2734,13 +2728,7 @@ loadTrades();
 
 loadMarket();
 
-setInterval(
-
-  loadMarket,
-
-  60000
-
-);
+setInterval(loadMarket, 60000);
 
 </script>
 
