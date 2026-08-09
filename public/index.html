@@ -81,61 +81,67 @@ async function loadTrades(){if(!token)return;let r=await fetch("/api/trades",{he
 async function saveTrade(){if(!token){alert("Please create an account or log in first.");return}let body={pair:$("jp").value,side:$("js").value,entry:+$("je").value,stop:+$("jstop").value,target:+$("jt").value,result:+$("jr").value,notes:$("jn").value};let r=await fetch("/api/trades",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify(body)});if(r.ok){$("jn").value="";loadTrades()}else alert("Could not save trade")}
 function risk(){let b=+$("bal").value,r=+$("rp").value,e=+$("en").value,s=+$("sl").value;let amount=b*r/100,dist=Math.abs(e-s);$("riskout").innerHTML=`Maximum planned loss: <b>$${amount.toFixed(2)}</b><br>Stop distance: <b>$${dist.toFixed(2)}</b><br><span class="muted">Exact XAU/USD position sizing depends on your broker's contract specification.</span>`}
 function analyze(){if(candles.length<10)return;let close=candles.map(x=>+x.close), n=close.length, a=close.slice(n-10,n-5).reduce((x,y)=>x+y,0)/5, b=close.slice(n-5).reduce((x,y)=>x+y,0)/5;let trend=b>a?"Bullish":"Bearish";let hi=Math.max(...close.slice(-20)),lo=Math.min(...close.slice(-20));$("price").innerHTML=`$${close[n-1].toFixed(2)} <span class="${trend==="Bullish"?"green":"red"}" style="font-size:14px">${trend}</span>`;$("bias").textContent=trend;$("bias").className=trend==="Bullish"?"green":"red";$("structure").textContent=trend==="Bullish"?"HH / HL":"LH / LL";$("support").textContent=lo.toFixed(2);$("resistance").textContent=hi.toFixed(2);$("aTrend").textContent=trend;$("aStructure").textContent=trend==="Bullish"?"Higher highs / higher lows":"Lower highs / lower lows";$("aMomentum").textContent=Math.abs(b-a)/a>0.001?"Strong":"Moderate";$("aQuality").textContent=Math.abs(b-a)/a>0.002?"Watchlist":"Developing";$("signal").innerHTML=`<b>${trend} market structure</b><p class="muted">Price is currently ${trend==="Bullish"?"above":"below"} its recent short-term average. Wait for your confirmation rules before entering.</p>`;drawChart()}
-function drawChart(){
+function  drawChart(){
 
-  const c = $("chart");
+  const canvas = $("chart");
 
-  const ctx = c.getContext("2d");
+  const ctx = canvas.getContext("2d");
 
   const d = window.devicePixelRatio || 1;
 
-  const w = c.clientWidth;
+  const w = canvas.clientWidth;
 
-  const h = c.clientHeight;
+  const h = canvas.clientHeight;
 
-  c.width = w * d;
+  canvas.width = Math.floor(w * d);
 
-  c.height = h * d;
+  canvas.height = Math.floor(h * d);
 
   ctx.setTransform(d, 0, 0, d, 0, 0);
 
   ctx.clearRect(0, 0, w, h);
 
-  if (!candles.length) return;
+  if(candles.length < 2) return;
 
-  const data = candles.slice(-60);
+  // Show fewer candles so they are easier to read on mobile
 
-  const highs = data.map(x => Number(x.high));
+  const data = candles.slice(-35);
 
-  const lows = data.map(x => Number(x.low));
+  const highs = data.map(c => Number(c.high));
 
-  const max = Math.max(...highs);
+  const lows  = data.map(c => Number(c.low));
 
-  const min = Math.min(...lows);
+  let max = Math.max(...highs);
 
-  const padding = {
+  let min = Math.min(...lows);
 
-    top: 20,
+  // Add breathing room around the candles
 
-    right: 55,
+  const rawRange = max - min || 1;
 
-    bottom: 25,
+  const extra = rawRange * 0.10;
 
-    left: 10
+  max += extra;
 
-  };
+  min -= extra;
 
-  const chartW = w - padding.left - padding.right;
+  const left = 12;
 
-  const chartH = h - padding.top - padding.bottom;
+  const right = 58;
 
-  const range = max - min || 1;
+  const top = 18;
+
+  const bottom = 28;
+
+  const chartWidth = w - left - right;
+
+  const chartHeight = h - top - bottom;
+
+  const range = max - min;
 
   function y(price){
 
-    return padding.top +
-
-      (max - price) / range * chartH;
+    return top + ((max - price) / range) * chartHeight;
 
   }
 
@@ -145,7 +151,7 @@ function drawChart(){
 
   ctx.fillRect(0, 0, w, h);
 
-  // Horizontal price grid
+  // Grid
 
   ctx.strokeStyle = "#1b2942";
 
@@ -153,13 +159,13 @@ function drawChart(){
 
   for(let i = 0; i <= 5; i++){
 
-    const gy = padding.top + (chartH / 5) * i;
+    const gy = top + (chartHeight / 5) * i;
 
     ctx.beginPath();
 
-    ctx.moveTo(padding.left, gy);
+    ctx.moveTo(left, gy);
 
-    ctx.lineTo(w - padding.right, gy);
+    ctx.lineTo(w - right, gy);
 
     ctx.stroke();
 
@@ -171,13 +177,31 @@ function drawChart(){
 
     ctx.textAlign = "left";
 
-    ctx.fillText(price.toFixed(2), w - padding.right + 5, gy + 3);
+    ctx.fillText(
+
+      price.toFixed(2),
+
+      w - right + 7,
+
+      gy + 3
+
+    );
 
   }
 
-  const spacing = chartW / data.length;
+  // Candle spacing
 
-  const candleWidth = Math.max(3, spacing * 0.65);
+  const spacing = chartWidth / data.length;
+
+  // Wider bodies for readability
+
+  const bodyWidth = Math.max(
+
+    5,
+
+    Math.min(11, spacing * 0.62)
+
+  );
 
   data.forEach((candle, i) => {
 
@@ -199,15 +223,13 @@ function drawChart(){
 
       !Number.isFinite(close)
 
-    ) return;
+    ){
 
-    const x =
+      return;
 
-      padding.left +
+    }
 
-      spacing * i +
-
-      spacing / 2;
+    const x = left + spacing * i + spacing / 2;
 
     const openY = y(open);
 
@@ -233,21 +255,25 @@ function drawChart(){
 
       : "#fb7185";
 
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
 
     ctx.stroke();
 
     // Candle body
 
-    const bodyTop = Math.min(openY, closeY);
+    let bodyTop = Math.min(openY, closeY);
 
-    const bodyBottom = Math.max(openY, closeY);
+    let bodyBottom = Math.max(openY, closeY);
 
     let bodyHeight = bodyBottom - bodyTop;
 
-    if(bodyHeight < 2){
+    // Make tiny candles visible
 
-      bodyHeight = 2;
+    if(bodyHeight < 3){
+
+      bodyHeight = 3;
+
+      bodyTop = ((openY + closeY) / 2) - 1.5;
 
     }
 
@@ -259,11 +285,11 @@ function drawChart(){
 
     ctx.fillRect(
 
-      x - candleWidth / 2,
+      x - bodyWidth / 2,
 
       bodyTop,
 
-      candleWidth,
+      bodyWidth,
 
       bodyHeight
 
@@ -271,23 +297,89 @@ function drawChart(){
 
   });
 
-  // Current price line
+  // Recent support and resistance
 
-  const latest = Number(data[data.length - 1].close);
+  const recent = data.slice(-20);
+
+  const resistance = Math.max(
+
+    ...recent.map(c => Number(c.high))
+
+  );
+
+  const support = Math.min(
+
+    ...recent.map(c => Number(c.low))
+
+  );
+
+  function levelLine(price, label, dashed){
+
+    const yy = y(price);
+
+    ctx.beginPath();
+
+    ctx.moveTo(left, yy);
+
+    ctx.lineTo(w - right, yy);
+
+    ctx.strokeStyle = "#71809c";
+
+    ctx.lineWidth = 1;
+
+    if(dashed){
+
+      ctx.setLineDash([4,4]);
+
+    }
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#a8b4cc";
+
+    ctx.font = "bold 10px system-ui";
+
+    ctx.textAlign = "left";
+
+    ctx.fillText(
+
+      label,
+
+      left + 5,
+
+      yy - 5
+
+    );
+
+  }
+
+  levelLine(resistance, "Resistance", true);
+
+  levelLine(support, "Support", true);
+
+  // Current price
+
+  const latest = Number(
+
+    data[data.length - 1].close
+
+  );
 
   const currentY = y(latest);
 
   ctx.beginPath();
 
-  ctx.moveTo(padding.left, currentY);
+  ctx.moveTo(left, currentY);
 
-  ctx.lineTo(w - padding.right, currentY);
+  ctx.lineTo(w - right, currentY);
 
   ctx.strokeStyle = "#f5c451";
 
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1.5;
 
-  ctx.setLineDash([5, 4]);
+  ctx.setLineDash([6,4]);
 
   ctx.stroke();
 
@@ -297,7 +389,7 @@ function drawChart(){
 
   ctx.fillStyle = "#f5c451";
 
-  ctx.font = "bold 11px system-ui";
+  ctx.font = "bold 12px system-ui";
 
   ctx.textAlign = "left";
 
@@ -305,9 +397,59 @@ function drawChart(){
 
     latest.toFixed(2),
 
-    w - padding.right + 5,
+    w - right + 7,
 
     currentY - 5
+
+  );
+
+  // Last candle highlight
+
+  const lastIndex = data.length - 1;
+
+  const lastX =
+
+    left +
+
+    spacing * lastIndex +
+
+    spacing / 2;
+
+  ctx.beginPath();
+
+  ctx.arc(
+
+    lastX,
+
+    currentY,
+
+    3,
+
+    0,
+
+    Math.PI * 2
+
+  );
+
+  ctx.fillStyle = "#f5c451";
+
+  ctx.fill();
+
+  // Bottom label
+
+  ctx.fillStyle = "#71809c";
+
+  ctx.font = "10px system-ui";
+
+  ctx.textAlign = "center";
+
+  ctx.fillText(
+
+    "XAU/USD · 5m",
+
+    left + chartWidth / 2,
+
+    h - 8
 
   );
 
