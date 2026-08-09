@@ -1,461 +1,2497 @@
 <!doctype html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
 <meta name="theme-color" content="#0b1020">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="PriceEdge">
+
 <title>PriceEdge</title>
+
 <link rel="manifest" href="/manifest.json">
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#080d19;color:#edf2ff;font:15px system-ui,-apple-system,Segoe UI,sans-serif}
-header{height:62px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #26334f;background:#0b1020;position:sticky;top:0;z-index:3}
-.logo{font-size:21px;font-weight:850}.logo i{color:#f5c451;font-style:normal}.pill{font-size:11px;background:#f5c451;color:#16120a;padding:5px 8px;border-radius:20px;font-weight:800}
-nav{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid #26334f;overflow:auto;background:#0b1020}nav button{border:0;background:transparent;color:#8e9cb7;padding:9px 12px;border-radius:9px;white-space:nowrap}nav button.on{background:#18223a;color:#fff}
-main{max-width:1100px;margin:auto;padding:16px}.page{display:none}.page.on{display:block}.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}.card{background:#111a2d;border:1px solid #26334f;border-radius:15px;padding:16px;margin-bottom:14px}
-h1,h2,h3{margin:0 0 10px}.muted{color:#8e9cb7}.green{color:#4ade80}.red{color:#fb7185}.gold{color:#f5c451}.price{font-size:30px;font-weight:850}
-.chart{height:330px;background:#0c1322;border-radius:11px;position:relative;overflow:hidden;margin-top:12px}.chart canvas{width:100%;height:100%}
-.row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #26334f}.row:last-child{border:0}.box{background:#18223a;border-radius:11px;padding:12px;margin-top:10px}
-input,select,textarea{width:100%;background:#0c1322;border:1px solid #31405f;border-radius:8px;color:#fff;padding:11px;margin:5px 0 12px}button.primary{border:0;border-radius:9px;padding:11px 14px;background:#f5c451;color:#17130a;font-weight:850;cursor:pointer;width:100%}
-table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #26334f;text-align:left}th{color:#8e9cb7}
-.notice{padding:11px;background:#211c0f;border:1px solid #5d4c1f;border-radius:9px;color:#f7dc88;font-size:13px;margin-top:10px}
-.auth{max-width:430px;margin:30px auto}.hidden{display:none!important}.actions{display:flex;gap:8px}.actions button{flex:1}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.chart{height:260px}}
-</style>
-</head>
-<body>
-<header><div class="logo">Price<i>Edge</i></div><span class="pill">XAU/USD</span></header>
-<nav id="nav">
-<button class="on" data-page="home">Dashboard</button><button data-page="analysis">Price Action</button>
-<button data-page="risk">Risk</button><button data-page="journal">Journal</button><button data-page="account">Account</button>
-</nav>
-<main>
-<section id="home" class="page on">
-<div class="grid">
-<div class="card">
-<div class="muted">XAU/USD · 5 MINUTES · LIVE</div><div id="price" class="price">—</div>
-<div class="chart"><canvas id="chart"></canvas></div>
-<div id="signal" class="box"><b>Waiting for market data…</b><p class="muted">Configure your market-data API key on the server.</p></div>
-</div>
-<div class="card"><h3>Setup</h3>
-<div class="row"><span>Bias</span><b id="bias">—</b></div><div class="row"><span>Structure</span><b id="structure">—</b></div>
-<div class="row"><span>Support</span><b id="support">—</b></div><div class="row"><span>Resistance</span><b id="resistance">—</b></div>
-<div class="notice">PriceEdge is decision-support software. It does not guarantee profits and is not financial advice.</div>
-</div>
-</div>
-</section>
 
-<section id="analysis" class="page"><div class="card"><h2>Price Action Scanner</h2><p class="muted">The scanner evaluates the latest candles for basic market structure.</p>
-<div class="row"><span>Trend</span><b id="aTrend">—</b></div><div class="row"><span>Recent structure</span><b id="aStructure">—</b></div>
-<div class="row"><span>Momentum</span><b id="aMomentum">—</b></div><div class="row"><span>Setup quality</span><b id="aQuality">—</b></div></div></section>
+*{
 
-<section id="risk" class="page"><div class="card"><h2>Risk Calculator</h2>
-<label>Account balance</label><input id="bal" type="number" value="1000">
-<label>Risk %</label><input id="rp" type="number" value="1" step=".1">
-<label>Entry</label><input id="en" type="number" value="0">
-<label>Stop loss</label><input id="sl" type="number" value="0">
-<button class="primary" onclick="risk()">Calculate</button><div id="riskout" class="box">Enter your values.</div></div></section>
-
-<section id="journal" class="page"><div class="card"><h2>Trading Journal</h2>
-<div id="loginRequired" class="notice">Log in to save trades to your account.</div>
-<label>Pair</label><input id="jp" value="XAU/USD"><label>Side</label><select id="js"><option>BUY</option><option>SELL</option></select>
-<label>Entry</label><input id="je" type="number"><label>Stop</label><input id="jstop" type="number"><label>Target</label><input id="jt" type="number">
-<label>Result ($)</label><input id="jr" type="number" value="0"><label>Notes</label><textarea id="jn"></textarea>
-<button class="primary" onclick="saveTrade()">Save Trade</button><div style="overflow:auto;margin-top:15px"><table><thead><tr><th>Pair</th><th>Side</th><th>Entry</th><th>Result</th></tr></thead><tbody id="trades"></tbody></table></div>
-</div></section>
-
-<section id="account" class="page"><div class="card auth" id="authBox"><h2 id="authTitle">Create account</h2>
-<p class="muted">Your journal is stored securely on the PriceEdge server.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password (6+ characters)">
-<div class="actions"><button class="primary" onclick="authAction()">Create account</button><button onclick="toggleAuth()" style="background:#18223a;color:#fff;border:0;border-radius:9px">Use login</button></div>
-<div id="authMsg" class="notice hidden"></div></div>
-<div class="card hidden" id="logged"><h2>Account</h2><p id="who"></p><button class="primary" onclick="logout()">Log out</button></div></section>
-</main>
-<script>
-let token=localStorage.getItem("pe_token")||"", mode="register", candles=[];
-const $=id=>document.getElementById(id);
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");document.querySelectorAll(".page").forEach(x=>x.classList.remove("on"));$(b.dataset.page).classList.add("on");});
-function toggleAuth(){mode=mode==="register"?"login":"register";$("authTitle").textContent=mode==="register"?"Create account":"Log in";document.querySelector("#authBox .actions button:first-child").textContent=mode==="register"?"Create account":"Log in";}
-async function authAction(){let email=$("email").value,password=$("password").value;let r=await fetch("/api/"+(mode==="register"?"register":"login"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});let d=await r.json();if(!r.ok){$("authMsg").textContent=d.error||"Error";$("authMsg").classList.remove("hidden");return}token=d.token;localStorage.setItem("pe_token",token);updateAccount();loadTrades();}
-async function updateAccount(){if(!token){$("authBox").classList.remove("hidden");$("logged").classList.add("hidden");$("loginRequired").classList.remove("hidden");return}let r=await fetch("/api/me",{headers:{Authorization:"Bearer "+token}});if(!r.ok){logout();return}let d=await r.json();$("authBox").classList.add("hidden");$("logged").classList.remove("hidden");$("who").textContent=d.user.email;$("loginRequired").classList.add("hidden");}
-function logout(){token="";localStorage.removeItem("pe_token");updateAccount()}
-async function loadTrades(){if(!token)return;let r=await fetch("/api/trades",{headers:{Authorization:"Bearer "+token}});if(r.ok){let rows=await r.json();$("trades").innerHTML=rows.map(t=>`<tr><td>${t.pair}</td><td>${t.side}</td><td>${t.entry??""}</td><td class="${t.result>=0?"green":"red"}">${t.result>=0?"+":""}$${Number(t.result).toFixed(2)}</td></tr>`).join("")}}
-async function saveTrade(){if(!token){alert("Please create an account or log in first.");return}let body={pair:$("jp").value,side:$("js").value,entry:+$("je").value,stop:+$("jstop").value,target:+$("jt").value,result:+$("jr").value,notes:$("jn").value};let r=await fetch("/api/trades",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify(body)});if(r.ok){$("jn").value="";loadTrades()}else alert("Could not save trade")}
-function risk(){let b=+$("bal").value,r=+$("rp").value,e=+$("en").value,s=+$("sl").value;let amount=b*r/100,dist=Math.abs(e-s);$("riskout").innerHTML=`Maximum planned loss: <b>$${amount.toFixed(2)}</b><br>Stop distance: <b>$${dist.toFixed(2)}</b><br><span class="muted">Exact XAU/USD position sizing depends on your broker's contract specification.</span>`}
-function analyze(){if(candles.length<10)return;let close=candles.map(x=>+x.close), n=close.length, a=close.slice(n-10,n-5).reduce((x,y)=>x+y,0)/5, b=close.slice(n-5).reduce((x,y)=>x+y,0)/5;let trend=b>a?"Bullish":"Bearish";let hi=Math.max(...close.slice(-20)),lo=Math.min(...close.slice(-20));$("price").innerHTML=`$${close[n-1].toFixed(2)} <span class="${trend==="Bullish"?"green":"red"}" style="font-size:14px">${trend}</span>`;$("bias").textContent=trend;$("bias").className=trend==="Bullish"?"green":"red";$("structure").textContent=trend==="Bullish"?"HH / HL":"LH / LL";$("support").textContent=lo.toFixed(2);$("resistance").textContent=hi.toFixed(2);$("aTrend").textContent=trend;$("aStructure").textContent=trend==="Bullish"?"Higher highs / higher lows":"Lower highs / lower lows";$("aMomentum").textContent=Math.abs(b-a)/a>0.001?"Strong":"Moderate";$("aQuality").textContent=Math.abs(b-a)/a>0.002?"Watchlist":"Developing";$("signal").innerHTML=`<b>${trend} market structure</b><p class="muted">Price is currently ${trend==="Bullish"?"above":"below"} its recent short-term average. Wait for your confirmation rules before entering.</p>`;drawChart()}
-function  drawChart(){
-
-  const canvas = $("chart");
-
-  const ctx = canvas.getContext("2d");
-
-  const d = window.devicePixelRatio || 1;
-
-  const w = canvas.clientWidth;
-
-  const h = canvas.clientHeight;
-
-  canvas.width = Math.floor(w * d);
-
-  canvas.height = Math.floor(h * d);
-
-  ctx.setTransform(d, 0, 0, d, 0, 0);
-
-  ctx.clearRect(0, 0, w, h);
-
-  if(candles.length < 2) return;
-
-  // Show fewer candles so they are easier to read on mobile
-
-  const data = candles.slice(-35);
-
-  const highs = data.map(c => Number(c.high));
-
-  const lows  = data.map(c => Number(c.low));
-
-  let max = Math.max(...highs);
-
-  let min = Math.min(...lows);
-
-  // Add breathing room around the candles
-
-  const rawRange = max - min || 1;
-
-  const extra = rawRange * 0.10;
-
-  max += extra;
-
-  min -= extra;
-
-  const left = 12;
-
-  const right = 58;
-
-  const top = 18;
-
-  const bottom = 28;
-
-  const chartWidth = w - left - right;
-
-  const chartHeight = h - top - bottom;
-
-  const range = max - min;
-
-  function y(price){
-
-    return top + ((max - price) / range) * chartHeight;
-
-  }
-
-  // Background
-
-  ctx.fillStyle = "#0c1322";
-
-  ctx.fillRect(0, 0, w, h);
-
-  // Grid
-
-  ctx.strokeStyle = "#1b2942";
-
-  ctx.lineWidth = 1;
-
-  for(let i = 0; i <= 5; i++){
-
-    const gy = top + (chartHeight / 5) * i;
-
-    ctx.beginPath();
-
-    ctx.moveTo(left, gy);
-
-    ctx.lineTo(w - right, gy);
-
-    ctx.stroke();
-
-    const price = max - (range / 5) * i;
-
-    ctx.fillStyle = "#71809c";
-
-    ctx.font = "10px system-ui";
-
-    ctx.textAlign = "left";
-
-    ctx.fillText(
-
-      price.toFixed(2),
-
-      w - right + 7,
-
-      gy + 3
-
-    );
-
-  }
-
-  // Candle spacing
-
-  const spacing = chartWidth / data.length;
-
-  // Wider bodies for readability
-
-  const bodyWidth = Math.max(
-
-    5,
-
-    Math.min(11, spacing * 0.62)
-
-  );
-
-  data.forEach((candle, i) => {
-
-    const open = Number(candle.open);
-
-    const high = Number(candle.high);
-
-    const low = Number(candle.low);
-
-    const close = Number(candle.close);
-
-    if(
-
-      !Number.isFinite(open) ||
-
-      !Number.isFinite(high) ||
-
-      !Number.isFinite(low) ||
-
-      !Number.isFinite(close)
-
-    ){
-
-      return;
-
-    }
-
-    const x = left + spacing * i + spacing / 2;
-
-    const openY = y(open);
-
-    const closeY = y(close);
-
-    const highY = y(high);
-
-    const lowY = y(low);
-
-    const bullish = close >= open;
-
-    // Wick
-
-    ctx.beginPath();
-
-    ctx.moveTo(x, highY);
-
-    ctx.lineTo(x, lowY);
-
-    ctx.strokeStyle = bullish
-
-      ? "#4ade80"
-
-      : "#fb7185";
-
-    ctx.lineWidth = 1.5;
-
-    ctx.stroke();
-
-    // Candle body
-
-    let bodyTop = Math.min(openY, closeY);
-
-    let bodyBottom = Math.max(openY, closeY);
-
-    let bodyHeight = bodyBottom - bodyTop;
-
-    // Make tiny candles visible
-
-    if(bodyHeight < 3){
-
-      bodyHeight = 3;
-
-      bodyTop = ((openY + closeY) / 2) - 1.5;
-
-    }
-
-    ctx.fillStyle = bullish
-
-      ? "#4ade80"
-
-      : "#fb7185";
-
-    ctx.fillRect(
-
-      x - bodyWidth / 2,
-
-      bodyTop,
-
-      bodyWidth,
-
-      bodyHeight
-
-    );
-
-  });
-
-  // Recent support and resistance
-
-  const recent = data.slice(-20);
-
-  const resistance = Math.max(
-
-    ...recent.map(c => Number(c.high))
-
-  );
-
-  const support = Math.min(
-
-    ...recent.map(c => Number(c.low))
-
-  );
-
-  function levelLine(price, label, dashed){
-
-    const yy = y(price);
-
-    ctx.beginPath();
-
-    ctx.moveTo(left, yy);
-
-    ctx.lineTo(w - right, yy);
-
-    ctx.strokeStyle = "#71809c";
-
-    ctx.lineWidth = 1;
-
-    if(dashed){
-
-      ctx.setLineDash([4,4]);
-
-    }
-
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#a8b4cc";
-
-    ctx.font = "bold 10px system-ui";
-
-    ctx.textAlign = "left";
-
-    ctx.fillText(
-
-      label,
-
-      left + 5,
-
-      yy - 5
-
-    );
-
-  }
-
-  levelLine(resistance, "Resistance", true);
-
-  levelLine(support, "Support", true);
-
-  // Current price
-
-  const latest = Number(
-
-    data[data.length - 1].close
-
-  );
-
-  const currentY = y(latest);
-
-  ctx.beginPath();
-
-  ctx.moveTo(left, currentY);
-
-  ctx.lineTo(w - right, currentY);
-
-  ctx.strokeStyle = "#f5c451";
-
-  ctx.lineWidth = 1.5;
-
-  ctx.setLineDash([6,4]);
-
-  ctx.stroke();
-
-  ctx.setLineDash([]);
-
-  // Current price label
-
-  ctx.fillStyle = "#f5c451";
-
-  ctx.font = "bold 12px system-ui";
-
-  ctx.textAlign = "left";
-
-  ctx.fillText(
-
-    latest.toFixed(2),
-
-    w - right + 7,
-
-    currentY - 5
-
-  );
-
-  // Last candle highlight
-
-  const lastIndex = data.length - 1;
-
-  const lastX =
-
-    left +
-
-    spacing * lastIndex +
-
-    spacing / 2;
-
-  ctx.beginPath();
-
-  ctx.arc(
-
-    lastX,
-
-    currentY,
-
-    3,
-
-    0,
-
-    Math.PI * 2
-
-  );
-
-  ctx.fillStyle = "#f5c451";
-
-  ctx.fill();
-
-  // Bottom label
-
-  ctx.fillStyle = "#71809c";
-
-  ctx.font = "10px system-ui";
-
-  ctx.textAlign = "center";
-
-  ctx.fillText(
-
-    "XAU/USD · 5m",
-
-    left + chartWidth / 2,
-
-    h - 8
-
-  );
+  box-sizing:border-box;
 
 }
-async function loadMarket(){try{let r=await fetch("/api/candles?symbol=XAU%2FUSD&interval=5min");let d=await r.json();if(!r.ok)throw Error(d.error);candles=(d.values||[]).reverse();analyze()}catch(e){$("signal").innerHTML=`<b>Market data unavailable</b><p class="muted">${e.message}</p><p class="muted">Add TWELVE_DATA_API_KEY to the server environment, then restart PriceEdge.</p>`}}
-window.addEventListener("resize",drawChart);updateAccount();loadTrades();loadMarket();setInterval(loadMarket,60000);
+
+html,body{
+
+  margin:0;
+
+  padding:0;
+
+  background:#080d19;
+
+  color:#edf2ff;
+
+  font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+}
+
+body{
+
+  min-height:100vh;
+
+}
+
+header{
+
+  height:62px;
+
+  padding:0 18px;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  border-bottom:1px solid #26334f;
+
+  background:#0b1020;
+
+  position:sticky;
+
+  top:0;
+
+  z-index:10;
+
+}
+
+.logo{
+
+  font-size:22px;
+
+  font-weight:900;
+
+  letter-spacing:-.5px;
+
+}
+
+.logo i{
+
+  color:#f5c451;
+
+  font-style:normal;
+
+}
+
+.pill{
+
+  font-size:12px;
+
+  background:#f5c451;
+
+  color:#16120a;
+
+  padding:7px 10px;
+
+  border-radius:20px;
+
+  font-weight:900;
+
+}
+
+nav{
+
+  display:flex;
+
+  gap:6px;
+
+  padding:10px 12px;
+
+  border-bottom:1px solid #26334f;
+
+  overflow-x:auto;
+
+  background:#0b1020;
+
+  position:sticky;
+
+  top:62px;
+
+  z-index:9;
+
+}
+
+nav button{
+
+  border:0;
+
+  background:transparent;
+
+  color:#8e9cb7;
+
+  padding:10px 13px;
+
+  border-radius:10px;
+
+  white-space:nowrap;
+
+  font-size:14px;
+
+}
+
+nav button.on{
+
+  background:#18223a;
+
+  color:#fff;
+
+}
+
+main{
+
+  max-width:1150px;
+
+  margin:auto;
+
+  padding:16px;
+
+}
+
+.page{
+
+  display:none;
+
+}
+
+.page.on{
+
+  display:block;
+
+}
+
+.grid{
+
+  display:grid;
+
+  grid-template-columns:2fr 1fr;
+
+  gap:14px;
+
+}
+
+.card{
+
+  background:#111a2d;
+
+  border:1px solid #26334f;
+
+  border-radius:16px;
+
+  padding:16px;
+
+  margin-bottom:14px;
+
+}
+
+h1,h2,h3{
+
+  margin:0 0 10px;
+
+}
+
+.muted{
+
+  color:#8e9cb7;
+
+}
+
+.green{
+
+  color:#4ade80;
+
+}
+
+.red{
+
+  color:#fb7185;
+
+}
+
+.gold{
+
+  color:#f5c451;
+
+}
+
+.price{
+
+  font-size:34px;
+
+  font-weight:900;
+
+  letter-spacing:-1px;
+
+  margin-top:4px;
+
+}
+
+/* =========================
+
+   TRADING CHART
+
+========================= */
+
+.chart{
+
+  height:390px;
+
+  background:#0c1322;
+
+  border-radius:13px;
+
+  position:relative;
+
+  overflow:hidden;
+
+  margin-top:14px;
+
+  border:1px solid #18253e;
+
+}
+
+.chart canvas{
+
+  display:block;
+
+  width:100%;
+
+  height:100%;
+
+  touch-action:none;
+
+}
+
+/* Chart toolbar */
+
+.chart-toolbar{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-top:10px;
+
+  gap:8px;
+
+}
+
+.chart-status{
+
+  font-size:12px;
+
+  color:#71809c;
+
+}
+
+.live-dot{
+
+  display:inline-block;
+
+  width:7px;
+
+  height:7px;
+
+  border-radius:50%;
+
+  background:#4ade80;
+
+  margin-right:5px;
+
+}
+
+/* Setup */
+
+.row{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:15px;
+
+  padding:11px 0;
+
+  border-bottom:1px solid #26334f;
+
+}
+
+.row:last-child{
+
+  border:0;
+
+}
+
+.row b{
+
+  text-align:right;
+
+}
+
+.box{
+
+  background:#18223a;
+
+  border-radius:12px;
+
+  padding:14px;
+
+  margin-top:10px;
+
+}
+
+input,
+
+select,
+
+textarea{
+
+  width:100%;
+
+  background:#0c1322;
+
+  border:1px solid #31405f;
+
+  border-radius:9px;
+
+  color:#fff;
+
+  padding:11px;
+
+  margin:5px 0 12px;
+
+}
+
+button.primary{
+
+  border:0;
+
+  border-radius:9px;
+
+  padding:12px 14px;
+
+  background:#f5c451;
+
+  color:#17130a;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+  width:100%;
+
+}
+
+table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+th,td{
+
+  padding:10px;
+
+  border-bottom:1px solid #26334f;
+
+  text-align:left;
+
+}
+
+th{
+
+  color:#8e9cb7;
+
+}
+
+.notice{
+
+  padding:12px;
+
+  background:#211c0f;
+
+  border:1px solid #5d4c1f;
+
+  border-radius:9px;
+
+  color:#f7dc88;
+
+  font-size:13px;
+
+  margin-top:10px;
+
+}
+
+.auth{
+
+  max-width:430px;
+
+  margin:30px auto;
+
+}
+
+.hidden{
+
+  display:none!important;
+
+}
+
+.actions{
+
+  display:flex;
+
+  gap:8px;
+
+}
+
+.actions button{
+
+  flex:1;
+
+}
+
+/* Mobile */
+
+@media(max-width:760px){
+
+  header{
+
+    height:58px;
+
+  }
+
+  nav{
+
+    top:58px;
+
+  }
+
+  main{
+
+    padding:10px;
+
+  }
+
+  .grid{
+
+    grid-template-columns:1fr;
+
+  }
+
+  .card{
+
+    padding:14px;
+
+    border-radius:15px;
+
+  }
+
+  .chart{
+
+    height:330px;
+
+  }
+
+  .price{
+
+    font-size:32px;
+
+  }
+
+}
+
+@media(max-width:420px){
+
+  .chart{
+
+    height:315px;
+
+  }
+
+  .price{
+
+    font-size:30px;
+
+  }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <div class="logo">Price<i>Edge</i></div>
+
+  <span class="pill">XAU/USD</span>
+
+</header>
+
+<nav id="nav">
+
+  <button class="on" data-page="home">Dashboard</button>
+
+  <button data-page="analysis">Price Action</button>
+
+  <button data-page="risk">Risk</button>
+
+  <button data-page="journal">Journal</button>
+
+  <button data-page="account">Account</button>
+
+</nav>
+
+<main>
+
+<!-- =========================
+
+     DASHBOARD
+
+========================= -->
+
+<section id="home" class="page on">
+
+<div class="grid">
+
+<div class="card">
+
+<div class="muted">
+
+XAU/USD · 5 MINUTES ·
+
+<span class="live-dot"></span>LIVE
+
+</div>
+
+<div id="price" class="price">—</div>
+
+<div class="chart">
+
+<canvas id="chart"></canvas>
+
+</div>
+
+<div class="chart-toolbar">
+
+  <span class="chart-status">Candlestick · 5m</span>
+
+  <span id="candleCount" class="chart-status">— candles</span>
+
+</div>
+
+<div id="signal" class="box">
+
+  <b>Waiting for market data…</b>
+
+  <p class="muted">
+
+    Configure your market-data API key on the server.
+
+  </p>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>Setup</h3>
+
+<div class="row">
+
+  <span>Bias</span>
+
+  <b id="bias">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Structure</span>
+
+  <b id="structure">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Support</span>
+
+  <b id="support">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Resistance</span>
+
+  <b id="resistance">—</b>
+
+</div>
+
+<div class="notice">
+
+PriceEdge is decision-support software.
+
+It does not guarantee profits and is not financial advice.
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- =========================
+
+     PRICE ACTION
+
+========================= -->
+
+<section id="analysis" class="page">
+
+<div class="card">
+
+<h2>Price Action Scanner</h2>
+
+<p class="muted">
+
+The scanner evaluates recent XAU/USD 5-minute candles
+
+for basic market structure and momentum.
+
+</p>
+
+<div class="row">
+
+  <span>Trend</span>
+
+  <b id="aTrend">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Recent structure</span>
+
+  <b id="aStructure">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Momentum</span>
+
+  <b id="aMomentum">—</b>
+
+</div>
+
+<div class="row">
+
+  <span>Setup quality</span>
+
+  <b id="aQuality">—</b>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- =========================
+
+     RISK
+
+========================= -->
+
+<section id="risk" class="page">
+
+<div class="card">
+
+<h2>Risk Calculator</h2>
+
+<label>Account balance</label>
+
+<input id="bal" type="number" value="1000">
+
+<label>Risk %</label>
+
+<input id="rp" type="number" value="1" step=".1">
+
+<label>Entry</label>
+
+<input id="en" type="number" value="0">
+
+<label>Stop loss</label>
+
+<input id="sl" type="number" value="0">
+
+<button class="primary" onclick="risk()">
+
+Calculate
+
+</button>
+
+<div id="riskout" class="box">
+
+Enter your values.
+
+</div>
+
+</div>
+
+</section>
+
+<!-- =========================
+
+     JOURNAL
+
+========================= -->
+
+<section id="journal" class="page">
+
+<div class="card">
+
+<h2>Trading Journal</h2>
+
+<div id="loginRequired" class="notice">
+
+Log in to save trades to your account.
+
+</div>
+
+<label>Pair</label>
+
+<input id="jp" value="XAU/USD">
+
+<label>Side</label>
+
+<select id="js">
+
+<option>BUY</option>
+
+<option>SELL</option>
+
+</select>
+
+<label>Entry</label>
+
+<input id="je" type="number">
+
+<label>Stop</label>
+
+<input id="jstop" type="number">
+
+<label>Target</label>
+
+<input id="jt" type="number">
+
+<label>Result ($)</label>
+
+<input id="jr" type="number" value="0">
+
+<label>Notes</label>
+
+<textarea id="jn"></textarea>
+
+<button class="primary" onclick="saveTrade()">
+
+Save Trade
+
+</button>
+
+<div style="overflow:auto;margin-top:15px">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Pair</th>
+
+<th>Side</th>
+
+<th>Entry</th>
+
+<th>Result</th>
+
+</tr>
+
+</thead>
+
+<tbody id="trades"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- =========================
+
+     ACCOUNT
+
+========================= -->
+
+<section id="account" class="page">
+
+<div class="card auth" id="authBox">
+
+<h2 id="authTitle">
+
+Create account
+
+</h2>
+
+<p class="muted">
+
+Your journal is stored securely on the PriceEdge server.
+
+</p>
+
+<input
+
+id="email"
+
+type="email"
+
+placeholder="Email"
+
+>
+
+<input
+
+id="password"
+
+type="password"
+
+placeholder="Password (6+ characters)"
+
+>
+
+<div class="actions">
+
+<button
+
+class="primary"
+
+onclick="authAction()">
+
+Create account
+
+</button>
+
+<button
+
+onclick="toggleAuth()"
+
+style="background:#18223a;color:#fff;border:0;border-radius:9px">
+
+Use login
+
+</button>
+
+</div>
+
+<div id="authMsg" class="notice hidden"></div>
+
+</div>
+
+<div class="card hidden" id="logged">
+
+<h2>Account</h2>
+
+<p id="who"></p>
+
+<button class="primary" onclick="logout()">
+
+Log out
+
+</button>
+
+</div>
+
+</section>
+
+</main>
+
+<script>
+
+let token =
+
+localStorage.getItem("pe_token") || "";
+
+let mode = "register";
+
+let candles = [];
+
+const $ = id =>
+
+document.getElementById(id);
+
+/* =========================
+
+   NAVIGATION
+
+========================= */
+
+document
+
+.querySelectorAll("nav button")
+
+.forEach(button => {
+
+button.onclick = () => {
+
+document
+
+.querySelectorAll("nav button")
+
+.forEach(x =>
+
+x.classList.remove("on"));
+
+button.classList.add("on");
+
+document
+
+.querySelectorAll(".page")
+
+.forEach(x =>
+
+x.classList.remove("on"));
+
+$(button.dataset.page)
+
+.classList.add("on");
+
+};
+
+});
+
+/* =========================
+
+   ACCOUNT
+
+========================= */
+
+function toggleAuth(){
+
+mode =
+
+mode === "register"
+
+? "login"
+
+: "register";
+
+$("authTitle").textContent =
+
+mode === "register"
+
+? "Create account"
+
+: "Log in";
+
+document
+
+.querySelector("#authBox .actions button:first-child")
+
+.textContent =
+
+mode === "register"
+
+? "Create account"
+
+: "Log in";
+
+}
+
+async function authAction(){
+
+let email =
+
+$("email").value.trim();
+
+let password =
+
+$("password").value;
+
+if(!email || !password){
+
+$("authMsg").textContent =
+
+"Please enter your email and password.";
+
+$("authMsg").classList.remove("hidden");
+
+return;
+
+}
+
+try{
+
+let r =
+
+await fetch(
+
+"/api/" +
+
+(mode === "register"
+
+? "register"
+
+: "login"),
+
+{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+email,
+
+password
+
+})
+
+});
+
+let d =
+
+await r.json();
+
+if(!r.ok){
+
+$("authMsg").textContent =
+
+d.error || "Error";
+
+$("authMsg").classList.remove("hidden");
+
+return;
+
+}
+
+token = d.token;
+
+localStorage.setItem(
+
+"pe_token",
+
+token
+
+);
+
+updateAccount();
+
+loadTrades();
+
+}catch(e){
+
+$("authMsg").textContent =
+
+"Unable to connect to PriceEdge.";
+
+$("authMsg").classList.remove("hidden");
+
+}
+
+}
+
+async function updateAccount(){
+
+if(!token){
+
+$("authBox")
+
+.classList.remove("hidden");
+
+$("logged")
+
+.classList.add("hidden");
+
+$("loginRequired")
+
+.classList.remove("hidden");
+
+return;
+
+}
+
+try{
+
+let r =
+
+await fetch(
+
+"/api/me",
+
+{
+
+headers:{
+
+Authorization:
+
+"Bearer " + token
+
+}
+
+});
+
+if(!r.ok){
+
+logout();
+
+return;
+
+}
+
+let d =
+
+await r.json();
+
+$("authBox")
+
+.classList.add("hidden");
+
+$("logged")
+
+.classList.remove("hidden");
+
+$("who").textContent =
+
+d.user.email;
+
+$("loginRequired")
+
+.classList.add("hidden");
+
+}catch(e){
+
+logout();
+
+}
+
+}
+
+function logout(){
+
+token = "";
+
+localStorage.removeItem(
+
+"pe_token"
+
+);
+
+updateAccount();
+
+}
+
+/* =========================
+
+   JOURNAL
+
+========================= */
+
+async function loadTrades(){
+
+if(!token) return;
+
+let r =
+
+await fetch(
+
+"/api/trades",
+
+{
+
+headers:{
+
+Authorization:
+
+"Bearer " + token
+
+}
+
+});
+
+if(r.ok){
+
+let rows =
+
+await r.json();
+
+$("trades").innerHTML =
+
+rows.map(t => `
+
+<tr>
+
+<td>${t.pair}</td>
+
+<td>${t.side}</td>
+
+<td>${t.entry ?? ""}</td>
+
+<td class="${
+
+t.result >= 0
+
+? "green"
+
+: "red"
+
+}">
+
+${
+
+t.result >= 0
+
+? "+"
+
+: ""
+
+}$${Number(t.result).toFixed(2)}
+
+</td>
+
+</tr>
+
+`).join("");
+
+}
+
+}
+
+async function saveTrade(){
+
+if(!token){
+
+alert(
+
+"Please create an account or log in first."
+
+);
+
+return;
+
+}
+
+let body = {
+
+pair:$("jp").value,
+
+side:$("js").value,
+
+entry:+$("je").value,
+
+stop:+$("jstop").value,
+
+target:+$("jt").value,
+
+result:+$("jr").value,
+
+notes:$("jn").value
+
+};
+
+let r =
+
+await fetch(
+
+"/api/trades",
+
+{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json",
+
+Authorization:
+
+"Bearer " + token
+
+},
+
+body:JSON.stringify(body)
+
+});
+
+if(r.ok){
+
+$("jn").value = "";
+
+loadTrades();
+
+}else{
+
+alert("Could not save trade");
+
+}
+
+}
+
+/* =========================
+
+   RISK CALCULATOR
+
+========================= */
+
+function risk(){
+
+let balance =
+
++$("bal").value;
+
+let riskPercent =
+
++$("rp").value;
+
+let entry =
+
++$("en").value;
+
+let stop =
+
++$("sl").value;
+
+let amount =
+
+balance * riskPercent / 100;
+
+let distance =
+
+Math.abs(entry - stop);
+
+$("riskout").innerHTML = `
+
+Maximum planned loss:
+
+<b>$${amount.toFixed(2)}</b>
+
+<br>
+
+Stop distance:
+
+<b>$${distance.toFixed(2)}</b>
+
+<br>
+
+<span class="muted">
+
+Exact XAU/USD position sizing depends
+
+on your broker's contract specification.
+
+</span>
+
+`;
+
+}
+
+/* =========================
+
+   PRICE ACTION ANALYSIS
+
+========================= */
+
+function analyze(){
+
+if(candles.length < 10)
+
+return;
+
+let close =
+
+candles.map(c => Number(c.close));
+
+let n =
+
+close.length;
+
+let first =
+
+close
+
+.slice(n - 10,n - 5)
+
+.reduce((a,b)=>a+b,0) / 5;
+
+let second =
+
+close
+
+.slice(n - 5)
+
+.reduce((a,b)=>a+b,0) / 5;
+
+let trend =
+
+second > first
+
+? "Bullish"
+
+: "Bearish";
+
+let recent =
+
+candles.slice(-20);
+
+let highs =
+
+recent.map(c => Number(c.high));
+
+let lows =
+
+recent.map(c => Number(c.low));
+
+let hi =
+
+Math.max(...highs);
+
+let lo =
+
+Math.min(...lows);
+
+let latest =
+
+close[n - 1];
+
+let momentum =
+
+Math.abs(second-first) /
+
+(Math.abs(first) || 1);
+
+$("price").innerHTML = `
+
+$${latest.toFixed(2)}
+
+<span
+
+class="${trend === "Bullish" ? "green" : "red"}"
+
+style="font-size:15px;margin-left:7px">
+
+${trend}
+
+</span>
+
+`;
+
+$("bias").textContent =
+
+trend;
+
+$("bias").className =
+
+trend === "Bullish"
+
+? "green"
+
+: "red";
+
+$("structure").textContent =
+
+trend === "Bullish"
+
+? "HH / HL"
+
+: "LH / LL";
+
+$("support").textContent =
+
+lo.toFixed(2);
+
+$("resistance").textContent =
+
+hi.toFixed(2);
+
+$("aTrend").textContent =
+
+trend;
+
+$("aTrend").className =
+
+trend === "Bullish"
+
+? "green"
+
+: "red";
+
+$("aStructure").textContent =
+
+trend === "Bullish"
+
+? "Higher highs / higher lows"
+
+: "Lower highs / lower lows";
+
+$("aMomentum").textContent =
+
+momentum > 0.001
+
+? "Strong"
+
+: "Moderate";
+
+$("aQuality").textContent =
+
+momentum > 0.002
+
+? "Watchlist"
+
+: "Developing";
+
+$("signal").innerHTML = `
+
+<b>
+
+${trend} market structure
+
+</b>
+
+<p class="muted">
+
+Price is currently
+
+${trend === "Bullish"
+
+? "above"
+
+: "below"}
+
+its recent short-term average.
+
+Wait for your confirmation rules
+
+before entering.
+
+</p>
+
+`;
+
+$("candleCount").textContent =
+
+`${candles.length} candles`;
+
+drawChart();
+
+}
+
+/* =========================
+
+   PROFESSIONAL CANDLESTICK
+
+   CHART
+
+========================= */
+
+function drawChart(){
+
+const canvas =
+
+$("chart");
+
+const ctx =
+
+canvas.getContext("2d");
+
+const d =
+
+window.devicePixelRatio || 1;
+
+const w =
+
+canvas.clientWidth;
+
+const h =
+
+canvas.clientHeight;
+
+if(!w || !h)
+
+return;
+
+canvas.width =
+
+Math.floor(w*d);
+
+canvas.height =
+
+Math.floor(h*d);
+
+ctx.setTransform(
+
+d,0,0,d,0,0
+
+);
+
+ctx.clearRect(
+
+0,0,w,h
+
+);
+
+if(candles.length < 2)
+
+return;
+
+/*
+
+Mobile:
+
+24 candles
+
+Desktop:
+
+40 candles
+
+*/
+
+const count =
+
+w < 600 ? 24 : 40;
+
+const data =
+
+candles.slice(-count);
+
+const highs =
+
+data.map(c=>Number(c.high));
+
+const lows =
+
+data.map(c=>Number(c.low));
+
+let max =
+
+Math.max(...highs);
+
+let min =
+
+Math.min(...lows);
+
+let range =
+
+max - min;
+
+if(!Number.isFinite(range) ||
+
+range <= 0){
+
+range = 1;
+
+}
+
+const padding =
+
+range * 0.12;
+
+max += padding;
+
+min -= padding;
+
+const left = 12;
+
+const right = 62;
+
+const top = 20;
+
+const bottom = 34;
+
+const chartWidth =
+
+Math.max(
+
+50,
+
+w-left-right
+
+);
+
+const chartHeight =
+
+Math.max(
+
+50,
+
+h-top-bottom
+
+);
+
+const priceRange =
+
+max-min;
+
+function y(price){
+
+return top +
+
+((max-price)/priceRange)
+
+* chartHeight;
+
+}
+
+/* Background */
+
+ctx.fillStyle =
+
+"#0c1322";
+
+ctx.fillRect(
+
+0,0,w,h
+
+);
+
+/* Grid */
+
+ctx.lineWidth = 1;
+
+ctx.strokeStyle =
+
+"#1a2942";
+
+ctx.font =
+
+"10px system-ui";
+
+ctx.textAlign =
+
+"left";
+
+for(let i=0;i<=5;i++){
+
+let gy =
+
+top +
+
+(chartHeight/5)*i;
+
+ctx.beginPath();
+
+ctx.moveTo(
+
+left,
+
+gy
+
+);
+
+ctx.lineTo(
+
+w-right,
+
+gy
+
+);
+
+ctx.stroke();
+
+let price =
+
+max -
+
+(priceRange/5)*i;
+
+ctx.fillStyle =
+
+"#71809c";
+
+ctx.fillText(
+
+price.toFixed(2),
+
+w-right+7,
+
+gy+3
+
+);
+
+}
+
+/* Candle spacing */
+
+const spacing =
+
+chartWidth / data.length;
+
+const bodyWidth =
+
+Math.max(
+
+6,
+
+Math.min(
+
+14,
+
+spacing * 0.68
+
+)
+
+);
+
+/* Candles */
+
+data.forEach((candle,index)=>{
+
+const open =
+
+Number(candle.open);
+
+const high =
+
+Number(candle.high);
+
+const low =
+
+Number(candle.low);
+
+const close =
+
+Number(candle.close);
+
+if(
+
+!Number.isFinite(open) ||
+
+!Number.isFinite(high) ||
+
+!Number.isFinite(low) ||
+
+!Number.isFinite(close)
+
+){
+
+return;
+
+}
+
+const x =
+
+left +
+
+spacing*index +
+
+spacing/2;
+
+const openY =
+
+y(open);
+
+const closeY =
+
+y(close);
+
+const highY =
+
+y(high);
+
+const lowY =
+
+y(low);
+
+const bullish =
+
+close >= open;
+
+const candleColor =
+
+bullish
+
+? "#4ade80"
+
+: "#fb7185";
+
+/* Wick */
+
+ctx.beginPath();
+
+ctx.moveTo(
+
+x,
+
+highY
+
+);
+
+ctx.lineTo(
+
+x,
+
+lowY
+
+);
+
+ctx.strokeStyle =
+
+candleColor;
+
+ctx.lineWidth = 1.7;
+
+ctx.stroke();
+
+/* Body */
+
+let bodyTop =
+
+Math.min(
+
+openY,
+
+closeY
+
+);
+
+let bodyBottom =
+
+Math.max(
+
+openY,
+
+closeY
+
+);
+
+let bodyHeight =
+
+bodyBottom-bodyTop;
+
+/*
+
+Very small candles are
+
+made visible.
+
+*/
+
+if(bodyHeight < 3){
+
+bodyHeight = 3;
+
+bodyTop =
+
+((openY+closeY)/2)-1.5;
+
+}
+
+/* Candle body */
+
+ctx.fillStyle =
+
+candleColor;
+
+ctx.fillRect(
+
+x-bodyWidth/2,
+
+bodyTop,
+
+bodyWidth,
+
+bodyHeight
+
+);
+
+/* Small border for clarity */
+
+ctx.strokeStyle =
+
+candleColor;
+
+ctx.lineWidth = 1;
+
+ctx.strokeRect(
+
+x-bodyWidth/2,
+
+bodyTop,
+
+bodyWidth,
+
+bodyHeight
+
+);
+
+});
+
+/* =========================
+
+   SUPPORT / RESISTANCE
+
+========================= */
+
+const recent =
+
+data.slice(-20);
+
+const resistance =
+
+Math.max(
+
+...recent.map(
+
+c=>Number(c.high)
+
+)
+
+);
+
+const support =
+
+Math.min(
+
+...recent.map(
+
+c=>Number(c.low)
+
+)
+
+);
+
+function drawLevel(
+
+price,
+
+label
+
+){
+
+const yy =
+
+y(price);
+
+ctx.beginPath();
+
+ctx.moveTo(
+
+left,
+
+yy
+
+);
+
+ctx.lineTo(
+
+w-right,
+
+yy
+
+);
+
+ctx.strokeStyle =
+
+"#7b89a4";
+
+ctx.lineWidth = 1;
+
+ctx.setLineDash([
+
+5,5
+
+]);
+
+ctx.stroke();
+
+ctx.setLineDash([]);
+
+/* Label */
+
+ctx.fillStyle =
+
+"#a8b4cc";
+
+ctx.font =
+
+"bold 10px system-ui";
+
+ctx.textAlign =
+
+"left";
+
+ctx.fillText(
+
+label,
+
+left+6,
+
+yy-6
+
+);
+
+}
+
+drawLevel(
+
+resistance,
+
+"Resistance"
+
+);
+
+drawLevel(
+
+support,
+
+"Support"
+
+);
+
+/* =========================
+
+   CURRENT PRICE
+
+========================= */
+
+const latest =
+
+Number(
+
+data[data.length-1].close
+
+);
+
+const currentY =
+
+y(latest);
+
+ctx.beginPath();
+
+ctx.moveTo(
+
+left,
+
+currentY
+
+);
+
+ctx.lineTo(
+
+w-right,
+
+currentY
+
+);
+
+ctx.strokeStyle =
+
+"#f5c451";
+
+ctx.lineWidth = 1.5;
+
+ctx.setLineDash([
+
+7,4
+
+]);
+
+ctx.stroke();
+
+ctx.setLineDash([]);
+
+/* Price marker */
+
+ctx.fillStyle =
+
+"#f5c451";
+
+ctx.beginPath();
+
+ctx.arc(
+
+w-right+1,
+
+currentY,
+
+3,
+
+0,
+
+Math.PI*2
+
+);
+
+ctx.fill();
+
+/* Price text */
+
+ctx.fillStyle =
+
+"#f5c451";
+
+ctx.font =
+
+"bold 12px system-ui";
+
+ctx.textAlign =
+
+"left";
+
+ctx.fillText(
+
+latest.toFixed(2),
+
+w-right+7,
+
+currentY-6
+
+);
+
+/* =========================
+
+   LAST CANDLE HIGHLIGHT
+
+========================= */
+
+const lastIndex =
+
+data.length-1;
+
+const lastX =
+
+left +
+
+spacing*lastIndex +
+
+spacing/2;
+
+ctx.beginPath();
+
+ctx.arc(
+
+lastX,
+
+currentY,
+
+3,
+
+0,
+
+Math.PI*2
+
+);
+
+ctx.fillStyle =
+
+"#f5c451";
+
+ctx.fill();
+
+/* =========================
+
+   TIME / AXIS LABEL
+
+========================= */
+
+ctx.fillStyle =
+
+"#71809c";
+
+ctx.font =
+
+"10px system-ui";
+
+ctx.textAlign =
+
+"center";
+
+ctx.fillText(
+
+"XAU/USD · 5m",
+
+left +
+
+chartWidth/2,
+
+h-9
+
+);
+
+}
+
+/* =========================
+
+   MARKET DATA
+
+========================= */
+
+async function loadMarket(){
+
+try{
+
+let r =
+
+await fetch(
+
+"/api/candles?symbol=XAU%2FUSD&interval=5min"
+
+);
+
+let d =
+
+await r.json();
+
+if(!r.ok)
+
+throw Error(
+
+d.error ||
+
+"Market data unavailable"
+
+);
+
+candles =
+
+(d.values || [])
+
+.reverse();
+
+if(candles.length){
+
+analyze();
+
+}else{
+
+$("signal").innerHTML = `
+
+<b>
+
+No candle data received
+
+</b>
+
+<p class="muted">
+
+The market-data server returned
+
+no candles.
+
+</p>
+
+`;
+
+}
+
+}catch(e){
+
+$("signal").innerHTML = `
+
+<b>
+
+Market data unavailable
+
+</b>
+
+<p class="muted">
+
+${e.message}
+
+</p>
+
+<p class="muted">
+
+Make sure TWELVE_DATA_API_KEY
+
+is configured in the Render
+
+environment variables.
+
+</p>
+
+`;
+
+}
+
+}
+
+/* =========================
+
+   RESIZE
+
+========================= */
+
+window.addEventListener(
+
+"resize",
+
+()=>{
+
+drawChart();
+
+}
+
+);
+
+/* =========================
+
+   START PRICEEDGE
+
+========================= */
+
+updateAccount();
+
+loadTrades();
+
+loadMarket();
+
+/*
+
+Refresh market data every minute.
+
+*/
+
+setInterval(
+
+loadMarket,
+
+60000
+
+);
+
 </script>
+
 </body>
+
 </html>
