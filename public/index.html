@@ -81,7 +81,237 @@ async function loadTrades(){if(!token)return;let r=await fetch("/api/trades",{he
 async function saveTrade(){if(!token){alert("Please create an account or log in first.");return}let body={pair:$("jp").value,side:$("js").value,entry:+$("je").value,stop:+$("jstop").value,target:+$("jt").value,result:+$("jr").value,notes:$("jn").value};let r=await fetch("/api/trades",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify(body)});if(r.ok){$("jn").value="";loadTrades()}else alert("Could not save trade")}
 function risk(){let b=+$("bal").value,r=+$("rp").value,e=+$("en").value,s=+$("sl").value;let amount=b*r/100,dist=Math.abs(e-s);$("riskout").innerHTML=`Maximum planned loss: <b>$${amount.toFixed(2)}</b><br>Stop distance: <b>$${dist.toFixed(2)}</b><br><span class="muted">Exact XAU/USD position sizing depends on your broker's contract specification.</span>`}
 function analyze(){if(candles.length<10)return;let close=candles.map(x=>+x.close), n=close.length, a=close.slice(n-10,n-5).reduce((x,y)=>x+y,0)/5, b=close.slice(n-5).reduce((x,y)=>x+y,0)/5;let trend=b>a?"Bullish":"Bearish";let hi=Math.max(...close.slice(-20)),lo=Math.min(...close.slice(-20));$("price").innerHTML=`$${close[n-1].toFixed(2)} <span class="${trend==="Bullish"?"green":"red"}" style="font-size:14px">${trend}</span>`;$("bias").textContent=trend;$("bias").className=trend==="Bullish"?"green":"red";$("structure").textContent=trend==="Bullish"?"HH / HL":"LH / LL";$("support").textContent=lo.toFixed(2);$("resistance").textContent=hi.toFixed(2);$("aTrend").textContent=trend;$("aStructure").textContent=trend==="Bullish"?"Higher highs / higher lows":"Lower highs / lower lows";$("aMomentum").textContent=Math.abs(b-a)/a>0.001?"Strong":"Moderate";$("aQuality").textContent=Math.abs(b-a)/a>0.002?"Watchlist":"Developing";$("signal").innerHTML=`<b>${trend} market structure</b><p class="muted">Price is currently ${trend==="Bullish"?"above":"below"} its recent short-term average. Wait for your confirmation rules before entering.</p>`;drawChart()}
-function drawChart(){let c=$("chart"),ctx=c.getContext("2d"),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;ctx.scale(d,d);ctx.clearRect(0,0,w,h);if(!candles.length)return;let vals=candles.slice(-80).map(x=>+x.close),min=Math.min(...vals),max=Math.max(...vals),pad=20;ctx.beginPath();vals.forEach((v,i)=>{let x=pad+i*(w-2*pad)/(vals.length-1),y=h-pad-(v-min)/(max-min||1)*(h-2*pad);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle="#4ade80";ctx.lineWidth=2;ctx.stroke()}
+function drawChart(){
+
+  const c = $("chart");
+
+  const ctx = c.getContext("2d");
+
+  const d = window.devicePixelRatio || 1;
+
+  const w = c.clientWidth;
+
+  const h = c.clientHeight;
+
+  c.width = w * d;
+
+  c.height = h * d;
+
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+
+  ctx.clearRect(0, 0, w, h);
+
+  if (!candles.length) return;
+
+  const data = candles.slice(-60);
+
+  const highs = data.map(x => Number(x.high));
+
+  const lows = data.map(x => Number(x.low));
+
+  const max = Math.max(...highs);
+
+  const min = Math.min(...lows);
+
+  const padding = {
+
+    top: 20,
+
+    right: 55,
+
+    bottom: 25,
+
+    left: 10
+
+  };
+
+  const chartW = w - padding.left - padding.right;
+
+  const chartH = h - padding.top - padding.bottom;
+
+  const range = max - min || 1;
+
+  function y(price){
+
+    return padding.top +
+
+      (max - price) / range * chartH;
+
+  }
+
+  // Background
+
+  ctx.fillStyle = "#0c1322";
+
+  ctx.fillRect(0, 0, w, h);
+
+  // Horizontal price grid
+
+  ctx.strokeStyle = "#1b2942";
+
+  ctx.lineWidth = 1;
+
+  for(let i = 0; i <= 5; i++){
+
+    const gy = padding.top + (chartH / 5) * i;
+
+    ctx.beginPath();
+
+    ctx.moveTo(padding.left, gy);
+
+    ctx.lineTo(w - padding.right, gy);
+
+    ctx.stroke();
+
+    const price = max - (range / 5) * i;
+
+    ctx.fillStyle = "#71809c";
+
+    ctx.font = "10px system-ui";
+
+    ctx.textAlign = "left";
+
+    ctx.fillText(price.toFixed(2), w - padding.right + 5, gy + 3);
+
+  }
+
+  const spacing = chartW / data.length;
+
+  const candleWidth = Math.max(3, spacing * 0.65);
+
+  data.forEach((candle, i) => {
+
+    const open = Number(candle.open);
+
+    const high = Number(candle.high);
+
+    const low = Number(candle.low);
+
+    const close = Number(candle.close);
+
+    if(
+
+      !Number.isFinite(open) ||
+
+      !Number.isFinite(high) ||
+
+      !Number.isFinite(low) ||
+
+      !Number.isFinite(close)
+
+    ) return;
+
+    const x =
+
+      padding.left +
+
+      spacing * i +
+
+      spacing / 2;
+
+    const openY = y(open);
+
+    const closeY = y(close);
+
+    const highY = y(high);
+
+    const lowY = y(low);
+
+    const bullish = close >= open;
+
+    // Wick
+
+    ctx.beginPath();
+
+    ctx.moveTo(x, highY);
+
+    ctx.lineTo(x, lowY);
+
+    ctx.strokeStyle = bullish
+
+      ? "#4ade80"
+
+      : "#fb7185";
+
+    ctx.lineWidth = 1;
+
+    ctx.stroke();
+
+    // Candle body
+
+    const bodyTop = Math.min(openY, closeY);
+
+    const bodyBottom = Math.max(openY, closeY);
+
+    let bodyHeight = bodyBottom - bodyTop;
+
+    if(bodyHeight < 2){
+
+      bodyHeight = 2;
+
+    }
+
+    ctx.fillStyle = bullish
+
+      ? "#4ade80"
+
+      : "#fb7185";
+
+    ctx.fillRect(
+
+      x - candleWidth / 2,
+
+      bodyTop,
+
+      candleWidth,
+
+      bodyHeight
+
+    );
+
+  });
+
+  // Current price line
+
+  const latest = Number(data[data.length - 1].close);
+
+  const currentY = y(latest);
+
+  ctx.beginPath();
+
+  ctx.moveTo(padding.left, currentY);
+
+  ctx.lineTo(w - padding.right, currentY);
+
+  ctx.strokeStyle = "#f5c451";
+
+  ctx.lineWidth = 1;
+
+  ctx.setLineDash([5, 4]);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // Current price label
+
+  ctx.fillStyle = "#f5c451";
+
+  ctx.font = "bold 11px system-ui";
+
+  ctx.textAlign = "left";
+
+  ctx.fillText(
+
+    latest.toFixed(2),
+
+    w - padding.right + 5,
+
+    currentY - 5
+
+  );
+
+}
 async function loadMarket(){try{let r=await fetch("/api/candles?symbol=XAU%2FUSD&interval=5min");let d=await r.json();if(!r.ok)throw Error(d.error);candles=(d.values||[]).reverse();analyze()}catch(e){$("signal").innerHTML=`<b>Market data unavailable</b><p class="muted">${e.message}</p><p class="muted">Add TWELVE_DATA_API_KEY to the server environment, then restart PriceEdge.</p>`}}
 window.addEventListener("resize",drawChart);updateAccount();loadTrades();loadMarket();setInterval(loadMarket,60000);
 </script>
