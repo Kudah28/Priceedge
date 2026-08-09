@@ -6,7 +6,7 @@
 
 <meta charset="utf-8">
 
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <meta name="theme-color" content="#0b1020">
 
@@ -22,29 +22,17 @@
 
 <style>
 
-*{
+*{box-sizing:border-box}
 
-  box-sizing:border-box;
-
-}
-
-html,body{
+body{
 
   margin:0;
-
-  padding:0;
 
   background:#080d19;
 
   color:#edf2ff;
 
-  font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-
-}
-
-body{
-
-  min-height:100vh;
+  font:15px system-ui,-apple-system,Segoe UI,sans-serif
 
 }
 
@@ -68,17 +56,15 @@ header{
 
   top:0;
 
-  z-index:10;
+  z-index:3
 
 }
 
 .logo{
 
-  font-size:22px;
+  font-size:21px;
 
-  font-weight:900;
-
-  letter-spacing:-.5px;
+  font-weight:850
 
 }
 
@@ -86,23 +72,23 @@ header{
 
   color:#f5c451;
 
-  font-style:normal;
+  font-style:normal
 
 }
 
 .pill{
 
-  font-size:12px;
+  font-size:11px;
 
   background:#f5c451;
 
   color:#16120a;
 
-  padding:7px 10px;
+  padding:5px 8px;
 
   border-radius:20px;
 
-  font-weight:900;
+  font-weight:800
 
 }
 
@@ -116,15 +102,9 @@ nav{
 
   border-bottom:1px solid #26334f;
 
-  overflow-x:auto;
+  overflow:auto;
 
-  background:#0b1020;
-
-  position:sticky;
-
-  top:62px;
-
-  z-index:9;
+  background:#0b1020
 
 }
 
@@ -136,13 +116,11 @@ nav button{
 
   color:#8e9cb7;
 
-  padding:10px 13px;
+  padding:9px 12px;
 
-  border-radius:10px;
+  border-radius:9px;
 
-  white-space:nowrap;
-
-  font-size:14px;
+  white-space:nowrap
 
 }
 
@@ -150,29 +128,29 @@ nav button.on{
 
   background:#18223a;
 
-  color:#fff;
+  color:#fff
 
 }
 
 main{
 
-  max-width:1150px;
+  max-width:1100px;
 
   margin:auto;
 
-  padding:16px;
+  padding:16px
 
 }
 
 .page{
 
-  display:none;
+  display:none
 
 }
 
 .page.on{
 
-  display:block;
+  display:block
 
 }
 
@@ -182,7 +160,7 @@ main{
 
   grid-template-columns:2fr 1fr;
 
-  gap:14px;
+  gap:14px
 
 }
 
@@ -192,133 +170,177 @@ main{
 
   border:1px solid #26334f;
 
-  border-radius:16px;
+  border-radius:15px;
 
   padding:16px;
 
-  margin-bottom:14px;
+  margin-bottom:14px
 
 }
 
 h1,h2,h3{
 
-  margin:0 0 10px;
+  margin:0 0 10px
 
 }
 
 .muted{
 
-  color:#8e9cb7;
+  color:#8e9cb7
 
 }
 
 .green{
 
-  color:#4ade80;
+  color:#4ade80
 
 }
 
 .red{
 
-  color:#fb7185;
+  color:#fb7185
 
 }
 
 .gold{
 
-  color:#f5c451;
+  color:#f5c451
 
 }
 
 .price{
 
-  font-size:34px;
+  font-size:30px;
 
-  font-weight:900;
-
-  letter-spacing:-1px;
-
-  margin-top:4px;
+  font-weight:850
 
 }
 
-/* =========================
+.marketbar{
 
-   TRADING CHART
+  display:flex;
 
-========================= */
+  align-items:center;
 
-.chart{
+  justify-content:space-between;
 
-  height:390px;
+  gap:10px;
+
+  margin-top:10px;
+
+  padding:10px 12px;
 
   background:#0c1322;
 
-  border-radius:13px;
+  border:1px solid #26334f;
+
+  border-radius:10px
+
+}
+
+.trendBadge{
+
+  font-size:12px;
+
+  font-weight:900;
+
+  padding:6px 9px;
+
+  border-radius:7px;
+
+  background:#18223a;
+
+  letter-spacing:.4px
+
+}
+
+.trendBadge.up{
+
+  color:#4ade80;
+
+  border:1px solid #27633f
+
+}
+
+.trendBadge.down{
+
+  color:#fb7185;
+
+  border:1px solid #74303d
+
+}
+
+.trendBadge.side{
+
+  color:#f5c451;
+
+  border:1px solid #665421
+
+}
+
+.chart{
+
+  height:380px;
+
+  background:#0c1322;
+
+  border-radius:11px;
 
   position:relative;
 
   overflow:hidden;
 
-  margin-top:14px;
+  margin-top:12px;
 
-  border:1px solid #18253e;
+  border:1px solid #26334f
 
 }
 
 .chart canvas{
 
-  display:block;
-
   width:100%;
 
-  height:100%;
-
-  touch-action:none;
+  height:100%
 
 }
 
-/* Chart toolbar */
-
-.chart-toolbar{
+.chartLegend{
 
   display:flex;
 
-  justify-content:space-between;
+  gap:14px;
+
+  flex-wrap:wrap;
+
+  margin-top:8px;
+
+  font-size:11px;
+
+  color:#8e9cb7
+
+}
+
+.legendItem{
+
+  display:flex;
 
   align-items:center;
 
-  margin-top:10px;
-
-  gap:8px;
+  gap:5px
 
 }
 
-.chart-status{
+.legendDot{
 
-  font-size:12px;
+  width:8px;
 
-  color:#71809c;
-
-}
-
-.live-dot{
-
-  display:inline-block;
-
-  width:7px;
-
-  height:7px;
+  height:8px;
 
   border-radius:50%;
 
-  background:#4ade80;
-
-  margin-right:5px;
+  display:inline-block
 
 }
-
-/* Setup */
 
 .row{
 
@@ -326,23 +348,15 @@ h1,h2,h3{
 
   justify-content:space-between;
 
-  gap:15px;
+  padding:9px 0;
 
-  padding:11px 0;
-
-  border-bottom:1px solid #26334f;
+  border-bottom:1px solid #26334f
 
 }
 
 .row:last-child{
 
-  border:0;
-
-}
-
-.row b{
-
-  text-align:right;
+  border:0
 
 }
 
@@ -350,19 +364,15 @@ h1,h2,h3{
 
   background:#18223a;
 
-  border-radius:12px;
+  border-radius:11px;
 
-  padding:14px;
+  padding:12px;
 
-  margin-top:10px;
+  margin-top:10px
 
 }
 
-input,
-
-select,
-
-textarea{
+input,select,textarea{
 
   width:100%;
 
@@ -370,13 +380,13 @@ textarea{
 
   border:1px solid #31405f;
 
-  border-radius:9px;
+  border-radius:8px;
 
   color:#fff;
 
   padding:11px;
 
-  margin:5px 0 12px;
+  margin:5px 0 12px
 
 }
 
@@ -386,17 +396,17 @@ button.primary{
 
   border-radius:9px;
 
-  padding:12px 14px;
+  padding:11px 14px;
 
   background:#f5c451;
 
   color:#17130a;
 
-  font-weight:900;
+  font-weight:850;
 
   cursor:pointer;
 
-  width:100%;
+  width:100%
 
 }
 
@@ -404,7 +414,7 @@ table{
 
   width:100%;
 
-  border-collapse:collapse;
+  border-collapse:collapse
 
 }
 
@@ -414,19 +424,19 @@ th,td{
 
   border-bottom:1px solid #26334f;
 
-  text-align:left;
+  text-align:left
 
 }
 
 th{
 
-  color:#8e9cb7;
+  color:#8e9cb7
 
 }
 
 .notice{
 
-  padding:12px;
+  padding:11px;
 
   background:#211c0f;
 
@@ -438,7 +448,7 @@ th{
 
   font-size:13px;
 
-  margin-top:10px;
+  margin-top:10px
 
 }
 
@@ -446,13 +456,13 @@ th{
 
   max-width:430px;
 
-  margin:30px auto;
+  margin:30px auto
 
 }
 
 .hidden{
 
-  display:none!important;
+  display:none!important
 
 }
 
@@ -460,77 +470,77 @@ th{
 
   display:flex;
 
-  gap:8px;
+  gap:8px
 
 }
 
 .actions button{
 
-  flex:1;
+  flex:1
 
 }
 
-/* Mobile */
+.structureBox{
+
+  margin-top:10px;
+
+  display:grid;
+
+  grid-template-columns:repeat(4,1fr);
+
+  gap:6px
+
+}
+
+.structureItem{
+
+  background:#0c1322;
+
+  border:1px solid #26334f;
+
+  border-radius:8px;
+
+  text-align:center;
+
+  padding:8px 4px;
+
+  font-size:11px
+
+}
+
+.structureItem b{
+
+  display:block;
+
+  font-size:14px;
+
+  margin-top:2px
+
+}
 
 @media(max-width:760px){
 
-  header{
-
-    height:58px;
-
-  }
-
-  nav{
-
-    top:58px;
-
-  }
-
-  main{
-
-    padding:10px;
-
-  }
-
   .grid{
 
-    grid-template-columns:1fr;
-
-  }
-
-  .card{
-
-    padding:14px;
-
-    border-radius:15px;
+    grid-template-columns:1fr
 
   }
 
   .chart{
 
-    height:330px;
+    height:330px
 
   }
 
   .price{
 
-    font-size:32px;
+    font-size:27px
 
   }
 
-}
+  .structureBox{
 
-@media(max-width:420px){
-
-  .chart{
-
-    height:315px;
-
-  }
-
-  .price{
-
-    font-size:30px;
+    grid-template-columns:repeat(2,1fr)
 
   }
 
@@ -566,39 +576,65 @@ th{
 
 <main>
 
-<!-- =========================
-
-     DASHBOARD
-
-========================= -->
-
 <section id="home" class="page on">
 
 <div class="grid">
 
 <div class="card">
 
-<div class="muted">
-
-XAU/USD · 5 MINUTES ·
-
-<span class="live-dot"></span>LIVE
-
-</div>
+<div class="muted">XAU/USD · 5 MINUTES · LIVE</div>
 
 <div id="price" class="price">—</div>
 
-<div class="chart">
+<div class="marketbar">
 
-<canvas id="chart"></canvas>
+  <div>
+
+    <div class="muted">Market direction</div>
+
+    <b id="trendText">Waiting for data</b>
+
+  </div>
+
+  <div id="trendBadge" class="trendBadge side">
+
+    WAITING
+
+  </div>
 
 </div>
 
-<div class="chart-toolbar">
+<div class="chart">
 
-  <span class="chart-status">Candlestick · 5m</span>
+  <canvas id="chart"></canvas>
 
-  <span id="candleCount" class="chart-status">— candles</span>
+</div>
+
+<div class="chartLegend">
+
+  <span class="legendItem">
+
+    <span class="legendDot" style="background:#4ade80"></span>
+
+    Bullish candle
+
+  </span>
+
+  <span class="legendItem">
+
+    <span class="legendDot" style="background:#fb7185"></span>
+
+    Bearish candle
+
+  </span>
+
+  <span class="legendItem">
+
+    <span class="legendDot" style="background:#f5c451"></span>
+
+    Current price
+
+  </span>
 
 </div>
 
@@ -608,7 +644,7 @@ XAU/USD · 5 MINUTES ·
 
   <p class="muted">
 
-    Configure your market-data API key on the server.
+    PriceEdge is connecting to the market-data server.
 
   </p>
 
@@ -652,11 +688,45 @@ XAU/USD · 5 MINUTES ·
 
 </div>
 
+<div class="structureBox">
+
+<div class="structureItem">
+
+  Higher High
+
+  <b id="hh">—</b>
+
+</div>
+
+<div class="structureItem">
+
+  Higher Low
+
+  <b id="hl">—</b>
+
+</div>
+
+<div class="structureItem">
+
+  Lower High
+
+  <b id="lh">—</b>
+
+</div>
+
+<div class="structureItem">
+
+  Lower Low
+
+  <b id="ll">—</b>
+
+</div>
+
+</div>
+
 <div class="notice">
 
-PriceEdge is decision-support software.
-
-It does not guarantee profits and is not financial advice.
+PriceEdge is decision-support software. It does not guarantee profits and is not financial advice.
 
 </div>
 
@@ -665,12 +735,6 @@ It does not guarantee profits and is not financial advice.
 </div>
 
 </section>
-
-<!-- =========================
-
-     PRICE ACTION
-
-========================= -->
 
 <section id="analysis" class="page">
 
@@ -680,53 +744,45 @@ It does not guarantee profits and is not financial advice.
 
 <p class="muted">
 
-The scanner evaluates recent XAU/USD 5-minute candles
-
-for basic market structure and momentum.
+PriceEdge evaluates recent swing structure rather than relying only on a moving average.
 
 </p>
 
 <div class="row">
 
-  <span>Trend</span>
+<span>Trend</span>
 
-  <b id="aTrend">—</b>
-
-</div>
-
-<div class="row">
-
-  <span>Recent structure</span>
-
-  <b id="aStructure">—</b>
+<b id="aTrend">—</b>
 
 </div>
 
 <div class="row">
 
-  <span>Momentum</span>
+<span>Recent structure</span>
 
-  <b id="aMomentum">—</b>
+<b id="aStructure">—</b>
 
 </div>
 
 <div class="row">
 
-  <span>Setup quality</span>
+<span>Momentum</span>
 
-  <b id="aQuality">—</b>
+<b id="aMomentum">—</b>
+
+</div>
+
+<div class="row">
+
+<span>Setup quality</span>
+
+<b id="aQuality">—</b>
 
 </div>
 
 </div>
 
 </section>
-
-<!-- =========================
-
-     RISK
-
-========================= -->
 
 <section id="risk" class="page">
 
@@ -765,12 +821,6 @@ Enter your values.
 </div>
 
 </section>
-
-<!-- =========================
-
-     JOURNAL
-
-========================= -->
 
 <section id="journal" class="page">
 
@@ -854,12 +904,6 @@ Save Trade
 
 </section>
 
-<!-- =========================
-
-     ACCOUNT
-
-========================= -->
-
 <section id="account" class="page">
 
 <div class="card auth" id="authBox">
@@ -876,31 +920,21 @@ Your journal is stored securely on the PriceEdge server.
 
 </p>
 
-<input
-
-id="email"
+<input id="email"
 
 type="email"
 
-placeholder="Email"
+placeholder="Email">
 
->
-
-<input
-
-id="password"
+<input id="password"
 
 type="password"
 
-placeholder="Password (6+ characters)"
-
->
+placeholder="Password (6+ characters)">
 
 <div class="actions">
 
-<button
-
-class="primary"
+<button class="primary"
 
 onclick="authAction()">
 
@@ -920,7 +954,9 @@ Use login
 
 </div>
 
-<div id="authMsg" class="notice hidden"></div>
+<div id="authMsg"
+
+class="notice hidden"></div>
 
 </div>
 
@@ -930,7 +966,9 @@ Use login
 
 <p id="who"></p>
 
-<button class="primary" onclick="logout()">
+<button class="primary"
+
+onclick="logout()">
 
 Log out
 
@@ -944,1531 +982,1851 @@ Log out
 
 <script>
 
-let token =
+let token=localStorage.getItem("pe_token")||"";
 
-localStorage.getItem("pe_token") || "";
+let mode="register";
 
-let mode = "register";
+let candles=[];
 
-let candles = [];
+const $=id=>document.getElementById(id);
 
-const $ = id =>
+/* NAVIGATION */
 
-document.getElementById(id);
+document.querySelectorAll("nav button").forEach(b=>{
 
-/* =========================
+  b.onclick=()=>{
 
-   NAVIGATION
+    document.querySelectorAll("nav button")
 
-========================= */
+      .forEach(x=>x.classList.remove("on"));
 
-document
+    b.classList.add("on");
 
-.querySelectorAll("nav button")
+    document.querySelectorAll(".page")
 
-.forEach(button => {
+      .forEach(x=>x.classList.remove("on"));
 
-button.onclick = () => {
+    $(b.dataset.page).classList.add("on");
 
-document
+    if(b.dataset.page==="home"){
 
-.querySelectorAll("nav button")
+      setTimeout(drawChart,50);
 
-.forEach(x =>
+    }
 
-x.classList.remove("on"));
-
-button.classList.add("on");
-
-document
-
-.querySelectorAll(".page")
-
-.forEach(x =>
-
-x.classList.remove("on"));
-
-$(button.dataset.page)
-
-.classList.add("on");
-
-};
+  };
 
 });
 
-/* =========================
-
-   ACCOUNT
-
-========================= */
+/* AUTH */
 
 function toggleAuth(){
 
-mode =
+  mode=mode==="register"?"login":"register";
 
-mode === "register"
+  $("authTitle").textContent=
 
-? "login"
+    mode==="register"?"Create account":"Log in";
 
-: "register";
+  document.querySelector(
 
-$("authTitle").textContent =
+    "#authBox .actions button:first-child"
 
-mode === "register"
+  ).textContent=
 
-? "Create account"
-
-: "Log in";
-
-document
-
-.querySelector("#authBox .actions button:first-child")
-
-.textContent =
-
-mode === "register"
-
-? "Create account"
-
-: "Log in";
+    mode==="register"?"Create account":"Log in";
 
 }
 
 async function authAction(){
 
-let email =
+  let email=$("email").value.trim();
 
-$("email").value.trim();
+  let password=$("password").value;
 
-let password =
+  let r=await fetch(
 
-$("password").value;
+    "/api/"+(mode==="register"?"register":"login"),
 
-if(!email || !password){
+    {
 
-$("authMsg").textContent =
+      method:"POST",
 
-"Please enter your email and password.";
+      headers:{
 
-$("authMsg").classList.remove("hidden");
+        "Content-Type":"application/json"
 
-return;
+      },
 
-}
+      body:JSON.stringify({
 
-try{
+        email,
 
-let r =
+        password
 
-await fetch(
+      })
 
-"/api/" +
+    }
 
-(mode === "register"
+  );
 
-? "register"
+  let d=await r.json();
 
-: "login"),
+  if(!r.ok){
 
-{
+    $("authMsg").textContent=
 
-method:"POST",
+      d.error||"Error";
 
-headers:{
+    $("authMsg").classList.remove("hidden");
 
-"Content-Type":"application/json"
+    return;
 
-},
+  }
 
-body:JSON.stringify({
+  token=d.token;
 
-email,
+  localStorage.setItem(
 
-password
+    "pe_token",
 
-})
+    token
 
-});
+  );
 
-let d =
+  updateAccount();
 
-await r.json();
-
-if(!r.ok){
-
-$("authMsg").textContent =
-
-d.error || "Error";
-
-$("authMsg").classList.remove("hidden");
-
-return;
-
-}
-
-token = d.token;
-
-localStorage.setItem(
-
-"pe_token",
-
-token
-
-);
-
-updateAccount();
-
-loadTrades();
-
-}catch(e){
-
-$("authMsg").textContent =
-
-"Unable to connect to PriceEdge.";
-
-$("authMsg").classList.remove("hidden");
-
-}
+  loadTrades();
 
 }
 
 async function updateAccount(){
 
-if(!token){
+  if(!token){
 
-$("authBox")
+    $("authBox").classList.remove("hidden");
 
-.classList.remove("hidden");
+    $("logged").classList.add("hidden");
 
-$("logged")
+    $("loginRequired").classList.remove("hidden");
 
-.classList.add("hidden");
+    return;
 
-$("loginRequired")
+  }
 
-.classList.remove("hidden");
+  let r=await fetch(
 
-return;
+    "/api/me",
 
-}
+    {
 
-try{
+      headers:{
 
-let r =
+        Authorization:"Bearer "+token
 
-await fetch(
+      }
 
-"/api/me",
+    }
 
-{
+  );
 
-headers:{
+  if(!r.ok){
 
-Authorization:
+    logout();
 
-"Bearer " + token
+    return;
 
-}
+  }
 
-});
+  let d=await r.json();
 
-if(!r.ok){
+  $("authBox").classList.add("hidden");
 
-logout();
+  $("logged").classList.remove("hidden");
 
-return;
+  $("who").textContent=d.user.email;
 
-}
-
-let d =
-
-await r.json();
-
-$("authBox")
-
-.classList.add("hidden");
-
-$("logged")
-
-.classList.remove("hidden");
-
-$("who").textContent =
-
-d.user.email;
-
-$("loginRequired")
-
-.classList.add("hidden");
-
-}catch(e){
-
-logout();
-
-}
+  $("loginRequired").classList.add("hidden");
 
 }
 
 function logout(){
 
-token = "";
+  token="";
 
-localStorage.removeItem(
+  localStorage.removeItem("pe_token");
 
-"pe_token"
-
-);
-
-updateAccount();
+  updateAccount();
 
 }
 
-/* =========================
-
-   JOURNAL
-
-========================= */
+/* JOURNAL */
 
 async function loadTrades(){
 
-if(!token) return;
+  if(!token)return;
 
-let r =
+  let r=await fetch(
 
-await fetch(
+    "/api/trades",
 
-"/api/trades",
+    {
 
-{
+      headers:{
 
-headers:{
+        Authorization:"Bearer "+token
 
-Authorization:
+      }
 
-"Bearer " + token
+    }
 
-}
+  );
 
-});
+  if(r.ok){
 
-if(r.ok){
+    let rows=await r.json();
 
-let rows =
+    $("trades").innerHTML=
 
-await r.json();
+      rows.map(t=>`
 
-$("trades").innerHTML =
+      <tr>
 
-rows.map(t => `
+        <td>${escapeHtml(t.pair)}</td>
 
-<tr>
+        <td>${escapeHtml(t.side)}</td>
 
-<td>${t.pair}</td>
+        <td>${t.entry??""}</td>
 
-<td>${t.side}</td>
+        <td class="${t.result>=0?"green":"red"}">
 
-<td>${t.entry ?? ""}</td>
+          ${t.result>=0?"+":""}$
 
-<td class="${
+          ${Number(t.result).toFixed(2)}
 
-t.result >= 0
+        </td>
 
-? "green"
+      </tr>
 
-: "red"
+      `).join("");
 
-}">
-
-${
-
-t.result >= 0
-
-? "+"
-
-: ""
-
-}$${Number(t.result).toFixed(2)}
-
-</td>
-
-</tr>
-
-`).join("");
-
-}
+  }
 
 }
 
 async function saveTrade(){
 
-if(!token){
+  if(!token){
 
-alert(
+    alert(
 
-"Please create an account or log in first."
+      "Please create an account or log in first."
 
-);
+    );
 
-return;
+    return;
 
-}
+  }
 
-let body = {
+  let body={
 
-pair:$("jp").value,
+    pair:$("jp").value,
 
-side:$("js").value,
+    side:$("js").value,
 
-entry:+$("je").value,
+    entry:+$("je").value,
 
-stop:+$("jstop").value,
+    stop:+$("jstop").value,
 
-target:+$("jt").value,
+    target:+$("jt").value,
 
-result:+$("jr").value,
+    result:+$("jr").value,
 
-notes:$("jn").value
+    notes:$("jn").value
 
-};
+  };
 
-let r =
+  let r=await fetch(
 
-await fetch(
+    "/api/trades",
 
-"/api/trades",
+    {
 
-{
+      method:"POST",
 
-method:"POST",
+      headers:{
 
-headers:{
+        "Content-Type":"application/json",
 
-"Content-Type":"application/json",
+        Authorization:"Bearer "+token
 
-Authorization:
+      },
 
-"Bearer " + token
+      body:JSON.stringify(body)
 
-},
+    }
 
-body:JSON.stringify(body)
+  );
 
-});
+  if(r.ok){
 
-if(r.ok){
+    $("jn").value="";
 
-$("jn").value = "";
+    loadTrades();
 
-loadTrades();
+  }else{
 
-}else{
+    alert("Could not save trade");
 
-alert("Could not save trade");
-
-}
+  }
 
 }
 
-/* =========================
-
-   RISK CALCULATOR
-
-========================= */
+/* RISK */
 
 function risk(){
 
-let balance =
+  let b=+$("bal").value;
 
-+$("bal").value;
+  let r=+$("rp").value;
 
-let riskPercent =
+  let e=+$("en").value;
 
-+$("rp").value;
+  let s=+$("sl").value;
 
-let entry =
+  let amount=b*r/100;
 
-+$("en").value;
+  let dist=Math.abs(e-s);
 
-let stop =
+  $("riskout").innerHTML=`
 
-+$("sl").value;
+    Maximum planned loss:
 
-let amount =
+    <b>$${amount.toFixed(2)}</b>
 
-balance * riskPercent / 100;
+    <br>
 
-let distance =
+    Stop distance:
 
-Math.abs(entry - stop);
+    <b>$${dist.toFixed(2)}</b>
 
-$("riskout").innerHTML = `
+    <br>
 
-Maximum planned loss:
+    <span class="muted">
 
-<b>$${amount.toFixed(2)}</b>
+    Exact XAU/USD position sizing depends on
 
-<br>
+    your broker's contract specification.
 
-Stop distance:
+    </span>
 
-<b>$${distance.toFixed(2)}</b>
-
-<br>
-
-<span class="muted">
-
-Exact XAU/USD position sizing depends
-
-on your broker's contract specification.
-
-</span>
-
-`;
+  `;
 
 }
 
-/* =========================
+/* ESCAPE */
 
-   PRICE ACTION ANALYSIS
+function escapeHtml(value){
 
-========================= */
+  return String(value??"")
+
+    .replaceAll("&","&amp;")
+
+    .replaceAll("<","&lt;")
+
+    .replaceAll(">","&gt;")
+
+    .replaceAll('"',"&quot;")
+
+    .replaceAll("'","&#039;");
+
+}
+
+/* MARKET STRUCTURE */
+
+function findSwings(data){
+
+  const highs=[];
+
+  const lows=[];
+
+  const strength=2;
+
+  for(let i=strength;i<data.length-strength;i++){
+
+    let high=Number(data[i].high);
+
+    let low=Number(data[i].low);
+
+    let isHigh=true;
+
+    let isLow=true;
+
+    for(
+
+      let j=i-strength;
+
+      j<=i+strength;
+
+      j++
+
+    ){
+
+      if(j===i)continue;
+
+      if(Number(data[j].high)>=high)
+
+        isHigh=false;
+
+      if(Number(data[j].low)<=low)
+
+        isLow=false;
+
+    }
+
+    if(isHigh){
+
+      highs.push({
+
+        index:i,
+
+        price:high
+
+      });
+
+    }
+
+    if(isLow){
+
+      lows.push({
+
+        index:i,
+
+        price:low
+
+      });
+
+    }
+
+  }
+
+  return {
+
+    highs,
+
+    lows
+
+  };
+
+}
 
 function analyze(){
 
-if(candles.length < 10)
+  if(candles.length<12)return;
 
-return;
+  const data=candles.slice(-80);
 
-let close =
+  const swings=findSwings(data);
 
-candles.map(c => Number(c.close));
+  const highs=swings.highs;
 
-let n =
+  const lows=swings.lows;
 
-close.length;
+  let trend="SIDEWAYS";
 
-let first =
+  let structure="NEUTRAL";
 
-close
+  let hh=false;
 
-.slice(n - 10,n - 5)
+  let hl=false;
 
-.reduce((a,b)=>a+b,0) / 5;
+  let lh=false;
 
-let second =
+  let ll=false;
 
-close
+  if(highs.length>=2){
 
-.slice(n - 5)
+    const h1=highs[highs.length-2].price;
 
-.reduce((a,b)=>a+b,0) / 5;
+    const h2=highs[highs.length-1].price;
 
-let trend =
+    hh=h2>h1;
 
-second > first
+    lh=h2<h1;
 
-? "Bullish"
+  }
 
-: "Bearish";
+  if(lows.length>=2){
 
-let recent =
+    const l1=lows[lows.length-2].price;
 
-candles.slice(-20);
+    const l2=lows[lows.length-1].price;
 
-let highs =
+    hl=l2>l1;
 
-recent.map(c => Number(c.high));
+    ll=l2<l1;
 
-let lows =
+  }
 
-recent.map(c => Number(c.low));
+  if(hh && hl){
 
-let hi =
+    trend="UPTREND";
 
-Math.max(...highs);
+    structure="HH / HL";
 
-let lo =
+  }else if(lh && ll){
 
-Math.min(...lows);
+    trend="DOWNTREND";
 
-let latest =
+    structure="LH / LL";
 
-close[n - 1];
+  }else{
 
-let momentum =
+    const close=data.map(c=>Number(c.close));
 
-Math.abs(second-first) /
+    const recent=close.slice(-10);
 
-(Math.abs(first) || 1);
+    const older=close.slice(-20,-10);
 
-$("price").innerHTML = `
+    const a=recent.reduce((x,y)=>x+y,0)/recent.length;
 
-$${latest.toFixed(2)}
+    const b=older.reduce((x,y)=>x+y,0)/older.length;
 
-<span
+    const movement=Math.abs(a-b)/Math.max(b,1);
 
-class="${trend === "Bullish" ? "green" : "red"}"
+    if(movement<0.0008){
 
-style="font-size:15px;margin-left:7px">
+      trend="SIDEWAYS";
 
-${trend}
+      structure="RANGE";
 
-</span>
+    }else if(a>b){
 
-`;
+      trend="UPTREND";
 
-$("bias").textContent =
+      structure="BULLISH";
 
-trend;
+    }else{
 
-$("bias").className =
+      trend="DOWNTREND";
 
-trend === "Bullish"
+      structure="BEARISH";
 
-? "green"
+    }
 
-: "red";
+  }
 
-$("structure").textContent =
+  const closes=data.map(c=>Number(c.close));
 
-trend === "Bullish"
+  const latest=closes[closes.length-1];
 
-? "HH / HL"
+  const recent20=data.slice(-20);
 
-: "LH / LL";
+  const resistance=Math.max(
 
-$("support").textContent =
+    ...recent20.map(c=>Number(c.high))
 
-lo.toFixed(2);
+  );
 
-$("resistance").textContent =
+  const support=Math.min(
 
-hi.toFixed(2);
+    ...recent20.map(c=>Number(c.low))
 
-$("aTrend").textContent =
+  );
 
-trend;
+  $("price").innerHTML=`
 
-$("aTrend").className =
+    $${latest.toFixed(2)}
 
-trend === "Bullish"
+    <span class="${
 
-? "green"
+      trend==="UPTREND"
 
-: "red";
+      ?"green"
 
-$("aStructure").textContent =
+      :trend==="DOWNTREND"
 
-trend === "Bullish"
+      ?"red"
 
-? "Higher highs / higher lows"
+      :"gold"
 
-: "Lower highs / lower lows";
+    }"
 
-$("aMomentum").textContent =
+    style="font-size:14px">
 
-momentum > 0.001
+      ${
 
-? "Strong"
+        trend==="UPTREND"
 
-: "Moderate";
+        ?"↗ Bullish"
 
-$("aQuality").textContent =
+        :trend==="DOWNTREND"
 
-momentum > 0.002
+        ?"↘ Bearish"
 
-? "Watchlist"
+        :"→ Range"
 
-: "Developing";
+      }
 
-$("signal").innerHTML = `
+    </span>
 
-<b>
+  `;
 
-${trend} market structure
+  $("trendText").textContent=
 
-</b>
+    trend==="UPTREND"
 
-<p class="muted">
+    ?"Market is trending upward"
 
-Price is currently
+    :trend==="DOWNTREND"
 
-${trend === "Bullish"
+    ?"Market is trending downward"
 
-? "above"
+    :"Market is ranging";
 
-: "below"}
+  const badge=$("trendBadge");
 
-its recent short-term average.
+  badge.className="trendBadge "+
 
-Wait for your confirmation rules
+    (
 
-before entering.
+      trend==="UPTREND"
 
-</p>
+      ?"up"
 
-`;
+      :trend==="DOWNTREND"
 
-$("candleCount").textContent =
+      ?"down"
 
-`${candles.length} candles`;
+      :"side"
 
-drawChart();
+    );
+
+  badge.textContent=
+
+    trend==="UPTREND"
+
+    ?"↗ UPTREND"
+
+    :trend==="DOWNTREND"
+
+    ?"↘ DOWNTREND"
+
+    :"→ SIDEWAYS";
+
+  $("bias").textContent=
+
+    trend==="UPTREND"
+
+    ?"Bullish"
+
+    :trend==="DOWNTREND"
+
+    ?"Bearish"
+
+    :"Neutral";
+
+  $("bias").className=
+
+    trend==="UPTREND"
+
+    ?"green"
+
+    :trend==="DOWNTREND"
+
+    ?"red"
+
+    :"gold";
+
+  $("structure").textContent=structure;
+
+  $("support").textContent=
+
+    support.toFixed(2);
+
+  $("resistance").textContent=
+
+    resistance.toFixed(2);
+
+  $("hh").textContent=
+
+    hh?"YES":"—";
+
+  $("hl").textContent=
+
+    hl?"YES":"—";
+
+  $("lh").textContent=
+
+    lh?"YES":"—";
+
+  $("ll").textContent=
+
+    ll?"YES":"—";
+
+  $("aTrend").textContent=trend;
+
+  $("aTrend").className=
+
+    trend==="UPTREND"
+
+    ?"green"
+
+    :trend==="DOWNTREND"
+
+    ?"red"
+
+    :"gold";
+
+  $("aStructure").textContent=structure;
+
+  const short=closes.slice(-5);
+
+  const previous=closes.slice(-10,-5);
+
+  const shortAvg=
+
+    short.reduce((a,b)=>a+b,0)/short.length;
+
+  const prevAvg=
+
+    previous.reduce((a,b)=>a+b,0)/previous.length;
+
+  const momentum=
+
+    Math.abs(shortAvg-prevAvg)/
+
+    Math.max(prevAvg,1);
+
+  $("aMomentum").textContent=
+
+    momentum>0.0015
+
+    ?"Strong"
+
+    :momentum>0.0007
+
+    ?"Moderate"
+
+    :"Weak";
+
+  let quality="Developing";
+
+  if(
+
+    (trend==="UPTREND" && hh && hl) ||
+
+    (trend==="DOWNTREND" && lh && ll)
+
+  ){
+
+    quality="Structured";
+
+  }
+
+  $("aQuality").textContent=quality;
+
+  let message="";
+
+  if(trend==="UPTREND"){
+
+    message=`
+
+      <b class="green">↗ UPTREND — HH / HL structure</b>
+
+      <p class="muted">
+
+      Price is forming higher highs and higher lows.
+
+      Look for a pullback into support and confirmation
+
+      before considering a long setup.
+
+      </p>
+
+    `;
+
+  }else if(trend==="DOWNTREND"){
+
+    message=`
+
+      <b class="red">↘ DOWNTREND — LH / LL structure</b>
+
+      <p class="muted">
+
+      Price is forming lower highs and lower lows.
+
+      Look for a pullback into resistance and confirmation
+
+      before considering a short setup.
+
+      </p>
+
+    `;
+
+  }else{
+
+    message=`
+
+      <b class="gold">→ SIDEWAYS / RANGE</b>
+
+      <p class="muted">
+
+      The market is not currently showing a clean
+
+      higher-high/higher-low or lower-high/lower-low structure.
+
+      Wait for a breakout and confirmation.
+
+      </p>
+
+    `;
+
+  }
+
+  $("signal").innerHTML=message;
+
+  drawChart(
+
+    data,
+
+    swings,
+
+    trend
+
+  );
 
 }
 
-/* =========================
+/* ADVANCED CANDLESTICK CHART */
 
-   PROFESSIONAL CANDLESTICK
+function drawChart(
 
-   CHART
+  chartData=candles.slice(-80),
 
-========================= */
+  swings=findSwings(candles.slice(-80)),
 
-function drawChart(){
-
-const canvas =
-
-$("chart");
-
-const ctx =
-
-canvas.getContext("2d");
-
-const d =
-
-window.devicePixelRatio || 1;
-
-const w =
-
-canvas.clientWidth;
-
-const h =
-
-canvas.clientHeight;
-
-if(!w || !h)
-
-return;
-
-canvas.width =
-
-Math.floor(w*d);
-
-canvas.height =
-
-Math.floor(h*d);
-
-ctx.setTransform(
-
-d,0,0,d,0,0
-
-);
-
-ctx.clearRect(
-
-0,0,w,h
-
-);
-
-if(candles.length < 2)
-
-return;
-
-/*
-
-Mobile:
-
-24 candles
-
-Desktop:
-
-40 candles
-
-*/
-
-const count =
-
-w < 600 ? 24 : 40;
-
-const data =
-
-candles.slice(-count);
-
-const highs =
-
-data.map(c=>Number(c.high));
-
-const lows =
-
-data.map(c=>Number(c.low));
-
-let max =
-
-Math.max(...highs);
-
-let min =
-
-Math.min(...lows);
-
-let range =
-
-max - min;
-
-if(!Number.isFinite(range) ||
-
-range <= 0){
-
-range = 1;
-
-}
-
-const padding =
-
-range * 0.12;
-
-max += padding;
-
-min -= padding;
-
-const left = 12;
-
-const right = 62;
-
-const top = 20;
-
-const bottom = 34;
-
-const chartWidth =
-
-Math.max(
-
-50,
-
-w-left-right
-
-);
-
-const chartHeight =
-
-Math.max(
-
-50,
-
-h-top-bottom
-
-);
-
-const priceRange =
-
-max-min;
-
-function y(price){
-
-return top +
-
-((max-price)/priceRange)
-
-* chartHeight;
-
-}
-
-/* Background */
-
-ctx.fillStyle =
-
-"#0c1322";
-
-ctx.fillRect(
-
-0,0,w,h
-
-);
-
-/* Grid */
-
-ctx.lineWidth = 1;
-
-ctx.strokeStyle =
-
-"#1a2942";
-
-ctx.font =
-
-"10px system-ui";
-
-ctx.textAlign =
-
-"left";
-
-for(let i=0;i<=5;i++){
-
-let gy =
-
-top +
-
-(chartHeight/5)*i;
-
-ctx.beginPath();
-
-ctx.moveTo(
-
-left,
-
-gy
-
-);
-
-ctx.lineTo(
-
-w-right,
-
-gy
-
-);
-
-ctx.stroke();
-
-let price =
-
-max -
-
-(priceRange/5)*i;
-
-ctx.fillStyle =
-
-"#71809c";
-
-ctx.fillText(
-
-price.toFixed(2),
-
-w-right+7,
-
-gy+3
-
-);
-
-}
-
-/* Candle spacing */
-
-const spacing =
-
-chartWidth / data.length;
-
-const bodyWidth =
-
-Math.max(
-
-6,
-
-Math.min(
-
-14,
-
-spacing * 0.68
-
-)
-
-);
-
-/* Candles */
-
-data.forEach((candle,index)=>{
-
-const open =
-
-Number(candle.open);
-
-const high =
-
-Number(candle.high);
-
-const low =
-
-Number(candle.low);
-
-const close =
-
-Number(candle.close);
-
-if(
-
-!Number.isFinite(open) ||
-
-!Number.isFinite(high) ||
-
-!Number.isFinite(low) ||
-
-!Number.isFinite(close)
+  trend="SIDEWAYS"
 
 ){
 
-return;
+  const canvas=$("chart");
+
+  const ctx=canvas.getContext("2d");
+
+  const d=window.devicePixelRatio||1;
+
+  const w=canvas.clientWidth;
+
+  const h=canvas.clientHeight;
+
+  if(!w||!h)return;
+
+  canvas.width=Math.floor(w*d);
+
+  canvas.height=Math.floor(h*d);
+
+  ctx.setTransform(
+
+    d,0,0,d,0,0
+
+  );
+
+  ctx.clearRect(0,0,w,h);
+
+  const data=chartData.slice(-45);
+
+  if(data.length<2)return;
+
+  const highs=data.map(
+
+    c=>Number(c.high)
+
+  );
+
+  const lows=data.map(
+
+    c=>Number(c.low)
+
+  );
+
+  let max=Math.max(...highs);
+
+  let min=Math.min(...lows);
+
+  const range=max-min||1;
+
+  max+=range*.08;
+
+  min-=range*.08;
+
+  const left=12;
+
+  const right=64;
+
+  const top=22;
+
+  const bottom=28;
+
+  const chartWidth=
+
+    w-left-right;
+
+  const chartHeight=
+
+    h-top-bottom;
+
+  const priceRange=max-min;
+
+  function y(price){
+
+    return top+
+
+      ((max-price)/priceRange)*
+
+      chartHeight;
+
+  }
+
+  /* BACKGROUND */
+
+  ctx.fillStyle="#0c1322";
+
+  ctx.fillRect(
+
+    0,0,w,h
+
+  );
+
+  /* GRID */
+
+  ctx.strokeStyle="#1b2942";
+
+  ctx.lineWidth=1;
+
+  for(let i=0;i<=6;i++){
+
+    const gy=
+
+      top+
+
+      chartHeight/6*i;
+
+    ctx.beginPath();
+
+    ctx.moveTo(left,gy);
+
+    ctx.lineTo(
+
+      w-right,
+
+      gy
+
+    );
+
+    ctx.stroke();
+
+    const p=
+
+      max-
+
+      priceRange/6*i;
+
+    ctx.fillStyle="#71809c";
+
+    ctx.font="10px system-ui";
+
+    ctx.textAlign="left";
+
+    ctx.fillText(
+
+      p.toFixed(2),
+
+      w-right+7,
+
+      gy+3
+
+    );
+
+  }
+
+  /* TREND BACKGROUND */
+
+  if(trend==="UPTREND"){
+
+    ctx.fillStyle=
+
+      "rgba(74,222,128,.035)";
+
+    ctx.fillRect(
+
+      left,
+
+      top,
+
+      chartWidth,
+
+      chartHeight
+
+    );
+
+  }else if(trend==="DOWNTREND"){
+
+    ctx.fillStyle=
+
+      "rgba(251,113,133,.035)";
+
+    ctx.fillRect(
+
+      left,
+
+      top,
+
+      chartWidth,
+
+      chartHeight
+
+    );
+
+  }
+
+  /* CANDLE SPACING */
+
+  const spacing=
+
+    chartWidth/data.length;
+
+  const bodyWidth=
+
+    Math.max(
+
+      5,
+
+      Math.min(
+
+        12,
+
+        spacing*.62
+
+      )
+
+    );
+
+  /* CANDLES */
+
+  data.forEach(
+
+    (candle,i)=>{
+
+      const open=Number(candle.open);
+
+      const high=Number(candle.high);
+
+      const low=Number(candle.low);
+
+      const close=Number(candle.close);
+
+      if(
+
+        !Number.isFinite(open)||
+
+        !Number.isFinite(high)||
+
+        !Number.isFinite(low)||
+
+        !Number.isFinite(close)
+
+      )return;
+
+      const x=
+
+        left+
+
+        spacing*i+
+
+        spacing/2;
+
+      const openY=y(open);
+
+      const closeY=y(close);
+
+      const highY=y(high);
+
+      const lowY=y(low);
+
+      const bullish=
+
+        close>=open;
+
+      /* WICK */
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+
+        x,
+
+        highY
+
+      );
+
+      ctx.lineTo(
+
+        x,
+
+        lowY
+
+      );
+
+      ctx.strokeStyle=
+
+        bullish
+
+        ?"rgba(74,222,128,.95)"
+
+        :"rgba(251,113,133,.95)";
+
+      ctx.lineWidth=1.5;
+
+      ctx.stroke();
+
+      /* BODY */
+
+      let bodyTop=
+
+        Math.min(
+
+          openY,
+
+          closeY
+
+        );
+
+      let bodyBottom=
+
+        Math.max(
+
+          openY,
+
+          closeY
+
+        );
+
+      let bodyHeight=
+
+        bodyBottom-bodyTop;
+
+      if(bodyHeight<3){
+
+        bodyHeight=3;
+
+        bodyTop=
+
+          (openY+closeY)/2-1.5;
+
+      }
+
+      ctx.fillStyle=
+
+        bullish
+
+        ?"rgba(74,222,128,.95)"
+
+        :"rgba(251,113,133,.95)";
+
+      ctx.fillRect(
+
+        x-bodyWidth/2,
+
+        bodyTop,
+
+        bodyWidth,
+
+        bodyHeight
+
+      );
+
+      /* CANDLE OUTLINE */
+
+      ctx.strokeStyle=
+
+        bullish
+
+        ?"rgba(74,222,128,1)"
+
+        :"rgba(251,113,133,1)";
+
+      ctx.lineWidth=.7;
+
+      ctx.strokeRect(
+
+        x-bodyWidth/2,
+
+        bodyTop,
+
+        bodyWidth,
+
+        bodyHeight
+
+      );
+
+    }
+
+  );
+
+  /* MAP SWINGS TO VISIBLE DATA */
+
+  const visibleHighs=
+
+    swings.highs.filter(
+
+      s=>s.index>=chartData.length-data.length
+
+    );
+
+  const visibleLows=
+
+    swings.lows.filter(
+
+      s=>s.index>=chartData.length-data.length
+
+    );
+
+  function visibleX(index){
+
+    const local=
+
+      index-
+
+      (chartData.length-data.length);
+
+    return left+
+
+      spacing*local+
+
+      spacing/2;
+
+  }
+
+  /* SWING HIGH MARKERS */
+
+  visibleHighs.forEach(
+
+    (s,i)=>{
+
+      const x=
+
+        visibleX(s.index);
+
+      const yy=
+
+        y(s.price);
+
+      ctx.fillStyle="#fb7185";
+
+      ctx.beginPath();
+
+      ctx.arc(
+
+        x,
+
+        yy,
+
+        3,
+
+        0,
+
+        Math.PI*2
+
+      );
+
+      ctx.fill();
+
+      if(i>=1){
+
+        const previous=
+
+          visibleHighs[i-1];
+
+        const label=
+
+          s.price>
+
+          previous.price
+
+          ?"HH"
+
+          :"LH";
+
+        ctx.fillStyle=
+
+          label==="HH"
+
+          ?"rgba(74,222,128,.95)"
+
+          :"rgba(251,113,133,.95)";
+
+        ctx.font=
+
+          "bold 10px system-ui";
+
+        ctx.textAlign="center";
+
+        ctx.fillText(
+
+          label,
+
+          x,
+
+          yy-8
+
+        );
+
+      }
+
+    }
+
+  );
+
+  /* SWING LOW MARKERS */
+
+  visibleLows.forEach(
+
+    (s,i)=>{
+
+      const x=
+
+        visibleX(s.index);
+
+      const yy=
+
+        y(s.price);
+
+      ctx.fillStyle="#4ade80";
+
+      ctx.beginPath();
+
+      ctx.arc(
+
+        x,
+
+        yy,
+
+        3,
+
+        0,
+
+        Math.PI*2
+
+      );
+
+      ctx.fill();
+
+      if(i>=1){
+
+        const previous=
+
+          visibleLows[i-1];
+
+        const label=
+
+          s.price>
+
+          previous.price
+
+          ?"HL"
+
+          :"LL";
+
+        ctx.fillStyle=
+
+          label==="HL"
+
+          ?"rgba(74,222,128,.95)"
+
+          :"rgba(251,113,133,.95)";
+
+        ctx.font=
+
+          "bold 10px system-ui";
+
+        ctx.textAlign="center";
+
+        ctx.fillText(
+
+          label,
+
+          x,
+
+          yy+15
+
+        );
+
+      }
+
+    }
+
+  );
+
+  /* TREND STRUCTURE LINES */
+
+  function drawStructureLine(points,color){
+
+    if(points.length<2)return;
+
+    ctx.beginPath();
+
+    points.forEach(
+
+      (p,i)=>{
+
+        const x=
+
+          visibleX(p.index);
+
+        const yy=
+
+          y(p.price);
+
+        if(i===0)
+
+          ctx.moveTo(x,yy);
+
+        else
+
+          ctx.lineTo(x,yy);
+
+      }
+
+    );
+
+    ctx.strokeStyle=color;
+
+    ctx.lineWidth=2;
+
+    ctx.setLineDash([5,4]);
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+  }
+
+  if(trend==="UPTREND"){
+
+    drawStructureLine(
+
+      visibleLows.slice(-4),
+
+      "rgba(74,222,128,.8)"
+
+    );
+
+    drawStructureLine(
+
+      visibleHighs.slice(-4),
+
+      "rgba(74,222,128,.55)"
+
+    );
+
+  }
+
+  if(trend==="DOWNTREND"){
+
+    drawStructureLine(
+
+      visibleHighs.slice(-4),
+
+      "rgba(251,113,133,.8)"
+
+    );
+
+    drawStructureLine(
+
+      visibleLows.slice(-4),
+
+      "rgba(251,113,133,.55)"
+
+    );
+
+  }
+
+  /* SUPPORT & RESISTANCE */
+
+  const recent=
+
+    data.slice(-20);
+
+  const resistance=
+
+    Math.max(
+
+      ...recent.map(
+
+        c=>Number(c.high)
+
+      )
+
+    );
+
+  const support=
+
+    Math.min(
+
+      ...recent.map(
+
+        c=>Number(c.low)
+
+      )
+
+    );
+
+  function levelLine(
+
+    price,
+
+    label
+
+  ){
+
+    const yy=y(price);
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+
+      left,
+
+      yy
+
+    );
+
+    ctx.lineTo(
+
+      w-right,
+
+      yy
+
+    );
+
+    ctx.strokeStyle=
+
+      "#71809c";
+
+    ctx.lineWidth=1;
+
+    ctx.setLineDash([4,4]);
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    ctx.fillStyle="#a8b4cc";
+
+    ctx.font=
+
+      "bold 10px system-ui";
+
+    ctx.textAlign="left";
+
+    ctx.fillText(
+
+      label,
+
+      left+5,
+
+      yy-5
+
+    );
+
+  }
+
+  levelLine(
+
+    resistance,
+
+    "RESISTANCE"
+
+  );
+
+  levelLine(
+
+    support,
+
+    "SUPPORT"
+
+  );
+
+  /* CURRENT PRICE */
+
+  const latest=
+
+    Number(
+
+      data[data.length-1].close
+
+    );
+
+  const currentY=
+
+    y(latest);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+
+    left,
+
+    currentY
+
+  );
+
+  ctx.lineTo(
+
+    w-right,
+
+    currentY
+
+  );
+
+  ctx.strokeStyle=
+
+    "#f5c451";
+
+  ctx.lineWidth=1.5;
+
+  ctx.setLineDash([6,4]);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  /* PRICE LABEL */
+
+  ctx.fillStyle="#f5c451";
+
+  ctx.font=
+
+    "bold 11px system-ui";
+
+  ctx.textAlign="left";
+
+  ctx.fillText(
+
+    latest.toFixed(2),
+
+    w-right+7,
+
+    currentY-5
+
+  );
+
+  /* LAST CANDLE */
+
+  const lastIndex=
+
+    data.length-1;
+
+  const lastX=
+
+    left+
+
+    spacing*lastIndex+
+
+    spacing/2;
+
+  ctx.beginPath();
+
+  ctx.arc(
+
+    lastX,
+
+    currentY,
+
+    3.5,
+
+    0,
+
+    Math.PI*2
+
+  );
+
+  ctx.fillStyle="#f5c451";
+
+  ctx.fill();
+
+  /* TREND LABEL */
+
+  const label=
+
+    trend==="UPTREND"
+
+    ?"↗ UPTREND"
+
+    :trend==="DOWNTREND"
+
+    ?"↘ DOWNTREND"
+
+    :"→ SIDEWAYS";
+
+  ctx.fillStyle=
+
+    trend==="UPTREND"
+
+    ?"rgba(74,222,128,.95)"
+
+    :trend==="DOWNTREND"
+
+    ?"rgba(251,113,133,.95)"
+
+    :"rgba(245,196,81,.95)";
+
+  ctx.font=
+
+    "bold 12px system-ui";
+
+  ctx.textAlign="left";
+
+  ctx.fillText(
+
+    label,
+
+    left+6,
+
+    top+14
+
+  );
+
+  /* BOTTOM LABEL */
+
+  ctx.fillStyle="#71809c";
+
+  ctx.font=
+
+    "10px system-ui";
+
+  ctx.textAlign="center";
+
+  ctx.fillText(
+
+    "XAU/USD · 5m",
+
+    left+chartWidth/2,
+
+    h-8
+
+  );
 
 }
 
-const x =
-
-left +
-
-spacing*index +
-
-spacing/2;
-
-const openY =
-
-y(open);
-
-const closeY =
-
-y(close);
-
-const highY =
-
-y(high);
-
-const lowY =
-
-y(low);
-
-const bullish =
-
-close >= open;
-
-const candleColor =
-
-bullish
-
-? "#4ade80"
-
-: "#fb7185";
-
-/* Wick */
-
-ctx.beginPath();
-
-ctx.moveTo(
-
-x,
-
-highY
-
-);
-
-ctx.lineTo(
-
-x,
-
-lowY
-
-);
-
-ctx.strokeStyle =
-
-candleColor;
-
-ctx.lineWidth = 1.7;
-
-ctx.stroke();
-
-/* Body */
-
-let bodyTop =
-
-Math.min(
-
-openY,
-
-closeY
-
-);
-
-let bodyBottom =
-
-Math.max(
-
-openY,
-
-closeY
-
-);
-
-let bodyHeight =
-
-bodyBottom-bodyTop;
-
-/*
-
-Very small candles are
-
-made visible.
-
-*/
-
-if(bodyHeight < 3){
-
-bodyHeight = 3;
-
-bodyTop =
-
-((openY+closeY)/2)-1.5;
-
-}
-
-/* Candle body */
-
-ctx.fillStyle =
-
-candleColor;
-
-ctx.fillRect(
-
-x-bodyWidth/2,
-
-bodyTop,
-
-bodyWidth,
-
-bodyHeight
-
-);
-
-/* Small border for clarity */
-
-ctx.strokeStyle =
-
-candleColor;
-
-ctx.lineWidth = 1;
-
-ctx.strokeRect(
-
-x-bodyWidth/2,
-
-bodyTop,
-
-bodyWidth,
-
-bodyHeight
-
-);
-
-});
-
-/* =========================
-
-   SUPPORT / RESISTANCE
-
-========================= */
-
-const recent =
-
-data.slice(-20);
-
-const resistance =
-
-Math.max(
-
-...recent.map(
-
-c=>Number(c.high)
-
-)
-
-);
-
-const support =
-
-Math.min(
-
-...recent.map(
-
-c=>Number(c.low)
-
-)
-
-);
-
-function drawLevel(
-
-price,
-
-label
-
-){
-
-const yy =
-
-y(price);
-
-ctx.beginPath();
-
-ctx.moveTo(
-
-left,
-
-yy
-
-);
-
-ctx.lineTo(
-
-w-right,
-
-yy
-
-);
-
-ctx.strokeStyle =
-
-"#7b89a4";
-
-ctx.lineWidth = 1;
-
-ctx.setLineDash([
-
-5,5
-
-]);
-
-ctx.stroke();
-
-ctx.setLineDash([]);
-
-/* Label */
-
-ctx.fillStyle =
-
-"#a8b4cc";
-
-ctx.font =
-
-"bold 10px system-ui";
-
-ctx.textAlign =
-
-"left";
-
-ctx.fillText(
-
-label,
-
-left+6,
-
-yy-6
-
-);
-
-}
-
-drawLevel(
-
-resistance,
-
-"Resistance"
-
-);
-
-drawLevel(
-
-support,
-
-"Support"
-
-);
-
-/* =========================
-
-   CURRENT PRICE
-
-========================= */
-
-const latest =
-
-Number(
-
-data[data.length-1].close
-
-);
-
-const currentY =
-
-y(latest);
-
-ctx.beginPath();
-
-ctx.moveTo(
-
-left,
-
-currentY
-
-);
-
-ctx.lineTo(
-
-w-right,
-
-currentY
-
-);
-
-ctx.strokeStyle =
-
-"#f5c451";
-
-ctx.lineWidth = 1.5;
-
-ctx.setLineDash([
-
-7,4
-
-]);
-
-ctx.stroke();
-
-ctx.setLineDash([]);
-
-/* Price marker */
-
-ctx.fillStyle =
-
-"#f5c451";
-
-ctx.beginPath();
-
-ctx.arc(
-
-w-right+1,
-
-currentY,
-
-3,
-
-0,
-
-Math.PI*2
-
-);
-
-ctx.fill();
-
-/* Price text */
-
-ctx.fillStyle =
-
-"#f5c451";
-
-ctx.font =
-
-"bold 12px system-ui";
-
-ctx.textAlign =
-
-"left";
-
-ctx.fillText(
-
-latest.toFixed(2),
-
-w-right+7,
-
-currentY-6
-
-);
-
-/* =========================
-
-   LAST CANDLE HIGHLIGHT
-
-========================= */
-
-const lastIndex =
-
-data.length-1;
-
-const lastX =
-
-left +
-
-spacing*lastIndex +
-
-spacing/2;
-
-ctx.beginPath();
-
-ctx.arc(
-
-lastX,
-
-currentY,
-
-3,
-
-0,
-
-Math.PI*2
-
-);
-
-ctx.fillStyle =
-
-"#f5c451";
-
-ctx.fill();
-
-/* =========================
-
-   TIME / AXIS LABEL
-
-========================= */
-
-ctx.fillStyle =
-
-"#71809c";
-
-ctx.font =
-
-"10px system-ui";
-
-ctx.textAlign =
-
-"center";
-
-ctx.fillText(
-
-"XAU/USD · 5m",
-
-left +
-
-chartWidth/2,
-
-h-9
-
-);
-
-}
-
-/* =========================
-
-   MARKET DATA
-
-========================= */
+/* MARKET DATA */
 
 async function loadMarket(){
 
-try{
+  try{
 
-let r =
+    let r=await fetch(
 
-await fetch(
+      "/api/candles?symbol=XAU%2FUSD&interval=5min"
 
-"/api/candles?symbol=XAU%2FUSD&interval=5min"
+    );
 
-);
+    let d=await r.json();
 
-let d =
+    if(!r.ok)
 
-await r.json();
+      throw Error(
 
-if(!r.ok)
+        d.error||"Market data unavailable"
 
-throw Error(
+      );
 
-d.error ||
+    candles=(d.values||[])
 
-"Market data unavailable"
+      .reverse()
 
-);
+      .filter(c=>
 
-candles =
+        Number.isFinite(Number(c.open)) &&
 
-(d.values || [])
+        Number.isFinite(Number(c.high)) &&
 
-.reverse();
+        Number.isFinite(Number(c.low)) &&
 
-if(candles.length){
+        Number.isFinite(Number(c.close))
 
-analyze();
+      );
 
-}else{
+    if(candles.length){
 
-$("signal").innerHTML = `
+      analyze();
 
-<b>
+    }else{
 
-No candle data received
+      throw Error(
 
-</b>
+        "No candle data was returned"
 
-<p class="muted">
+      );
 
-The market-data server returned
+    }
 
-no candles.
+  }catch(e){
 
-</p>
+    $("trendText").textContent=
 
-`;
+      "Market data unavailable";
 
-}
+    $("trendBadge").textContent=
 
-}catch(e){
+      "OFFLINE";
 
-$("signal").innerHTML = `
+    $("trendBadge").className=
 
-<b>
+      "trendBadge side";
 
-Market data unavailable
+    $("signal").innerHTML=`
 
-</b>
+      <b>Market data unavailable</b>
 
-<p class="muted">
+      <p class="muted">
 
-${e.message}
+        ${escapeHtml(e.message)}
 
-</p>
+      </p>
 
-<p class="muted">
+      <p class="muted">
 
-Make sure TWELVE_DATA_API_KEY
+        Make sure TWELVE_DATA_API_KEY is configured
 
-is configured in the Render
+        in your Render environment variables.
 
-environment variables.
+      </p>
 
-</p>
+    `;
 
-`;
-
-}
+  }
 
 }
 
-/* =========================
-
-   RESIZE
-
-========================= */
+/* RESIZE */
 
 window.addEventListener(
 
-"resize",
+  "resize",
 
-()=>{
+  ()=>{
 
-drawChart();
+    if(candles.length)
 
-}
+      analyze();
+
+  }
 
 );
 
-/* =========================
-
-   START PRICEEDGE
-
-========================= */
+/* START */
 
 updateAccount();
 
@@ -2476,17 +2834,11 @@ loadTrades();
 
 loadMarket();
 
-/*
-
-Refresh market data every minute.
-
-*/
-
 setInterval(
 
-loadMarket,
+  loadMarket,
 
-60000
+  60000
 
 );
 
