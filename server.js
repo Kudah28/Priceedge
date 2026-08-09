@@ -394,7 +394,7 @@ app.post("/api/trades", auth, (req, res) => {
 
 // =========================
 
-app.get("/api/candles", async (req, res) => {
+app.get("/api/candles", async (req,res)=>{
 
   const symbol = req.query.symbol || "XAU/USD";
 
@@ -406,9 +406,85 @@ app.get("/api/candles", async (req, res) => {
 
     return res.status(503).json({
 
-      error: "Market-data API key is not configured"
+      error: "TWELVE_DATA_API_KEY is missing from Render environment variables"
 
     });
+
+  }
+
+  try {
+
+    const url =
+
+      "https://api.twelvedata.com/time_series" +
+
+      "?symbol=" + encodeURIComponent(symbol) +
+
+      "&interval=" + encodeURIComponent(interval) +
+
+      "&outputsize=120" +
+
+      "&format=JSON" +
+
+      "&apikey=" + encodeURIComponent(key);
+
+    const response = await fetch(url);
+
+    const data = await response.json();
+
+    console.log("Twelve Data response:", JSON.stringify(data).slice(0,1000));
+
+    if (!response.ok) {
+
+      return res.status(502).json({
+
+        error: "Market-data provider HTTP error"
+
+      });
+
+    }
+
+    if (data.status === "error") {
+
+      return res.status(502).json({
+
+        error: data.message || "Twelve Data returned an error"
+
+      });
+
+    }
+
+    if (!Array.isArray(data.values)) {
+
+      return res.status(502).json({
+
+        error: "Market-data provider returned no candle values"
+
+      });
+
+    }
+
+    res.json({
+
+      status: "ok",
+
+      values: data.values
+
+    });
+
+  } catch (error) {
+
+    console.error("Candle API error:", error);
+
+    res.status(502).json({
+
+      error: "Unable to reach market-data provider"
+
+    });
+
+  }
+
+})
 
   }
 
