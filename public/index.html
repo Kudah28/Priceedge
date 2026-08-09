@@ -1800,147 +1800,149 @@ function analyze(){
 
 /* ADVANCED CANDLESTICK CHART */
 
-function drawChart(
+function drawChart(){
 
-  chartData=candles.slice(-80),
+  const canvas = $("chart");
 
-  swings=findSwings(candles.slice(-80)),
+  const ctx = canvas.getContext("2d");
 
-  trend="SIDEWAYS"
+  const d = window.devicePixelRatio || 1;
 
-){
+  const w = canvas.clientWidth;
 
-  const canvas=$("chart");
+  const h = canvas.clientHeight;
 
-  const ctx=canvas.getContext("2d");
+  canvas.width = Math.floor(w * d);
 
-  const d=window.devicePixelRatio||1;
+  canvas.height = Math.floor(h * d);
 
-  const w=canvas.clientWidth;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
 
-  const h=canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
 
-  if(!w||!h)return;
+  if(candles.length < 10) return;
 
-  canvas.width=Math.floor(w*d);
+  // --------------------------------------------------
 
-  canvas.height=Math.floor(h*d);
+  // CHART DATA
 
-  ctx.setTransform(
+  // --------------------------------------------------
 
-    d,0,0,d,0,0
+  const data = candles.slice(-40);
 
-  );
+  const highs = data.map(c => Number(c.high));
 
-  ctx.clearRect(0,0,w,h);
+  const lows  = data.map(c => Number(c.low));
 
-  const data=chartData.slice(-45);
+  let max = Math.max(...highs);
 
-  if(data.length<2)return;
+  let min = Math.min(...lows);
 
-  const highs=data.map(
+  const rawRange = max - min || 1;
 
-    c=>Number(c.high)
+  const extra = rawRange * 0.12;
 
-  );
+  max += extra;
 
-  const lows=data.map(
+  min -= extra;
 
-    c=>Number(c.low)
+  const left = 12;
 
-  );
+  const right = 64;
 
-  let max=Math.max(...highs);
+  const top = 32;
 
-  let min=Math.min(...lows);
+  const bottom = 32;
 
-  const range=max-min||1;
+  const chartWidth = w - left - right;
 
-  max+=range*.08;
+  const chartHeight = h - top - bottom;
 
-  min-=range*.08;
-
-  const left=12;
-
-  const right=64;
-
-  const top=22;
-
-  const bottom=28;
-
-  const chartWidth=
-
-    w-left-right;
-
-  const chartHeight=
-
-    h-top-bottom;
-
-  const priceRange=max-min;
+  const range = max - min;
 
   function y(price){
 
-    return top+
-
-      ((max-price)/priceRange)*
-
-      chartHeight;
+    return top + ((max - price) / range) * chartHeight;
 
   }
 
-  /* BACKGROUND */
+  // --------------------------------------------------
 
-  ctx.fillStyle="#0c1322";
+  // BACKGROUND
 
-  ctx.fillRect(
+  // --------------------------------------------------
 
-    0,0,w,h
+  ctx.fillStyle = "#0c1322";
 
-  );
+  ctx.fillRect(0,0,w,h);
 
-  /* GRID */
+  // --------------------------------------------------
 
-  ctx.strokeStyle="#1b2942";
+  // DETERMINE TREND
 
-  ctx.lineWidth=1;
+  // --------------------------------------------------
 
-  for(let i=0;i<=6;i++){
+  const closes = data.map(c => Number(c.close));
 
-    const gy=
+  const shortPeriod = Math.min(8, closes.length);
 
-      top+
+  const longPeriod = Math.min(20, closes.length);
 
-      chartHeight/6*i;
+  function average(arr){
+
+    return arr.reduce((a,b)=>a+b,0) / arr.length;
+
+  }
+
+  const shortMA = average(closes.slice(-shortPeriod));
+
+  const longMA = average(closes.slice(-longPeriod));
+
+  let trend = "RANGE";
+
+  if(shortMA > longMA * 1.00015){
+
+    trend = "UPTREND";
+
+  }else if(shortMA < longMA * 0.99985){
+
+    trend = "DOWNTREND";
+
+  }
+
+  // --------------------------------------------------
+
+  // GRID
+
+  // --------------------------------------------------
+
+  ctx.strokeStyle = "#1b2942";
+
+  ctx.lineWidth = 1;
+
+  for(let i = 0; i <= 5; i++){
+
+    const gy = top + (chartHeight / 5) * i;
 
     ctx.beginPath();
 
     ctx.moveTo(left,gy);
 
-    ctx.lineTo(
-
-      w-right,
-
-      gy
-
-    );
+    ctx.lineTo(w-right,gy);
 
     ctx.stroke();
 
-    const p=
+    const price = max - (range / 5) * i;
 
-      max-
+    ctx.fillStyle = "#71809c";
 
-      priceRange/6*i;
+    ctx.font = "10px system-ui";
 
-    ctx.fillStyle="#71809c";
-
-    ctx.font="10px system-ui";
-
-    ctx.textAlign="left";
+    ctx.textAlign = "left";
 
     ctx.fillText(
 
-      p.toFixed(2),
+      price.toFixed(2),
 
       w-right+7,
 
@@ -1950,571 +1952,475 @@ function drawChart(
 
   }
 
-  /* TREND BACKGROUND */
+  // --------------------------------------------------
 
-  if(trend==="UPTREND"){
+  // TREND BADGE
 
-    ctx.fillStyle=
+  // --------------------------------------------------
 
-      "rgba(74,222,128,.035)";
+  let badgeText = "↔ RANGE";
 
-    ctx.fillRect(
+  let badgeColor = "#f5c451";
 
-      left,
+  if(trend === "UPTREND"){
 
-      top,
+    badgeText = "▲ UPTREND";
 
-      chartWidth,
-
-      chartHeight
-
-    );
-
-  }else if(trend==="DOWNTREND"){
-
-    ctx.fillStyle=
-
-      "rgba(251,113,133,.035)";
-
-    ctx.fillRect(
-
-      left,
-
-      top,
-
-      chartWidth,
-
-      chartHeight
-
-    );
+    badgeColor = "#4ade80";
 
   }
 
-  /* CANDLE SPACING */
+  if(trend === "DOWNTREND"){
 
-  const spacing=
+    badgeText = "▼ DOWNTREND";
 
-    chartWidth/data.length;
+    badgeColor = "#fb7185";
 
-  const bodyWidth=
+  }
 
-    Math.max(
+  ctx.font = "bold 12px system-ui";
 
-      5,
+  const badgeWidth = ctx.measureText(badgeText).width + 20;
 
-      Math.min(
+  ctx.fillStyle = badgeColor;
 
-        12,
+  ctx.globalAlpha = 0.15;
 
-        spacing*.62
+  ctx.beginPath();
 
-      )
+  ctx.roundRect(
 
-    );
+    left,
 
-  /* CANDLES */
+    7,
 
-  data.forEach(
+    badgeWidth,
 
-    (candle,i)=>{
+    22,
 
-      const open=Number(candle.open);
+    6,
 
-      const high=Number(candle.high);
-
-      const low=Number(candle.low);
-
-      const close=Number(candle.close);
-
-      if(
-
-        !Number.isFinite(open)||
-
-        !Number.isFinite(high)||
-
-        !Number.isFinite(low)||
-
-        !Number.isFinite(close)
-
-      )return;
-
-      const x=
-
-        left+
-
-        spacing*i+
-
-        spacing/2;
-
-      const openY=y(open);
-
-      const closeY=y(close);
-
-      const highY=y(high);
-
-      const lowY=y(low);
-
-      const bullish=
-
-        close>=open;
-
-      /* WICK */
-
-      ctx.beginPath();
-
-      ctx.moveTo(
-
-        x,
-
-        highY
-
-      );
-
-      ctx.lineTo(
-
-        x,
-
-        lowY
-
-      );
-
-      ctx.strokeStyle=
-
-        bullish
-
-        ?"rgba(74,222,128,.95)"
-
-        :"rgba(251,113,133,.95)";
-
-      ctx.lineWidth=1.5;
-
-      ctx.stroke();
-
-      /* BODY */
-
-      let bodyTop=
-
-        Math.min(
-
-          openY,
-
-          closeY
-
-        );
-
-      let bodyBottom=
-
-        Math.max(
-
-          openY,
-
-          closeY
-
-        );
-
-      let bodyHeight=
-
-        bodyBottom-bodyTop;
-
-      if(bodyHeight<3){
-
-        bodyHeight=3;
-
-        bodyTop=
-
-          (openY+closeY)/2-1.5;
-
-      }
-
-      ctx.fillStyle=
-
-        bullish
-
-        ?"rgba(74,222,128,.95)"
-
-        :"rgba(251,113,133,.95)";
-
-      ctx.fillRect(
-
-        x-bodyWidth/2,
-
-        bodyTop,
-
-        bodyWidth,
-
-        bodyHeight
-
-      );
-
-      /* CANDLE OUTLINE */
-
-      ctx.strokeStyle=
-
-        bullish
-
-        ?"rgba(74,222,128,1)"
-
-        :"rgba(251,113,133,1)";
-
-      ctx.lineWidth=.7;
-
-      ctx.strokeRect(
-
-        x-bodyWidth/2,
-
-        bodyTop,
-
-        bodyWidth,
-
-        bodyHeight
-
-      );
-
-    }
+    6
 
   );
 
-  /* MAP SWINGS TO VISIBLE DATA */
+  ctx.fill();
 
-  const visibleHighs=
+  ctx.globalAlpha = 1;
 
-    swings.highs.filter(
+  ctx.fillStyle = badgeColor;
 
-      s=>s.index>=chartData.length-data.length
+  ctx.font = "bold 12px system-ui";
 
-    );
+  ctx.textAlign = "left";
 
-  const visibleLows=
+  ctx.fillText(
 
-    swings.lows.filter(
+    badgeText,
 
-      s=>s.index>=chartData.length-data.length
+    left+10,
 
-    );
+    22
 
-  function visibleX(index){
+  );
 
-    const local=
+  // --------------------------------------------------
 
-      index-
+  // CANDLE SPACING
 
-      (chartData.length-data.length);
+  // --------------------------------------------------
 
-    return left+
+  const spacing = chartWidth / data.length;
 
-      spacing*local+
+  const bodyWidth = Math.max(
+
+    5,
+
+    Math.min(12, spacing * 0.65)
+
+  );
+
+  // --------------------------------------------------
+
+  // DRAW CANDLES
+
+  // --------------------------------------------------
+
+  data.forEach((candle,i)=>{
+
+    const open = Number(candle.open);
+
+    const high = Number(candle.high);
+
+    const low = Number(candle.low);
+
+    const close = Number(candle.close);
+
+    if(
+
+      !Number.isFinite(open) ||
+
+      !Number.isFinite(high) ||
+
+      !Number.isFinite(low) ||
+
+      !Number.isFinite(close)
+
+    ) return;
+
+    const x =
+
+      left +
+
+      spacing*i +
 
       spacing/2;
 
-  }
+    const openY = y(open);
 
-  /* SWING HIGH MARKERS */
+    const closeY = y(close);
 
-  visibleHighs.forEach(
+    const highY = y(high);
 
-    (s,i)=>{
+    const lowY = y(low);
 
-      const x=
+    const bullish = close >= open;
 
-        visibleX(s.index);
-
-      const yy=
-
-        y(s.price);
-
-      ctx.fillStyle="#fb7185";
-
-      ctx.beginPath();
-
-      ctx.arc(
-
-        x,
-
-        yy,
-
-        3,
-
-        0,
-
-        Math.PI*2
-
-      );
-
-      ctx.fill();
-
-      if(i>=1){
-
-        const previous=
-
-          visibleHighs[i-1];
-
-        const label=
-
-          s.price>
-
-          previous.price
-
-          ?"HH"
-
-          :"LH";
-
-        ctx.fillStyle=
-
-          label==="HH"
-
-          ?"rgba(74,222,128,.95)"
-
-          :"rgba(251,113,133,.95)";
-
-        ctx.font=
-
-          "bold 10px system-ui";
-
-        ctx.textAlign="center";
-
-        ctx.fillText(
-
-          label,
-
-          x,
-
-          yy-8
-
-        );
-
-      }
-
-    }
-
-  );
-
-  /* SWING LOW MARKERS */
-
-  visibleLows.forEach(
-
-    (s,i)=>{
-
-      const x=
-
-        visibleX(s.index);
-
-      const yy=
-
-        y(s.price);
-
-      ctx.fillStyle="#4ade80";
-
-      ctx.beginPath();
-
-      ctx.arc(
-
-        x,
-
-        yy,
-
-        3,
-
-        0,
-
-        Math.PI*2
-
-      );
-
-      ctx.fill();
-
-      if(i>=1){
-
-        const previous=
-
-          visibleLows[i-1];
-
-        const label=
-
-          s.price>
-
-          previous.price
-
-          ?"HL"
-
-          :"LL";
-
-        ctx.fillStyle=
-
-          label==="HL"
-
-          ?"rgba(74,222,128,.95)"
-
-          :"rgba(251,113,133,.95)";
-
-        ctx.font=
-
-          "bold 10px system-ui";
-
-        ctx.textAlign="center";
-
-        ctx.fillText(
-
-          label,
-
-          x,
-
-          yy+15
-
-        );
-
-      }
-
-    }
-
-  );
-
-  /* TREND STRUCTURE LINES */
-
-  function drawStructureLine(points,color){
-
-    if(points.length<2)return;
+    // Wick
 
     ctx.beginPath();
 
-    points.forEach(
+    ctx.moveTo(x,highY);
 
-      (p,i)=>{
+    ctx.lineTo(x,lowY);
 
-        const x=
+    ctx.strokeStyle =
 
-          visibleX(p.index);
+      bullish ? "#4ade80" : "#fb7185";
 
-        const yy=
-
-          y(p.price);
-
-        if(i===0)
-
-          ctx.moveTo(x,yy);
-
-        else
-
-          ctx.lineTo(x,yy);
-
-      }
-
-    );
-
-    ctx.strokeStyle=color;
-
-    ctx.lineWidth=2;
-
-    ctx.setLineDash([5,4]);
+    ctx.lineWidth = 1.5;
 
     ctx.stroke();
 
-    ctx.setLineDash([]);
+    // Body
+
+    let bodyTop = Math.min(openY,closeY);
+
+    let bodyBottom = Math.max(openY,closeY);
+
+    let bodyHeight = bodyBottom-bodyTop;
+
+    if(bodyHeight < 3){
+
+      bodyHeight = 3;
+
+      bodyTop =
+
+        ((openY+closeY)/2)-1.5;
+
+    }
+
+    ctx.fillStyle =
+
+      bullish ? "#4ade80" : "#fb7185";
+
+    ctx.fillRect(
+
+      x-bodyWidth/2,
+
+      bodyTop,
+
+      bodyWidth,
+
+      bodyHeight
+
+    );
+
+  });
+
+  // --------------------------------------------------
+
+  // SIMPLE MOVING AVERAGE
+
+  // --------------------------------------------------
+
+  ctx.beginPath();
+
+  closes.forEach((close,i)=>{
+
+    const start = Math.max(0,i-7);
+
+    const slice = closes.slice(start,i+1);
+
+    const ma = average(slice);
+
+    const x =
+
+      left +
+
+      spacing*i +
+
+      spacing/2;
+
+    const yy = y(ma);
+
+    if(i===0){
+
+      ctx.moveTo(x,yy);
+
+    }else{
+
+      ctx.lineTo(x,yy);
+
+    }
+
+  });
+
+  ctx.strokeStyle = "#f5c451";
+
+  ctx.lineWidth = 1.5;
+
+  ctx.setLineDash([5,4]);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // --------------------------------------------------
+
+  // FIND SWING POINTS
+
+  // --------------------------------------------------
+
+  const swingHighs = [];
+
+  const swingLows = [];
+
+  for(let i=2;i<data.length-2;i++){
+
+    const h0 = Number(data[i].high);
+
+    const l0 = Number(data[i].low);
+
+    const leftHigh =
+
+      Number(data[i-1].high);
+
+    const rightHigh =
+
+      Number(data[i+1].high);
+
+    const leftLow =
+
+      Number(data[i-1].low);
+
+    const rightLow =
+
+      Number(data[i+1].low);
+
+    if(
+
+      h0 > leftHigh &&
+
+      h0 > rightHigh
+
+    ){
+
+      swingHighs.push({
+
+        index:i,
+
+        price:h0
+
+      });
+
+    }
+
+    if(
+
+      l0 < leftLow &&
+
+      l0 < rightLow
+
+    ){
+
+      swingLows.push({
+
+        index:i,
+
+        price:l0
+
+      });
+
+    }
 
   }
 
-  if(trend==="UPTREND"){
+  // --------------------------------------------------
 
-    drawStructureLine(
+  // HH / LH LABELS
 
-      visibleLows.slice(-4),
+  // --------------------------------------------------
 
-      "rgba(74,222,128,.8)"
+  if(swingHighs.length >= 2){
 
-    );
+    for(let i=1;i<swingHighs.length;i++){
 
-    drawStructureLine(
+      const previous =
 
-      visibleHighs.slice(-4),
+        swingHighs[i-1];
 
-      "rgba(74,222,128,.55)"
+      const current =
 
-    );
+        swingHighs[i];
+
+      const label =
+
+        current.price > previous.price
+
+          ? "HH"
+
+          : "LH";
+
+      const x =
+
+        left +
+
+        spacing*current.index +
+
+        spacing/2;
+
+      const yy =
+
+        y(current.price)-8;
+
+      ctx.font = "bold 9px system-ui";
+
+      ctx.textAlign = "center";
+
+      ctx.fillStyle =
+
+        label === "HH"
+
+          ? "#4ade80"
+
+          : "#fb7185";
+
+      ctx.fillText(
+
+        label,
+
+        x,
+
+        yy
+
+      );
+
+    }
 
   }
 
-  if(trend==="DOWNTREND"){
+  // --------------------------------------------------
 
-    drawStructureLine(
+  // HL / LL LABELS
 
-      visibleHighs.slice(-4),
+  // --------------------------------------------------
 
-      "rgba(251,113,133,.8)"
+  if(swingLows.length >= 2){
 
-    );
+    for(let i=1;i<swingLows.length;i++){
 
-    drawStructureLine(
+      const previous =
 
-      visibleLows.slice(-4),
+        swingLows[i-1];
 
-      "rgba(251,113,133,.55)"
+      const current =
 
-    );
+        swingLows[i];
+
+      const label =
+
+        current.price > previous.price
+
+          ? "HL"
+
+          : "LL";
+
+      const x =
+
+        left +
+
+        spacing*current.index +
+
+        spacing/2;
+
+      const yy =
+
+        y(current.price)+14;
+
+      ctx.font = "bold 9px system-ui";
+
+      ctx.textAlign = "center";
+
+      ctx.fillStyle =
+
+        label === "HL"
+
+          ? "#4ade80"
+
+          : "#fb7185";
+
+      ctx.fillText(
+
+        label,
+
+        x,
+
+        yy
+
+      );
+
+    }
 
   }
 
-  /* SUPPORT & RESISTANCE */
+  // --------------------------------------------------
 
-  const recent=
+  // SUPPORT / RESISTANCE
 
-    data.slice(-20);
+  // --------------------------------------------------
 
-  const resistance=
+  const recent = data.slice(-20);
+
+  const resistance =
 
     Math.max(
 
-      ...recent.map(
-
-        c=>Number(c.high)
-
-      )
+      ...recent.map(c=>Number(c.high))
 
     );
 
-  const support=
+  const support =
 
     Math.min(
 
-      ...recent.map(
-
-        c=>Number(c.low)
-
-      )
+      ...recent.map(c=>Number(c.low))
 
     );
 
-  function levelLine(
+  function levelLine(price,label){
 
-    price,
-
-    label
-
-  ){
-
-    const yy=y(price);
+    const yy = y(price);
 
     ctx.beginPath();
 
-    ctx.moveTo(
+    ctx.moveTo(left,yy);
 
-      left,
+    ctx.lineTo(w-right,yy);
 
-      yy
+    ctx.strokeStyle = "#71809c";
 
-    );
-
-    ctx.lineTo(
-
-      w-right,
-
-      yy
-
-    );
-
-    ctx.strokeStyle=
-
-      "#71809c";
-
-    ctx.lineWidth=1;
+    ctx.lineWidth = 1;
 
     ctx.setLineDash([4,4]);
 
@@ -2522,19 +2428,17 @@ function drawChart(
 
     ctx.setLineDash([]);
 
-    ctx.fillStyle="#a8b4cc";
+    ctx.fillStyle = "#a8b4cc";
 
-    ctx.font=
+    ctx.font = "bold 9px system-ui";
 
-      "bold 10px system-ui";
-
-    ctx.textAlign="left";
+    ctx.textAlign = "left";
 
     ctx.fillText(
 
       label,
 
-      left+5,
+      left+4,
 
       yy-5
 
@@ -2558,9 +2462,13 @@ function drawChart(
 
   );
 
-  /* CURRENT PRICE */
+  // --------------------------------------------------
 
-  const latest=
+  // CURRENT PRICE
+
+  // --------------------------------------------------
+
+  const latest =
 
     Number(
 
@@ -2568,33 +2476,17 @@ function drawChart(
 
     );
 
-  const currentY=
-
-    y(latest);
+  const currentY = y(latest);
 
   ctx.beginPath();
 
-  ctx.moveTo(
+  ctx.moveTo(left,currentY);
 
-    left,
+  ctx.lineTo(w-right,currentY);
 
-    currentY
+  ctx.strokeStyle = "#f5c451";
 
-  );
-
-  ctx.lineTo(
-
-    w-right,
-
-    currentY
-
-  );
-
-  ctx.strokeStyle=
-
-    "#f5c451";
-
-  ctx.lineWidth=1.5;
+  ctx.lineWidth = 1.5;
 
   ctx.setLineDash([6,4]);
 
@@ -2602,15 +2494,11 @@ function drawChart(
 
   ctx.setLineDash([]);
 
-  /* PRICE LABEL */
+  ctx.fillStyle = "#f5c451";
 
-  ctx.fillStyle="#f5c451";
+  ctx.font = "bold 12px system-ui";
 
-  ctx.font=
-
-    "bold 11px system-ui";
-
-  ctx.textAlign="left";
+  ctx.textAlign = "left";
 
   ctx.fillText(
 
@@ -2622,17 +2510,19 @@ function drawChart(
 
   );
 
-  /* LAST CANDLE */
+  // --------------------------------------------------
 
-  const lastIndex=
+  // LAST CANDLE MARKER
 
-    data.length-1;
+  // --------------------------------------------------
 
-  const lastX=
+  const lastIndex = data.length-1;
 
-    left+
+  const lastX =
 
-    spacing*lastIndex+
+    left +
+
+    spacing*lastIndex +
 
     spacing/2;
 
@@ -2644,7 +2534,7 @@ function drawChart(
 
     currentY,
 
-    3.5,
+    3,
 
     0,
 
@@ -2652,65 +2542,77 @@ function drawChart(
 
   );
 
-  ctx.fillStyle="#f5c451";
+  ctx.fillStyle = "#f5c451";
 
   ctx.fill();
 
-  /* TREND LABEL */
+  // --------------------------------------------------
 
-  const label=
+  // TREND DIRECTION LINE
 
-    trend==="UPTREND"
+  // --------------------------------------------------
 
-    ?"↗ UPTREND"
+  if(trend !== "RANGE"){
 
-    :trend==="DOWNTREND"
+    const firstPrice =
 
-    ?"↘ DOWNTREND"
+      Number(data[0].close);
 
-    :"→ SIDEWAYS";
+    const lastPrice =
 
-  ctx.fillStyle=
+      Number(data[data.length-1].close);
 
-    trend==="UPTREND"
+    ctx.beginPath();
 
-    ?"rgba(74,222,128,.95)"
+    ctx.moveTo(
 
-    :trend==="DOWNTREND"
+      left,
 
-    ?"rgba(251,113,133,.95)"
+      y(firstPrice)
 
-    :"rgba(245,196,81,.95)";
+    );
 
-  ctx.font=
+    ctx.lineTo(
 
-    "bold 12px system-ui";
+      w-right,
 
-  ctx.textAlign="left";
+      y(lastPrice)
+
+    );
+
+    ctx.strokeStyle =
+
+      trend === "UPTREND"
+
+        ? "#4ade80"
+
+        : "#fb7185";
+
+    ctx.lineWidth = 2;
+
+    ctx.globalAlpha = 0.55;
+
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+  }
+
+  // --------------------------------------------------
+
+  // BOTTOM LABEL
+
+  // --------------------------------------------------
+
+  ctx.fillStyle = "#71809c";
+
+  ctx.font = "10px system-ui";
+
+  ctx.textAlign = "center";
 
   ctx.fillText(
 
-    label,
-
-    left+6,
-
-    top+14
-
-  );
-
-  /* BOTTOM LABEL */
-
-  ctx.fillStyle="#71809c";
-
-  ctx.font=
-
-    "10px system-ui";
-
-  ctx.textAlign="center";
-
-  ctx.fillText(
-
-    "XAU/USD · 5m",
+    "XAU/USD · 5m · Price Action",
 
     left+chartWidth/2,
 
@@ -2718,9 +2620,7 @@ function drawChart(
 
   );
 
-}
 
-/* MARKET DATA */
 
 async function loadMarket(){
 
