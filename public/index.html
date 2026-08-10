@@ -10,12 +10,6 @@
 
 <meta name="theme-color" content="#0b1020">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<meta name="apple-mobile-web-app-title" content="PriceEdge">
-
 <title>PriceEdge</title>
 
 <link rel="manifest" href="/manifest.json">
@@ -32,7 +26,7 @@ body{
 
   color:#edf2ff;
 
-  font:15px system-ui,-apple-system,Segoe UI,sans-serif
+  font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
 
 }
 
@@ -56,7 +50,7 @@ header{
 
   top:0;
 
-  z-index:3
+  z-index:5
 
 }
 
@@ -142,17 +136,9 @@ main{
 
 }
 
-.page{
+.page{display:none}
 
-  display:none
-
-}
-
-.page.on{
-
-  display:block
-
-}
+.page.on{display:block}
 
 .grid{
 
@@ -216,71 +202,9 @@ h1,h2,h3{
 
 }
 
-.marketbar{
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:space-between;
-
-  gap:10px;
-
-  margin-top:10px;
-
-  padding:10px 12px;
-
-  background:#0c1322;
-
-  border:1px solid #26334f;
-
-  border-radius:10px
-
-}
-
-.trendBadge{
-
-  font-size:12px;
-
-  font-weight:900;
-
-  padding:6px 9px;
-
-  border-radius:7px;
-
-  background:#18223a;
-
-  letter-spacing:.4px
-
-}
-
-.trendBadge.up{
-
-  color:#4ade80;
-
-  border:1px solid #27633f
-
-}
-
-.trendBadge.down{
-
-  color:#fb7185;
-
-  border:1px solid #74303d
-
-}
-
-.trendBadge.side{
-
-  color:#f5c451;
-
-  border:1px solid #665421
-
-}
-
 .chart{
 
-  height:380px;
+  height:360px;
 
   background:#0c1322;
 
@@ -290,9 +214,7 @@ h1,h2,h3{
 
   overflow:hidden;
 
-  margin-top:12px;
-
-  border:1px solid #26334f
+  margin-top:12px
 
 }
 
@@ -300,45 +222,31 @@ h1,h2,h3{
 
   width:100%;
 
-  height:100%
+  height:100%;
+
+  display:block
 
 }
 
-.chartLegend{
+.chart-status{
 
-  display:flex;
+  position:absolute;
 
-  gap:14px;
+  top:10px;
 
-  flex-wrap:wrap;
+  left:12px;
 
-  margin-top:8px;
+  z-index:2;
 
-  font-size:11px;
+  font-size:12px;
 
-  color:#8e9cb7
+  font-weight:800;
 
-}
+  padding:5px 9px;
 
-.legendItem{
+  border-radius:7px;
 
-  display:flex;
-
-  align-items:center;
-
-  gap:5px
-
-}
-
-.legendDot{
-
-  width:8px;
-
-  height:8px;
-
-  border-radius:50%;
-
-  display:inline-block
+  background:#18223a
 
 }
 
@@ -369,6 +277,50 @@ h1,h2,h3{
   padding:12px;
 
   margin-top:10px
+
+}
+
+.trend-box{
+
+  margin-top:10px;
+
+  padding:12px;
+
+  border-radius:10px;
+
+  text-align:center;
+
+  font-size:18px;
+
+  font-weight:900;
+
+  letter-spacing:.5px;
+
+  background:#18223a
+
+}
+
+.trend-up{
+
+  color:#4ade80;
+
+  border:1px solid #256b43
+
+}
+
+.trend-down{
+
+  color:#fb7185;
+
+  border:1px solid #7b3040
+
+}
+
+.trend-range{
+
+  color:#f5c451;
+
+  border:1px solid #715d27
 
 }
 
@@ -480,44 +432,6 @@ th{
 
 }
 
-.structureBox{
-
-  margin-top:10px;
-
-  display:grid;
-
-  grid-template-columns:repeat(4,1fr);
-
-  gap:6px
-
-}
-
-.structureItem{
-
-  background:#0c1322;
-
-  border:1px solid #26334f;
-
-  border-radius:8px;
-
-  text-align:center;
-
-  padding:8px 4px;
-
-  font-size:11px
-
-}
-
-.structureItem b{
-
-  display:block;
-
-  font-size:14px;
-
-  margin-top:2px
-
-}
-
 @media(max-width:760px){
 
   .grid{
@@ -528,19 +442,13 @@ th{
 
   .chart{
 
-    height:330px
+    height:300px
 
   }
 
   .price{
 
     font-size:27px
-
-  }
-
-  .structureBox{
-
-    grid-template-columns:repeat(2,1fr)
 
   }
 
@@ -576,6 +484,8 @@ th{
 
 <main>
 
+<!-- DASHBOARD -->
+
 <section id="home" class="page on">
 
 <div class="grid">
@@ -584,69 +494,35 @@ th{
 
 <div class="muted">XAU/USD · 5 MINUTES · LIVE</div>
 
-<div id="price" class="price">—</div>
+<div id="price" class="price">Loading...</div>
 
-<div class="marketbar">
+<div id="trendBox" class="trend-box trend-range">
 
-  <div>
-
-    <div class="muted">Market direction</div>
-
-    <b id="trendText">Waiting for data</b>
-
-  </div>
-
-  <div id="trendBadge" class="trendBadge side">
-
-    WAITING
-
-  </div>
+  MARKET DATA LOADING
 
 </div>
 
 <div class="chart">
 
-  <canvas id="chart"></canvas>
+<div id="chartStatus" class="chart-status">
+
+  Loading candles...
 
 </div>
 
-<div class="chartLegend">
-
-  <span class="legendItem">
-
-    <span class="legendDot" style="background:#4ade80"></span>
-
-    Bullish candle
-
-  </span>
-
-  <span class="legendItem">
-
-    <span class="legendDot" style="background:#fb7185"></span>
-
-    Bearish candle
-
-  </span>
-
-  <span class="legendItem">
-
-    <span class="legendDot" style="background:#f5c451"></span>
-
-    Current price
-
-  </span>
+<canvas id="chart"></canvas>
 
 </div>
 
 <div id="signal" class="box">
 
-  <b>Waiting for market data…</b>
+<b>Connecting to market data...</b>
 
-  <p class="muted">
+<p class="muted">
 
-    PriceEdge is connecting to the market-data server.
+PriceEdge is requesting the latest XAU/USD candles.
 
-  </p>
+</p>
 
 </div>
 
@@ -658,69 +534,49 @@ th{
 
 <div class="row">
 
-  <span>Bias</span>
+<span>Bias</span>
 
-  <b id="bias">—</b>
-
-</div>
-
-<div class="row">
-
-  <span>Structure</span>
-
-  <b id="structure">—</b>
+<b id="bias">—</b>
 
 </div>
 
 <div class="row">
 
-  <span>Support</span>
+<span>Structure</span>
 
-  <b id="support">—</b>
+<b id="structure">—</b>
 
 </div>
 
 <div class="row">
 
-  <span>Resistance</span>
+<span>Support</span>
 
-  <b id="resistance">—</b>
-
-</div>
-
-<div class="structureBox">
-
-<div class="structureItem">
-
-  Higher High
-
-  <b id="hh">—</b>
+<b id="support">—</b>
 
 </div>
 
-<div class="structureItem">
+<div class="row">
 
-  Higher Low
+<span>Resistance</span>
 
-  <b id="hl">—</b>
-
-</div>
-
-<div class="structureItem">
-
-  Lower High
-
-  <b id="lh">—</b>
+<b id="resistance">—</b>
 
 </div>
 
-<div class="structureItem">
+<div class="row">
 
-  Lower Low
+<span>Candles</span>
 
-  <b id="ll">—</b>
+<b id="candleCount">—</b>
 
 </div>
+
+<div class="row">
+
+<span>Last update</span>
+
+<b id="lastUpdate">—</b>
 
 </div>
 
@@ -736,6 +592,8 @@ PriceEdge is decision-support software. It does not guarantee profits and is not
 
 </section>
 
+<!-- PRICE ACTION -->
+
 <section id="analysis" class="page">
 
 <div class="card">
@@ -744,7 +602,7 @@ PriceEdge is decision-support software. It does not guarantee profits and is not
 
 <p class="muted">
 
-PriceEdge evaluates recent swing structure rather than relying only on a moving average.
+PriceEdge evaluates recent XAU/USD 5-minute candles for trend, momentum and market structure.
 
 </p>
 
@@ -784,6 +642,8 @@ PriceEdge evaluates recent swing structure rather than relying only on a moving 
 
 </section>
 
+<!-- RISK -->
+
 <section id="risk" class="page">
 
 <div class="card">
@@ -821,6 +681,8 @@ Enter your values.
 </div>
 
 </section>
+
+<!-- JOURNAL -->
 
 <section id="journal" class="page">
 
@@ -904,6 +766,8 @@ Save Trade
 
 </section>
 
+<!-- ACCOUNT -->
+
 <section id="account" class="page">
 
 <div class="card auth" id="authBox">
@@ -920,23 +784,29 @@ Your journal is stored securely on the PriceEdge server.
 
 </p>
 
-<input id="email"
+<input
+
+id="email"
 
 type="email"
 
-placeholder="Email">
+placeholder="Email"
 
-<input id="password"
+>
+
+<input
+
+id="password"
 
 type="password"
 
-placeholder="Password (6+ characters)">
+placeholder="Password (6+ characters)"
+
+>
 
 <div class="actions">
 
-<button class="primary"
-
-onclick="authAction()">
+<button class="primary" onclick="authAction()">
 
 Create account
 
@@ -946,7 +816,9 @@ Create account
 
 onclick="toggleAuth()"
 
-style="background:#18223a;color:#fff;border:0;border-radius:9px">
+style="background:#18223a;color:#fff;border:0;border-radius:9px"
+
+>
 
 Use login
 
@@ -954,9 +826,7 @@ Use login
 
 </div>
 
-<div id="authMsg"
-
-class="notice hidden"></div>
+<div id="authMsg" class="notice hidden"></div>
 
 </div>
 
@@ -966,9 +836,7 @@ class="notice hidden"></div>
 
 <p id="who"></p>
 
-<button class="primary"
-
-onclick="logout()">
+<button class="primary" onclick="logout()">
 
 Log out
 
@@ -982,33 +850,37 @@ Log out
 
 <script>
 
-let token=localStorage.getItem("pe_token")||"";
+let token = localStorage.getItem("pe_token") || "";
 
-let mode="register";
+let mode = "register";
 
-let candles=[];
+let candles = [];
 
-const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-/* NAVIGATION */
+/* =========================
 
-document.querySelectorAll("nav button").forEach(b=>{
+NAVIGATION
 
-  b.onclick=()=>{
+========================= */
+
+document.querySelectorAll("nav button").forEach(button => {
+
+  button.onclick = () => {
 
     document.querySelectorAll("nav button")
 
-      .forEach(x=>x.classList.remove("on"));
+      .forEach(x => x.classList.remove("on"));
 
-    b.classList.add("on");
+    button.classList.add("on");
 
     document.querySelectorAll(".page")
 
-      .forEach(x=>x.classList.remove("on"));
+      .forEach(x => x.classList.remove("on"));
 
-    $(b.dataset.page).classList.add("on");
+    $(button.dataset.page).classList.add("on");
 
-    if(b.dataset.page==="home"){
+    if(button.dataset.page === "home"){
 
       setTimeout(drawChart,50);
 
@@ -1018,85 +890,95 @@ document.querySelectorAll("nav button").forEach(b=>{
 
 });
 
-/* AUTH */
+/* =========================
+
+AUTH
+
+========================= */
 
 function toggleAuth(){
 
-  mode=mode==="register"?"login":"register";
+  mode = mode === "register" ? "login" : "register";
 
-  $("authTitle").textContent=
+  $("authTitle").textContent =
 
-    mode==="register"?"Create account":"Log in";
+    mode === "register" ? "Create account" : "Log in";
 
   document.querySelector(
 
     "#authBox .actions button:first-child"
 
-  ).textContent=
+  ).textContent =
 
-    mode==="register"?"Create account":"Log in";
+    mode === "register" ? "Create account" : "Log in";
 
 }
 
 async function authAction(){
 
-  let email=$("email").value.trim();
+  try{
 
-  let password=$("password").value;
+    const email = $("email").value.trim();
 
-  let r=await fetch(
+    const password = $("password").value;
 
-    "/api/"+(mode==="register"?"register":"login"),
+    const response = await fetch(
 
-    {
+      "/api/" + (mode === "register" ? "register" : "login"),
 
-      method:"POST",
+      {
 
-      headers:{
+        method:"POST",
 
-        "Content-Type":"application/json"
+        headers:{
 
-      },
+          "Content-Type":"application/json"
 
-      body:JSON.stringify({
+        },
 
-        email,
+        body:JSON.stringify({
 
-        password
+          email,
 
-      })
+          password
+
+        })
+
+      }
+
+    );
+
+    const data = await response.json();
+
+    if(!response.ok){
+
+      $("authMsg").textContent =
+
+        data.error || "Authentication error";
+
+      $("authMsg").classList.remove("hidden");
+
+      return;
 
     }
 
-  );
+    token = data.token;
 
-  let d=await r.json();
+    localStorage.setItem("pe_token",token);
 
-  if(!r.ok){
+    await updateAccount();
 
-    $("authMsg").textContent=
+    await loadTrades();
 
-      d.error||"Error";
+  }catch(error){
+
+    $("authMsg").textContent =
+
+      "Unable to connect to PriceEdge server.";
 
     $("authMsg").classList.remove("hidden");
 
-    return;
-
   }
-
-  token=d.token;
-
-  localStorage.setItem(
-
-    "pe_token",
-
-    token
-
-  );
-
-  updateAccount();
-
-  loadTrades();
 
 }
 
@@ -1114,45 +996,53 @@ async function updateAccount(){
 
   }
 
-  let r=await fetch(
+  try{
 
-    "/api/me",
+    const response = await fetch(
 
-    {
+      "/api/me",
 
-      headers:{
+      {
 
-        Authorization:"Bearer "+token
+        headers:{
+
+          Authorization:"Bearer " + token
+
+        }
 
       }
 
+    );
+
+    if(!response.ok){
+
+      logout();
+
+      return;
+
     }
 
-  );
+    const data = await response.json();
 
-  if(!r.ok){
+    $("authBox").classList.add("hidden");
 
-    logout();
+    $("logged").classList.remove("hidden");
 
-    return;
+    $("who").textContent = data.user.email;
+
+    $("loginRequired").classList.add("hidden");
+
+  }catch(error){
+
+    console.error(error);
 
   }
-
-  let d=await r.json();
-
-  $("authBox").classList.add("hidden");
-
-  $("logged").classList.remove("hidden");
-
-  $("who").textContent=d.user.email;
-
-  $("loginRequired").classList.add("hidden");
 
 }
 
 function logout(){
 
-  token="";
+  token = "";
 
   localStorage.removeItem("pe_token");
 
@@ -1160,55 +1050,67 @@ function logout(){
 
 }
 
-/* JOURNAL */
+/* =========================
+
+TRADING JOURNAL
+
+========================= */
 
 async function loadTrades(){
 
   if(!token)return;
 
-  let r=await fetch(
+  try{
 
-    "/api/trades",
+    const response = await fetch(
 
-    {
+      "/api/trades",
 
-      headers:{
+      {
 
-        Authorization:"Bearer "+token
+        headers:{
+
+          Authorization:"Bearer " + token
+
+        }
 
       }
 
-    }
+    );
 
-  );
+    if(response.ok){
 
-  if(r.ok){
+      const rows = await response.json();
 
-    let rows=await r.json();
+      $("trades").innerHTML =
 
-    $("trades").innerHTML=
+        rows.map(t => `
 
-      rows.map(t=>`
+        <tr>
 
-      <tr>
+        <td>${t.pair}</td>
 
-        <td>${escapeHtml(t.pair)}</td>
+        <td>${t.side}</td>
 
-        <td>${escapeHtml(t.side)}</td>
+        <td>${t.entry ?? ""}</td>
 
-        <td>${t.entry??""}</td>
+        <td class="${t.result >= 0 ? "green" : "red"}">
 
-        <td class="${t.result>=0?"green":"red"}">
+        ${t.result >= 0 ? "+" : ""}
 
-          ${t.result>=0?"+":""}$
-
-          ${Number(t.result).toFixed(2)}
+        $${Number(t.result).toFixed(2)}
 
         </td>
 
-      </tr>
+        </tr>
 
-      `).join("");
+        `).join("");
+
+    }
+
+  }catch(error){
+
+    console.error(error);
 
   }
 
@@ -1218,17 +1120,13 @@ async function saveTrade(){
 
   if(!token){
 
-    alert(
-
-      "Please create an account or log in first."
-
-    );
+    alert("Please create an account or log in first.");
 
     return;
 
   }
 
-  let body={
+  const body = {
 
     pair:$("jp").value,
 
@@ -1246,59 +1144,75 @@ async function saveTrade(){
 
   };
 
-  let r=await fetch(
+  try{
 
-    "/api/trades",
+    const response = await fetch(
 
-    {
+      "/api/trades",
 
-      method:"POST",
+      {
 
-      headers:{
+        method:"POST",
 
-        "Content-Type":"application/json",
+        headers:{
 
-        Authorization:"Bearer "+token
+          "Content-Type":"application/json",
 
-      },
+          Authorization:"Bearer " + token
 
-      body:JSON.stringify(body)
+        },
+
+        body:JSON.stringify(body)
+
+      }
+
+    );
+
+    if(response.ok){
+
+      $("jn").value="";
+
+      loadTrades();
+
+    }else{
+
+      alert("Could not save trade.");
 
     }
 
-  );
+  }catch(error){
 
-  if(r.ok){
-
-    $("jn").value="";
-
-    loadTrades();
-
-  }else{
-
-    alert("Could not save trade");
+    alert("Unable to connect to PriceEdge.");
 
   }
 
 }
 
-/* RISK */
+/* =========================
+
+RISK
+
+========================= */
 
 function risk(){
 
-  let b=+$("bal").value;
+  const balance = +$("bal").value;
 
-  let r=+$("rp").value;
+  const riskPercent = +$("rp").value;
 
-  let e=+$("en").value;
+  const entry = +$("en").value;
 
-  let s=+$("sl").value;
+  const stop = +$("sl").value;
 
-  let amount=b*r/100;
+  const amount =
 
-  let dist=Math.abs(e-s);
+    balance * riskPercent / 100;
 
-  $("riskout").innerHTML=`
+  const distance =
+
+    Math.abs(entry - stop);
+
+  $("riskout").innerHTML = `
 
     Maximum planned loss:
 
@@ -1308,15 +1222,13 @@ function risk(){
 
     Stop distance:
 
-    <b>$${dist.toFixed(2)}</b>
+    <b>$${distance.toFixed(2)}</b>
 
     <br>
 
     <span class="muted">
 
-    Exact XAU/USD position sizing depends on
-
-    your broker's contract specification.
+    Exact XAU/USD position sizing depends on your broker's contract specification.
 
     </span>
 
@@ -1324,1349 +1236,81 @@ function risk(){
 
 }
 
-/* ESCAPE */
+/* =========================
 
-function escapeHtml(value){
+MARKET DATA
 
-  return String(value??"")
+========================= */
 
-    .replaceAll("&","&amp;")
+async function loadMarket(){
 
-    .replaceAll("<","&lt;")
+  $("chartStatus").textContent =
 
-    .replaceAll(">","&gt;")
+    "Connecting...";
 
-    .replaceAll('"',"&quot;")
-
-    .replaceAll("'","&#039;");
-
-}
-
-/* MARKET STRUCTURE */
-
-function findSwings(data){
-
-  const highs=[];
-
-  const lows=[];
-
-  const strength=2;
-
-  for(let i=strength;i<data.length-strength;i++){
-
-    let high=Number(data[i].high);
-
-    let low=Number(data[i].low);
-
-    let isHigh=true;
-
-    let isLow=true;
-
-    for(
-
-      let j=i-strength;
-
-      j<=i+strength;
-
-      j++
-
-    ){
-
-      if(j===i)continue;
-
-      if(Number(data[j].high)>=high)
-
-        isHigh=false;
-
-      if(Number(data[j].low)<=low)
-
-        isLow=false;
-
-    }
-
-    if(isHigh){
-
-      highs.push({
-
-        index:i,
-
-        price:high
-
-      });
-
-    }
-
-    if(isLow){
-
-      lows.push({
-
-        index:i,
-
-        price:low
-
-      });
-
-    }
-
-  }
-
-  return {
-
-    highs,
-
-    lows
-
-  };
-
-}
-
-function analyze(){
-
-  if(candles.length<12)return;
-
-  const data=candles.slice(-80);
-
-  const swings=findSwings(data);
-
-  const highs=swings.highs;
-
-  const lows=swings.lows;
-
-  let trend="SIDEWAYS";
-
-  let structure="NEUTRAL";
-
-  let hh=false;
-
-  let hl=false;
-
-  let lh=false;
-
-  let ll=false;
-
-  if(highs.length>=2){
-
-    const h1=highs[highs.length-2].price;
-
-    const h2=highs[highs.length-1].price;
-
-    hh=h2>h1;
-
-    lh=h2<h1;
-
-  }
-
-  if(lows.length>=2){
-
-    const l1=lows[lows.length-2].price;
-
-    const l2=lows[lows.length-1].price;
-
-    hl=l2>l1;
-
-    ll=l2<l1;
-
-  }
-
-  if(hh && hl){
-
-    trend="UPTREND";
-
-    structure="HH / HL";
-
-  }else if(lh && ll){
-
-    trend="DOWNTREND";
-
-    structure="LH / LL";
-
-  }else{
-
-    const close=data.map(c=>Number(c.close));
-
-    const recent=close.slice(-10);
-
-    const older=close.slice(-20,-10);
-
-    const a=recent.reduce((x,y)=>x+y,0)/recent.length;
-
-    const b=older.reduce((x,y)=>x+y,0)/older.length;
-
-    const movement=Math.abs(a-b)/Math.max(b,1);
-
-    if(movement<0.0008){
-
-      trend="SIDEWAYS";
-
-      structure="RANGE";
-
-    }else if(a>b){
-
-      trend="UPTREND";
-
-      structure="BULLISH";
-
-    }else{
-
-      trend="DOWNTREND";
-
-      structure="BEARISH";
-
-    }
-
-  }
-
-  const closes=data.map(c=>Number(c.close));
-
-  const latest=closes[closes.length-1];
-
-  const recent20=data.slice(-20);
-
-  const resistance=Math.max(
-
-    ...recent20.map(c=>Number(c.high))
-
-  );
-
-  const support=Math.min(
-
-    ...recent20.map(c=>Number(c.low))
-
-  );
-
-  $("price").innerHTML=`
-
-    $${latest.toFixed(2)}
-
-    <span class="${
-
-      trend==="UPTREND"
-
-      ?"green"
-
-      :trend==="DOWNTREND"
-
-      ?"red"
-
-      :"gold"
-
-    }"
-
-    style="font-size:14px">
-
-      ${
-
-        trend==="UPTREND"
-
-        ?"↗ Bullish"
-
-        :trend==="DOWNTREND"
-
-        ?"↘ Bearish"
-
-        :"→ Range"
-
-      }
-
-    </span>
-
-  `;
-
-  $("trendText").textContent=
-
-    trend==="UPTREND"
-
-    ?"Market is trending upward"
-
-    :trend==="DOWNTREND"
-
-    ?"Market is trending downward"
-
-    :"Market is ranging";
-
-  const badge=$("trendBadge");
-
-  badge.className="trendBadge "+
-
-    (
-
-      trend==="UPTREND"
-
-      ?"up"
-
-      :trend==="DOWNTREND"
-
-      ?"down"
-
-      :"side"
-
-    );
-
-  badge.textContent=
-
-    trend==="UPTREND"
-
-    ?"↗ UPTREND"
-
-    :trend==="DOWNTREND"
-
-    ?"↘ DOWNTREND"
-
-    :"→ SIDEWAYS";
-
-  $("bias").textContent=
-
-    trend==="UPTREND"
-
-    ?"Bullish"
-
-    :trend==="DOWNTREND"
-
-    ?"Bearish"
-
-    :"Neutral";
-
-  $("bias").className=
-
-    trend==="UPTREND"
-
-    ?"green"
-
-    :trend==="DOWNTREND"
-
-    ?"red"
-
-    :"gold";
-
-  $("structure").textContent=structure;
-
-  $("support").textContent=
-
-    support.toFixed(2);
-
-  $("resistance").textContent=
-
-    resistance.toFixed(2);
-
-  $("hh").textContent=
-
-    hh?"YES":"—";
-
-  $("hl").textContent=
-
-    hl?"YES":"—";
-
-  $("lh").textContent=
-
-    lh?"YES":"—";
-
-  $("ll").textContent=
-
-    ll?"YES":"—";
-
-  $("aTrend").textContent=trend;
-
-  $("aTrend").className=
-
-    trend==="UPTREND"
-
-    ?"green"
-
-    :trend==="DOWNTREND"
-
-    ?"red"
-
-    :"gold";
-
-  $("aStructure").textContent=structure;
-
-  const short=closes.slice(-5);
-
-  const previous=closes.slice(-10,-5);
-
-  const shortAvg=
-
-    short.reduce((a,b)=>a+b,0)/short.length;
-
-  const prevAvg=
-
-    previous.reduce((a,b)=>a+b,0)/previous.length;
-
-  const momentum=
-
-    Math.abs(shortAvg-prevAvg)/
-
-    Math.max(prevAvg,1);
-
-  $("aMomentum").textContent=
-
-    momentum>0.0015
-
-    ?"Strong"
-
-    :momentum>0.0007
-
-    ?"Moderate"
-
-    :"Weak";
-
-  let quality="Developing";
-
-  if(
-
-    (trend==="UPTREND" && hh && hl) ||
-
-    (trend==="DOWNTREND" && lh && ll)
-
-  ){
-
-    quality="Structured";
-
-  }
-
-  $("aQuality").textContent=quality;
-
-  let message="";
-
-  if(trend==="UPTREND"){
-
-    message=`
-
-      <b class="green">↗ UPTREND — HH / HL structure</b>
-
-      <p class="muted">
-
-      Price is forming higher highs and higher lows.
-
-      Look for a pullback into support and confirmation
-
-      before considering a long setup.
-
-      </p>
-
-    `;
-
-  }else if(trend==="DOWNTREND"){
-
-    message=`
-
-      <b class="red">↘ DOWNTREND — LH / LL structure</b>
-
-      <p class="muted">
-
-      Price is forming lower highs and lower lows.
-
-      Look for a pullback into resistance and confirmation
-
-      before considering a short setup.
-
-      </p>
-
-    `;
-
-  }else{
-
-    message=`
-
-      <b class="gold">→ SIDEWAYS / RANGE</b>
-
-      <p class="muted">
-
-      The market is not currently showing a clean
-
-      higher-high/higher-low or lower-high/lower-low structure.
-
-      Wait for a breakout and confirmation.
-
-      </p>
-
-    `;
-
-  }
-
-  $("signal").innerHTML=message;
-
-  drawChart(
-
-    data,
-
-    swings,
-
-    trend
-
-  );
-
-}
-
-/* ADVANCED CANDLESTICK CHART */
-
-function drawChart(){
-
-  const canvas = $("chart");
-
-  const ctx = canvas.getContext("2d");
-
-  const d = window.devicePixelRatio || 1;
-
-  const w = canvas.clientWidth;
-
-  const h = canvas.clientHeight;
-
-  canvas.width = Math.floor(w * d);
-
-  canvas.height = Math.floor(h * d);
-
-  ctx.setTransform(d, 0, 0, d, 0, 0);
-
-  ctx.clearRect(0, 0, w, h);
-
-  if(candles.length < 10) return;
-
-  // --------------------------------------------------
-
-  // CHART DATA
-
-  // --------------------------------------------------
-
-  const data = candles.slice(-40);
-
-  const highs = data.map(c => Number(c.high));
-
-  const lows  = data.map(c => Number(c.low));
-
-  let max = Math.max(...highs);
-
-  let min = Math.min(...lows);
-
-  const rawRange = max - min || 1;
-
-  const extra = rawRange * 0.12;
-
-  max += extra;
-
-  min -= extra;
-
-  const left = 12;
-
-  const right = 64;
-
-  const top = 32;
-
-  const bottom = 32;
-
-  const chartWidth = w - left - right;
-
-  const chartHeight = h - top - bottom;
-
-  const range = max - min;
-
-  function y(price){
-
-    return top + ((max - price) / range) * chartHeight;
-
-  }
-
-  // --------------------------------------------------
-
-  // BACKGROUND
-
-  // --------------------------------------------------
-
-  ctx.fillStyle = "#0c1322";
-
-  ctx.fillRect(0,0,w,h);
-
-  // --------------------------------------------------
-
-  // DETERMINE TREND
-
-  // --------------------------------------------------
-
-  const closes = data.map(c => Number(c.close));
-
-  const shortPeriod = Math.min(8, closes.length);
-
-  const longPeriod = Math.min(20, closes.length);
-
-  function average(arr){
-
-    return arr.reduce((a,b)=>a+b,0) / arr.length;
-
-  }
-
-  const shortMA = average(closes.slice(-shortPeriod));
-
-  const longMA = average(closes.slice(-longPeriod));
-
-  let trend = "RANGE";
-
-  if(shortMA > longMA * 1.00015){
-
-    trend = "UPTREND";
-
-  }else if(shortMA < longMA * 0.99985){
-
-    trend = "DOWNTREND";
-
-  }
-
-  // --------------------------------------------------
-
-  // GRID
-
-  // --------------------------------------------------
-
-  ctx.strokeStyle = "#1b2942";
-
-  ctx.lineWidth = 1;
-
-  for(let i = 0; i <= 5; i++){
-
-    const gy = top + (chartHeight / 5) * i;
-
-    ctx.beginPath();
-
-    ctx.moveTo(left,gy);
-
-    ctx.lineTo(w-right,gy);
-
-    ctx.stroke();
-
-    const price = max - (range / 5) * i;
-
-    ctx.fillStyle = "#71809c";
-
-    ctx.font = "10px system-ui";
-
-    ctx.textAlign = "left";
-
-    ctx.fillText(
-
-      price.toFixed(2),
-
-      w-right+7,
-
-      gy+3
-
-    );
-
-  }
-
-  // --------------------------------------------------
-
-  // TREND BADGE
-
-  // --------------------------------------------------
-
-  let badgeText = "↔ RANGE";
-
-  let badgeColor = "#f5c451";
-
-  if(trend === "UPTREND"){
-
-    badgeText = "▲ UPTREND";
-
-    badgeColor = "#4ade80";
-
-  }
-
-  if(trend === "DOWNTREND"){
-
-    badgeText = "▼ DOWNTREND";
-
-    badgeColor = "#fb7185";
-
-  }
-
-  ctx.font = "bold 12px system-ui";
-
-  const badgeWidth = ctx.measureText(badgeText).width + 20;
-
-  ctx.fillStyle = badgeColor;
-
-  ctx.globalAlpha = 0.15;
-
-  ctx.beginPath();
-
-  ctx.roundRect(
-
-    left,
-
-    7,
-
-    badgeWidth,
-
-    22,
-
-    6,
-
-    6
-
-  );
-
-  ctx.fill();
-
-  ctx.globalAlpha = 1;
-
-  ctx.fillStyle = badgeColor;
-
-  ctx.font = "bold 12px system-ui";
-
-  ctx.textAlign = "left";
-
-  ctx.fillText(
-
-    badgeText,
-
-    left+10,
-
-    22
-
-  );
-
-  // --------------------------------------------------
-
-  // CANDLE SPACING
-
-  // --------------------------------------------------
-
-  const spacing = chartWidth / data.length;
-
-  const bodyWidth = Math.max(
-
-    5,
-
-    Math.min(12, spacing * 0.65)
-
-  );
-
-  // --------------------------------------------------
-
-  // DRAW CANDLES
-
-  // --------------------------------------------------
-
-  data.forEach((candle,i)=>{
-
-    const open = Number(candle.open);
-
-    const high = Number(candle.high);
-
-    const low = Number(candle.low);
-
-    const close = Number(candle.close);
-
-    if(
-
-      !Number.isFinite(open) ||
-
-      !Number.isFinite(high) ||
-
-      !Number.isFinite(low) ||
-
-      !Number.isFinite(close)
-
-    ) return;
-
-    const x =
-
-      left +
-
-      spacing*i +
-
-      spacing/2;
-
-    const openY = y(open);
-
-    const closeY = y(close);
-
-    const highY = y(high);
-
-    const lowY = y(low);
-
-    const bullish = close >= open;
-
-    // Wick
-
-    ctx.beginPath();
-
-    ctx.moveTo(x,highY);
-
-    ctx.lineTo(x,lowY);
-
-    ctx.strokeStyle =
-
-      bullish ? "#4ade80" : "#fb7185";
-
-    ctx.lineWidth = 1.5;
-
-    ctx.stroke();
-
-    // Body
-
-    let bodyTop = Math.min(openY,closeY);
-
-    let bodyBottom = Math.max(openY,closeY);
-
-    let bodyHeight = bodyBottom-bodyTop;
-
-    if(bodyHeight < 3){
-
-      bodyHeight = 3;
-
-      bodyTop =
-
-        ((openY+closeY)/2)-1.5;
-
-    }
-
-    ctx.fillStyle =
-
-      bullish ? "#4ade80" : "#fb7185";
-
-    ctx.fillRect(
-
-      x-bodyWidth/2,
-
-      bodyTop,
-
-      bodyWidth,
-
-      bodyHeight
-
-    );
-
-  });
-
-  // --------------------------------------------------
-
-  // SIMPLE MOVING AVERAGE
-
-  // --------------------------------------------------
-
-  ctx.beginPath();
-
-  closes.forEach((close,i)=>{
-
-    const start = Math.max(0,i-7);
-
-    const slice = closes.slice(start,i+1);
-
-    const ma = average(slice);
-
-    const x =
-
-      left +
-
-      spacing*i +
-
-      spacing/2;
-
-    const yy = y(ma);
-
-    if(i===0){
-
-      ctx.moveTo(x,yy);
-
-    }else{
-
-      ctx.lineTo(x,yy);
-
-    }
-
-  });
-
-  ctx.strokeStyle = "#f5c451";
-
-  ctx.lineWidth = 1.5;
-
-  ctx.setLineDash([5,4]);
-
-  ctx.stroke();
-
-  ctx.setLineDash([]);
-
-  // --------------------------------------------------
-
-  // FIND SWING POINTS
-
-  // --------------------------------------------------
-
-  const swingHighs = [];
-
-  const swingLows = [];
-
-  for(let i=2;i<data.length-2;i++){
-
-    const h0 = Number(data[i].high);
-
-    const l0 = Number(data[i].low);
-
-    const leftHigh =
-
-      Number(data[i-1].high);
-
-    const rightHigh =
-
-      Number(data[i+1].high);
-
-    const leftLow =
-
-      Number(data[i-1].low);
-
-    const rightLow =
-
-      Number(data[i+1].low);
-
-    if(
-
-      h0 > leftHigh &&
-
-      h0 > rightHigh
-
-    ){
-
-      swingHighs.push({
-
-        index:i,
-
-        price:h0
-
-      });
-
-    }
-
-    if(
-
-      l0 < leftLow &&
-
-      l0 < rightLow
-
-    ){
-
-      swingLows.push({
-
-        index:i,
-
-        price:l0
-
-      });
-
-    }
-
-  }
-
-  // --------------------------------------------------
-
-  // HH / LH LABELS
-
-  // --------------------------------------------------
-
-  if(swingHighs.length >= 2){
-
-    for(let i=1;i<swingHighs.length;i++){
-
-      const previous =
-
-        swingHighs[i-1];
-
-      const current =
-
-        swingHighs[i];
-
-      const label =
-
-        current.price > previous.price
-
-          ? "HH"
-
-          : "LH";
-
-      const x =
-
-        left +
-
-        spacing*current.index +
-
-        spacing/2;
-
-      const yy =
-
-        y(current.price)-8;
-
-      ctx.font = "bold 9px system-ui";
-
-      ctx.textAlign = "center";
-
-      ctx.fillStyle =
-
-        label === "HH"
-
-          ? "#4ade80"
-
-          : "#fb7185";
-
-      ctx.fillText(
-
-        label,
-
-        x,
-
-        yy
-
-      );
-
-    }
-
-  }
-
-  // --------------------------------------------------
-
-  // HL / LL LABELS
-
-  // --------------------------------------------------
-
-  if(swingLows.length >= 2){
-
-    for(let i=1;i<swingLows.length;i++){
-
-      const previous =
-
-        swingLows[i-1];
-
-      const current =
-
-        swingLows[i];
-
-      const label =
-
-        current.price > previous.price
-
-          ? "HL"
-
-          : "LL";
-
-      const x =
-
-        left +
-
-        spacing*current.index +
-
-        spacing/2;
-
-      const yy =
-
-        y(current.price)+14;
-
-      ctx.font = "bold 9px system-ui";
-
-      ctx.textAlign = "center";
-
-      ctx.fillStyle =
-
-        label === "HL"
-
-          ? "#4ade80"
-
-          : "#fb7185";
-
-      ctx.fillText(
-
-        label,
-
-        x,
-
-        yy
-
-      );
-
-    }
-
-  }
-
-  // --------------------------------------------------
-
-  // SUPPORT / RESISTANCE
-
-  // --------------------------------------------------
-
-  const recent = data.slice(-20);
-
-  const resistance =
-
-    Math.max(
-
-      ...recent.map(c=>Number(c.high))
-
-    );
-
-  const support =
-
-    Math.min(
-
-      ...recent.map(c=>Number(c.low))
-
-    );
-
-  function levelLine(price,label){
-
-    const yy = y(price);
-
-    ctx.beginPath();
-
-    ctx.moveTo(left,yy);
-
-    ctx.lineTo(w-right,yy);
-
-    ctx.strokeStyle = "#71809c";
-
-    ctx.lineWidth = 1;
-
-    ctx.setLineDash([4,4]);
-
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#a8b4cc";
-
-    ctx.font = "bold 9px system-ui";
-
-    ctx.textAlign = "left";
-
-    ctx.fillText(
-
-      label,
-
-      left+4,
-
-      yy-5
-
-    );
-
-  }
-
-  levelLine(
-
-    resistance,
-
-    "RESISTANCE"
-
-  );
-
-  levelLine(
-
-    support,
-
-    "SUPPORT"
-
-  );
-
-  // --------------------------------------------------
-
-  // CURRENT PRICE
-
-  // --------------------------------------------------
-
-  const latest =
-
-    Number(
-
-      data[data.length-1].close
-
-    );
-
-  const currentY = y(latest);
-
-  ctx.beginPath();
-
-  ctx.moveTo(left,currentY);
-
-  ctx.lineTo(w-right,currentY);
-
-  ctx.strokeStyle = "#f5c451";
-
-  ctx.lineWidth = 1.5;
-
-  ctx.setLineDash([6,4]);
-
-  ctx.stroke();
-
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = "#f5c451";
-
-  ctx.font = "bold 12px system-ui";
-
-  ctx.textAlign = "left";
-
-  ctx.fillText(
-
-    latest.toFixed(2),
-
-    w-right+7,
-
-    currentY-5
-
-  );
-
-  // --------------------------------------------------
-
-  // LAST CANDLE MARKER
-
-  // --------------------------------------------------
-
-  const lastIndex = data.length-1;
-
-  const lastX =
-
-    left +
-
-    spacing*lastIndex +
-
-    spacing/2;
-
-  ctx.beginPath();
-
-  ctx.arc(
-
-    lastX,
-
-    currentY,
-
-    3,
-
-    0,
-
-    Math.PI*2
-
-  );
-
-  ctx.fillStyle = "#f5c451";
-
-  ctx.fill();
-
-  // --------------------------------------------------
-
-  // TREND DIRECTION LINE
-
-  // --------------------------------------------------
-
-  if(trend !== "RANGE"){
-
-    const firstPrice =
-
-      Number(data[0].close);
-
-    const lastPrice =
-
-      Number(data[data.length-1].close);
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-
-      left,
-
-      y(firstPrice)
-
-    );
-
-    ctx.lineTo(
-
-      w-right,
-
-      y(lastPrice)
-
-    );
-
-    ctx.strokeStyle =
-
-      trend === "UPTREND"
-
-        ? "#4ade80"
-
-        : "#fb7185";
-
-    ctx.lineWidth = 2;
-
-    ctx.globalAlpha = 0.55;
-
-    ctx.stroke();
-
-    ctx.globalAlpha = 1;
-
-  }
-
-  // --------------------------------------------------
-
-  // BOTTOM LABEL
-
-  // --------------------------------------------------
-
-  ctx.fillStyle = "#71809c";
-
-  ctx.font = "10px system-ui";
-
-  ctx.textAlign = "center";
-
-  ctx.fillText(
-
-    "XAU/USD · 5m · Price Action",
-
-    left+chartWidth/2,
-
-    h-8
-
-  );
-
-
-
-async functionloadMarket() {
-
-  try {
-
-    $("signal").innerHTML =
-
-      "<b>Loading XAU/USD market data…</b><p class='muted'>Connecting to Twelve Data.</p>";
+  try{
 
     const response = await fetch(
 
       "/api/candles?symbol=XAU%2FUSD&interval=5min",
 
-      { cache: "no-store" }
+      {
+
+        cache:"no-store"
+
+      }
 
     );
 
     const data = await response.json();
 
-    console.log("PriceEdge market response:", data);
+    console.log("PriceEdge market response:",data);
 
-    if (!response.ok) {
+    if(!response.ok){
 
-      throw new Error(data.error || "Market data request failed");
+      throw new Error(
+
+        data.error || "Market data request failed"
+
+      );
+
+    }
+
+    if(!data || !Array.isArray(data.values)){
+
+      throw new Error(
+
+        "PriceEdge received no candle values."
+
+      );
 
     }
 
-    if (!data || !Array.isArray(data.values)) {
+    /*
 
-      throw new Error("No candle values were received");
+      Twelve Data sends newest candle first.
 
-    }
+      Convert every value to a number and
+
+      reverse the array so the chart runs
+
+      from oldest -> newest.
+
+    */
 
     candles = data.values
 
       .map(c => ({
 
-        datetime: c.datetime,
+        datetime:c.datetime,
 
-        open: Number(c.open),
+        open:Number(c.open),
 
-        high: Number(c.high),
+        high:Number(c.high),
 
-        low: Number(c.low),
+        low:Number(c.low),
 
-        close: Number(c.close)
+        close:Number(c.close)
 
       }))
 
@@ -2684,62 +1328,1195 @@ async functionloadMarket() {
 
       .reverse();
 
-    if (candles.length < 2) {
+    if(candles.length < 2){
 
-      throw new Error("Not enough valid candles received");
+      throw new Error(
+
+        "Not enough valid candles were received."
+
+      );
 
     }
 
-    console.log(
+    $("candleCount").textContent =
 
-      "PriceEdge candles loaded:",
+      candles.length;
 
-      candles.length,
+    $("lastUpdate").textContent =
 
-      candles[candles.length - 1]
+      candles[candles.length - 1].datetime;
 
-    );
+    $("chartStatus").textContent =
+
+      candles.length + " candles loaded";
 
     analyze();
 
-    drawChart();
+    /*
 
-  } catch (error) {
+      Give the browser time to finish
 
-    console.error("PriceEdge market error:", error);
+      layout before drawing.
+
+    */
+
+    requestAnimationFrame(() => {
+
+      drawChart();
+
+    });
+
+  }catch(error){
+
+    console.error(
+
+      "PriceEdge market data error:",
+
+      error
+
+    );
+
+    $("chartStatus").textContent =
+
+      "Market data error";
 
     $("signal").innerHTML = `
 
       <b>Market data unavailable</b>
 
-      <p class="muted">${error.message}</p>
+      <p class="muted">
+
+      ${error.message}
+
+      </p>
 
       <p class="muted">
 
-        The server is responding, but PriceEdge could not process the candle data.
+      The PriceEdge server is reachable, but the dashboard could not process the candle data.
 
       </p>
 
     `;
 
   }
-window.addEventListener("resize", () => {
 
-  if (candles.length > 0) {
+}
 
-    drawChart();
+/* =========================
+
+ANALYSIS
+
+========================= */
+
+function analyze(){
+
+  if(candles.length < 10)return;
+
+  const closes =
+
+    candles.map(c => c.close);
+
+  const n =
+
+    closes.length;
+
+  /*
+
+    Compare recent average with
+
+    previous average.
+
+  */
+
+  const recent =
+
+    closes.slice(-10);
+
+  const previous =
+
+    closes.slice(-20,-10);
+
+  const recentAverage =
+
+    recent.reduce((a,b)=>a+b,0) /
+
+    recent.length;
+
+  const previousAverage =
+
+    previous.reduce((a,b)=>a+b,0) /
+
+    previous.length;
+
+  const difference =
+
+    recentAverage - previousAverage;
+
+  const percentage =
+
+    Math.abs(difference / previousAverage);
+
+  /*
+
+    Detect trend.
+
+  */
+
+  let trend;
+
+  if(percentage < 0.00025){
+
+    trend = "RANGE";
+
+  }else if(difference > 0){
+
+    trend = "UPTREND";
+
+  }else{
+
+    trend = "DOWNTREND";
 
   }
 
-});
+  const recent20 =
 
-updateAccount();
+    candles.slice(-20);
 
-loadTrades();
+  const highs =
 
-loadMarket();
+    recent20.map(c=>c.high);
 
-setInterval(loadMarket, 60000);
+  const lows =
+
+    recent20.map(c=>c.low);
+
+  const resistance =
+
+    Math.max(...highs);
+
+  const support =
+
+    Math.min(...lows);
+
+  const latest =
+
+    closes[n-1];
+
+  /*
+
+    Dashboard price.
+
+  */
+
+  $("price").innerHTML = `
+
+    $${latest.toFixed(2)}
+
+    <span
+
+      class="${trend==="UPTREND"?"green":trend==="DOWNTREND"?"red":"gold"}"
+
+      style="font-size:14px"
+
+    >
+
+      ${trend}
+
+    </span>
+
+  `;
+
+  /*
+
+    Trend box.
+
+  */
+
+  $("trendBox").textContent =
+
+    trend;
+
+  $("trendBox").className =
+
+    "trend-box " +
+
+    (
+
+      trend==="UPTREND"
+
+      ? "trend-up"
+
+      : trend==="DOWNTREND"
+
+      ? "trend-down"
+
+      : "trend-range"
+
+    );
+
+  /*
+
+    Setup.
+
+  */
+
+  $("bias").textContent =
+
+    trend;
+
+  $("bias").className =
+
+    trend==="UPTREND"
+
+    ? "green"
+
+    : trend==="DOWNTREND"
+
+    ? "red"
+
+    : "gold";
+
+  $("structure").textContent =
+
+    trend==="UPTREND"
+
+    ? "Higher highs / higher lows"
+
+    : trend==="DOWNTREND"
+
+    ? "Lower highs / lower lows"
+
+    : "Sideways / consolidation";
+
+  $("support").textContent =
+
+    support.toFixed(2);
+
+  $("resistance").textContent =
+
+    resistance.toFixed(2);
+
+  /*
+
+    Price Action scanner.
+
+  */
+
+  $("aTrend").textContent =
+
+    trend;
+
+  $("aTrend").className =
+
+    trend==="UPTREND"
+
+    ? "green"
+
+    : trend==="DOWNTREND"
+
+    ? "red"
+
+    : "gold";
+
+  $("aStructure").textContent =
+
+    trend==="UPTREND"
+
+    ? "Higher highs / higher lows"
+
+    : trend==="DOWNTREND"
+
+    ? "Lower highs / lower lows"
+
+    : "Range";
+
+  $("aMomentum").textContent =
+
+    percentage > 0.001
+
+    ? "Strong"
+
+    : percentage > 0.0005
+
+    ? "Moderate"
+
+    : "Weak";
+
+  $("aQuality").textContent =
+
+    percentage > 0.002
+
+    ? "Developing"
+
+    : percentage > 0.001
+
+    ? "Watchlist"
+
+    : "Low";
+
+  /*
+
+    Signal message.
+
+  */
+
+  $("signal").innerHTML = `
+
+    <b>
+
+      ${trend === "UPTREND"
+
+        ? "Bullish price action"
+
+        : trend === "DOWNTREND"
+
+        ? "Bearish price action"
+
+        : "Market is ranging"}
+
+    </b>
+
+    <p class="muted">
+
+      ${
+
+        trend === "UPTREND"
+
+        ? "Recent prices are trading above the previous short-term average. Look for bullish confirmation and pullbacks."
+
+        : trend === "DOWNTREND"
+
+        ? "Recent prices are trading below the previous short-term average. Look for bearish confirmation and rallies."
+
+        : "Price is moving sideways. Wait for a clear breakout or rejection before considering a setup."
+
+      }
+
+    </p>
+
+  `;
+
+  drawChart();
+
+}
+
+/* =========================
+
+CANDLESTICK CHART
+
+========================= */
+
+function drawChart(){
+
+  const canvas =
+
+    $("chart");
+
+  if(!canvas)return;
+
+  const ctx =
+
+    canvas.getContext("2d");
+
+  const width =
+
+    canvas.clientWidth;
+
+  const height =
+
+    canvas.clientHeight;
+
+  if(width <= 0 || height <= 0){
+
+    return;
+
+  }
+
+  const dpr =
+
+    window.devicePixelRatio || 1;
+
+  canvas.width =
+
+    Math.floor(width * dpr);
+
+  canvas.height =
+
+    Math.floor(height * dpr);
+
+  ctx.setTransform(
+
+    dpr,
+
+    0,
+
+    0,
+
+    dpr,
+
+    0,
+
+    0
+
+  );
+
+  ctx.clearRect(
+
+    0,
+
+    0,
+
+    width,
+
+    height
+
+  );
+
+  /*
+
+    Background.
+
+  */
+
+  ctx.fillStyle =
+
+    "#0c1322";
+
+  ctx.fillRect(
+
+    0,
+
+    0,
+
+    width,
+
+    height
+
+  );
+
+  if(candles.length < 2){
+
+    ctx.fillStyle =
+
+      "#71809c";
+
+    ctx.font =
+
+      "14px system-ui";
+
+    ctx.textAlign =
+
+      "center";
+
+    ctx.fillText(
+
+      "Waiting for candles...",
+
+      width/2,
+
+      height/2
+
+    );
+
+    return;
+
+  }
+
+  /*
+
+    Display latest 50 candles.
+
+  */
+
+  const data =
+
+    candles.slice(-50);
+
+  const highs =
+
+    data.map(c=>c.high);
+
+  const lows =
+
+    data.map(c=>c.low);
+
+  let max =
+
+    Math.max(...highs);
+
+  let min =
+
+    Math.min(...lows);
+
+  const rawRange =
+
+    max - min || 1;
+
+  /*
+
+    Add padding.
+
+  */
+
+  max += rawRange * 0.12;
+
+  min -= rawRange * 0.12;
+
+  const left = 12;
+
+  const right = 65;
+
+  const top = 25;
+
+  const bottom = 30;
+
+  const chartWidth =
+
+    width - left - right;
+
+  const chartHeight =
+
+    height - top - bottom;
+
+  const range =
+
+    max - min;
+
+  function y(price){
+
+    return top +
+
+      ((max-price)/range) *
+
+      chartHeight;
+
+  }
+
+  /*
+
+    Grid.
+
+  */
+
+  ctx.lineWidth = 1;
+
+  ctx.strokeStyle =
+
+    "#1b2942";
+
+  ctx.fillStyle =
+
+    "#71809c";
+
+  ctx.font =
+
+    "10px system-ui";
+
+  ctx.textAlign =
+
+    "left";
+
+  for(let i=0;i<=5;i++){
+
+    const gy =
+
+      top +
+
+      (chartHeight/5)*i;
+
+    ctx.beginPath();
+
+    ctx.moveTo(left,gy);
+
+    ctx.lineTo(
+
+      width-right,
+
+      gy
+
+    );
+
+    ctx.stroke();
+
+    const price =
+
+      max -
+
+      (range/5)*i;
+
+    ctx.fillText(
+
+      price.toFixed(2),
+
+      width-right+7,
+
+      gy+3
+
+    );
+
+  }
+
+  /*
+
+    Candle sizing.
+
+  */
+
+  const spacing =
+
+    chartWidth / data.length;
+
+  const bodyWidth =
+
+    Math.max(
+
+      4,
+
+      Math.min(
+
+        12,
+
+        spacing*0.68
+
+      )
+
+    );
+
+  /*
+
+    Draw candles.
+
+  */
+
+  data.forEach((candle,index)=>{
+
+    const open =
+
+      candle.open;
+
+    const high =
+
+      candle.high;
+
+    const low =
+
+      candle.low;
+
+    const close =
+
+      candle.close;
+
+    const x =
+
+      left +
+
+      spacing*index +
+
+      spacing/2;
+
+    const openY =
+
+      y(open);
+
+    const closeY =
+
+      y(close);
+
+    const highY =
+
+      y(high);
+
+    const lowY =
+
+      y(low);
+
+    const bullish =
+
+      close >= open;
+
+    const candleColor =
+
+      bullish
+
+      ? "#4ade80"
+
+      : "#fb7185";
+
+    /*
+
+      Wick.
+
+    */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+
+      x,
+
+      highY
+
+    );
+
+    ctx.lineTo(
+
+      x,
+
+      lowY
+
+    );
+
+    ctx.strokeStyle =
+
+      candleColor;
+
+    ctx.lineWidth = 1.5;
+
+    ctx.stroke();
+
+    /*
+
+      Body.
+
+    */
+
+    let bodyTop =
+
+      Math.min(
+
+        openY,
+
+        closeY
+
+      );
+
+    let bodyBottom =
+
+      Math.max(
+
+        openY,
+
+        closeY
+
+      );
+
+    let bodyHeight =
+
+      bodyBottom-bodyTop;
+
+    if(bodyHeight < 2){
+
+      bodyHeight = 2;
+
+      bodyTop =
+
+        (openY+closeY)/2 -
+
+        1;
+
+    }
+
+    ctx.fillStyle =
+
+      candleColor;
+
+    ctx.fillRect(
+
+      x-bodyWidth/2,
+
+      bodyTop,
+
+      bodyWidth,
+
+      bodyHeight
+
+    );
+
+    /*
+
+      Last candle highlight.
+
+    */
+
+    if(index === data.length-1){
+
+      ctx.strokeStyle =
+
+        "#f5c451";
+
+      ctx.lineWidth = 1;
+
+      ctx.strokeRect(
+
+        x-bodyWidth/2-2,
+
+        bodyTop-2,
+
+        bodyWidth+4,
+
+        bodyHeight+4
+
+      );
+
+    }
+
+  });
+
+  /*
+
+    Support / resistance.
+
+  */
+
+  const recent =
+
+    data.slice(-20);
+
+  const resistance =
+
+    Math.max(
+
+      ...recent.map(c=>c.high)
+
+    );
+
+  const support =
+
+    Math.min(
+
+      ...recent.map(c=>c.low)
+
+    );
+
+  function drawLevel(
+
+    price,
+
+    label
+
+  ){
+
+    const yy =
+
+      y(price);
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+
+      left,
+
+      yy
+
+    );
+
+    ctx.lineTo(
+
+      width-right,
+
+      yy
+
+    );
+
+    ctx.strokeStyle =
+
+      "#71809c";
+
+    ctx.lineWidth = 1;
+
+    ctx.setLineDash([
+
+      5,
+
+      4
+
+    ]);
+
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    ctx.fillStyle =
+
+      "#a8b4cc";
+
+    ctx.font =
+
+      "bold 10px system-ui";
+
+    ctx.textAlign =
+
+      "left";
+
+    ctx.fillText(
+
+      label,
+
+      left+5,
+
+      yy-5
+
+    );
+
+  }
+
+  drawLevel(
+
+    resistance,
+
+    "RESISTANCE"
+
+  );
+
+  drawLevel(
+
+    support,
+
+    "SUPPORT"
+
+  );
+
+  /*
+
+    Current price.
+
+  */
+
+  const latest =
+
+    data[data.length-1].close;
+
+  const currentY =
+
+    y(latest);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+
+    left,
+
+    currentY
+
+  );
+
+  ctx.lineTo(
+
+    width-right,
+
+    currentY
+
+  );
+
+  ctx.strokeStyle =
+
+    "#f5c451";
+
+  ctx.lineWidth = 1.5;
+
+  ctx.setLineDash([
+
+    6,
+
+    4
+
+  ]);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  /*
+
+    Price label.
+
+  */
+
+  ctx.fillStyle =
+
+    "#f5c451";
+
+  ctx.font =
+
+    "bold 12px system-ui";
+
+  ctx.textAlign =
+
+    "left";
+
+  ctx.fillText(
+
+    latest.toFixed(2),
+
+    width-right+7,
+
+    currentY-5
+
+  );
+
+  /*
+
+    Trend arrow / visual guide.
+
+  */
+
+  const firstClose =
+
+    data[0].close;
+
+  const lastClose =
+
+    data[data.length-1].close;
+
+  if(lastClose > firstClose){
+
+    ctx.strokeStyle =
+
+      "#4ade80";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+
+      left+5,
+
+      height-bottom-5
+
+    );
+
+    ctx.lineTo(
+
+      width-right-10,
+
+      top+20
+
+    );
+
+    ctx.stroke();
+
+  }else if(lastClose < firstClose){
+
+    ctx.strokeStyle =
+
+      "#fb7185";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+
+      left+5,
+
+      top+20
+
+    );
+
+    ctx.lineTo(
+
+      width-right-10,
+
+      height-bottom-5
+
+    );
+
+    ctx.stroke();
+
+  }
+
+  /*
+
+    Bottom label.
+
+  */
+
+  ctx.fillStyle =
+
+    "#71809c";
+
+  ctx.font =
+
+    "10px system-ui";
+
+  ctx.textAlign =
+
+    "center";
+
+  ctx.fillText(
+
+    "XAU/USD · 5 MIN",
+
+    left + chartWidth/2,
+
+    height-8
+
+  );
+
+}
+
+/* =========================
+
+RESIZE
+
+========================= */
+
+window.addEventListener(
+
+  "resize",
+
+  () => {
+
+    setTimeout(
+
+      drawChart,
+
+      50
+
+    );
+
+  }
+
+);
+
+/* =========================
+
+START PRICEEDGE
+
+========================= */
+
+async function startPriceEdge(){
+
+  await updateAccount();
+
+  await loadTrades();
+
+  await loadMarket();
+
+}
+
+/*
+
+  Start application.
+
+*/
+
+startPriceEdge();
+
+/*
+
+  Refresh market data every minute.
+
+*/
+
+setInterval(
+
+  loadMarket,
+
+  60000
+
+);
 
 </script>
 
