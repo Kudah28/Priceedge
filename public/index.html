@@ -2622,96 +2622,107 @@ function drawChart(){
 
 
 
-async function loadMarket(){
+async functionloadMarket() {
 
-  try{
+  try {
 
-    let r=await fetch(
+    $("signal").innerHTML =
 
-      "/api/candles?symbol=XAU%2FUSD&interval=5min"
+      "<b>Loading XAU/USD market data…</b><p class='muted'>Connecting to Twelve Data.</p>";
+
+    const response = await fetch(
+
+      "/api/candles?symbol=XAU%2FUSD&interval=5min",
+
+      { cache: "no-store" }
 
     );
 
-    let d=await r.json();
+    const data = await response.json();
 
-    if(!r.ok)
+    console.log("PriceEdge market response:", data);
 
-      throw Error(
+    if (!response.ok) {
 
-        d.error||"Market data unavailable"
-
-      );
-
-    candles=(d.values||[])
-
-      .reverse()
-
-      .filter(c=>
-
-        Number.isFinite(Number(c.open)) &&
-
-        Number.isFinite(Number(c.high)) &&
-
-        Number.isFinite(Number(c.low)) &&
-
-        Number.isFinite(Number(c.close))
-
-      );
-
-    if(candles.length){
-
-      analyze();
-
-    }else{
-
-      throw Error(
-
-        "No candle data was returned"
-
-      );
+      throw new Error(data.error || "Market data request failed");
 
     }
 
-  }catch(e){
+    if (!data || !Array.isArray(data.values)) {
 
-    $("trendText").textContent=
+      throw new Error("No candle values were received");
 
-      "Market data unavailable";
+    }
 
-    $("trendBadge").textContent=
+    candles = data.values
 
-      "OFFLINE";
+      .map(c => ({
 
-    $("trendBadge").className=
+        datetime: c.datetime,
 
-      "trendBadge side";
+        open: Number(c.open),
 
-    $("signal").innerHTML=`
+        high: Number(c.high),
+
+        low: Number(c.low),
+
+        close: Number(c.close)
+
+      }))
+
+      .filter(c =>
+
+        Number.isFinite(c.open) &&
+
+        Number.isFinite(c.high) &&
+
+        Number.isFinite(c.low) &&
+
+        Number.isFinite(c.close)
+
+      )
+
+      .reverse();
+
+    if (candles.length < 2) {
+
+      throw new Error("Not enough valid candles received");
+
+    }
+
+    console.log(
+
+      "PriceEdge candles loaded:",
+
+      candles.length,
+
+      candles[candles.length - 1]
+
+    );
+
+    analyze();
+
+    drawChart();
+
+  } catch (error) {
+
+    console.error("PriceEdge market error:", error);
+
+    $("signal").innerHTML = `
 
       <b>Market data unavailable</b>
 
-      <p class="muted">
-
-        ${escapeHtml(e.message)}
-
-      </p>
+      <p class="muted">${error.message}</p>
 
       <p class="muted">
 
-        Make sure TWELVE_DATA_API_KEY is configured
-
-        in your Render environment variables.
+        The server is responding, but PriceEdge could not process the candle data.
 
       </p>
 
     `;
 
   }
-
-}
-
-/* RESIZE */
-
 window.addEventListener("resize", () => {
 
   if (candles.length > 0) {
