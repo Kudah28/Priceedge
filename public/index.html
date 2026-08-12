@@ -64,9 +64,9 @@ button{
 
 header{
 
-  height:70px;
+  min-height:76px;
 
-  padding:0 22px;
+  padding:0 20px;
 
   display:flex;
 
@@ -88,11 +88,11 @@ header{
 
 .logo{
 
-  font-size:25px;
+  font-size:26px;
 
   font-weight:900;
 
-  letter-spacing:-.7px;
+  letter-spacing:-1px;
 
 }
 
@@ -106,15 +106,15 @@ header{
 
 .pill{
 
-  font-size:13px;
+  font-size:14px;
 
   background:#f5c451;
 
   color:#16120a;
 
-  padding:8px 13px;
+  padding:9px 15px;
 
-  border-radius:20px;
+  border-radius:25px;
 
   font-weight:900;
 
@@ -124,9 +124,9 @@ nav{
 
   display:flex;
 
-  gap:6px;
+  gap:7px;
 
-  padding:12px 14px;
+  padding:12px 16px;
 
   border-bottom:1px solid #26334f;
 
@@ -134,13 +134,11 @@ nav{
 
   background:#0b1020;
 
-  position:sticky;
-
-  top:70px;
-
-  z-index:9;
-
   scrollbar-width:none;
+
+  position:relative;
+
+  z-index:5;
 
 }
 
@@ -158,11 +156,13 @@ nav button{
 
   color:#8e9cb7;
 
-  padding:11px 15px;
+  padding:11px 16px;
 
-  border-radius:10px;
+  border-radius:11px;
 
   white-space:nowrap;
+
+  font-size:16px;
 
 }
 
@@ -180,7 +180,7 @@ main{
 
   margin:auto;
 
-  padding:18px;
+  padding:20px;
 
 }
 
@@ -200,9 +200,9 @@ main{
 
   display:grid;
 
-  grid-template-columns:minmax(0,2fr) minmax(280px,1fr);
+  grid-template-columns:minmax(0,2fr) minmax(300px,1fr);
 
-  gap:15px;
+  gap:16px;
 
 }
 
@@ -212,19 +212,19 @@ main{
 
   border:1px solid #26334f;
 
-  border-radius:17px;
+  border-radius:18px;
 
-  padding:17px;
+  padding:18px;
 
-  margin-bottom:15px;
+  margin-bottom:16px;
 
-  box-shadow:0 8px 25px rgba(0,0,0,.12);
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
 
 }
 
 h1,h2,h3{
 
-  margin:0 0 10px;
+  margin:0 0 12px;
 
 }
 
@@ -254,13 +254,13 @@ h1,h2,h3{
 
 .price{
 
-  font-size:34px;
+  font-size:40px;
 
   font-weight:900;
 
-  margin-top:10px;
+  line-height:1.15;
 
-  letter-spacing:-1px;
+  margin-top:12px;
 
 }
 
@@ -272,7 +272,7 @@ h1,h2,h3{
 
   align-items:center;
 
-  gap:10px;
+  gap:12px;
 
   flex-wrap:wrap;
 
@@ -284,23 +284,23 @@ h1,h2,h3{
 
   align-items:center;
 
-  gap:7px;
+  gap:8px;
 
   color:#4ade80;
 
-  font-size:12px;
+  font-size:14px;
 
-  font-weight:900;
+  font-weight:850;
 
-  margin-top:5px;
+  margin-top:7px;
 
 }
 
 .live-dot{
 
-  width:8px;
+  width:9px;
 
-  height:8px;
+  height:9px;
 
   border-radius:50%;
 
@@ -310,7 +310,13 @@ h1,h2,h3{
 
 }
 
-.live-dot.warning{
+.live.cached{
+
+  color:#f5c451;
+
+}
+
+.live.cached .live-dot{
 
   background:#f5c451;
 
@@ -318,11 +324,39 @@ h1,h2,h3{
 
 }
 
-.live-dot.error{
+.live.error{
+
+  color:#fb7185;
+
+}
+
+.live.error .live-dot{
 
   background:#fb7185;
 
   box-shadow:0 0 10px #fb7185;
+
+}
+
+.data-status{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:10px;
+
+  flex-wrap:wrap;
+
+  margin-top:9px;
+
+  font-size:12px;
+
+}
+
+.data-status strong{
+
+  color:#4ade80;
 
 }
 
@@ -334,19 +368,19 @@ h1,h2,h3{
 
   justify-content:center;
 
-  min-width:150px;
+  min-width:155px;
 
-  padding:10px 15px;
+  padding:11px 15px;
 
   border-radius:11px;
 
   background:#18223a;
 
-  font-size:13px;
+  font-size:14px;
 
   font-weight:950;
 
-  letter-spacing:.5px;
+  letter-spacing:.6px;
 
 }
 
@@ -374,45 +408,11 @@ h1,h2,h3{
 
 }
 
-.data-status{
+.trend-badge.error{
 
-  display:flex;
+  color:#fb7185;
 
-  justify-content:space-between;
-
-  align-items:center;
-
-  gap:8px;
-
-  margin-top:7px;
-
-  font-size:11px;
-
-  color:#8e9cb7;
-
-}
-
-.data-status strong{
-
-  font-weight:800;
-
-}
-
-.data-fresh{
-
-  color:#4ade80!important;
-
-}
-
-.data-stale{
-
-  color:#f5c451!important;
-
-}
-
-.data-error{
-
-  color:#fb7185!important;
+  border:1px solid #713244;
 
 }
 
@@ -422,13 +422,13 @@ h1,h2,h3{
 
   background:#0c1322;
 
-  border-radius:12px;
+  border-radius:13px;
 
   position:relative;
 
   overflow:hidden;
 
-  margin-top:13px;
+  margin-top:14px;
 
   border:1px solid #202d47;
 
@@ -450,17 +450,19 @@ h1,h2,h3{
 
   position:absolute;
 
-  top:11px;
+  top:10px;
 
-  left:11px;
+  left:10px;
 
   pointer-events:none;
 
   display:flex;
 
-  gap:7px;
+  gap:8px;
 
   flex-wrap:wrap;
+
+  z-index:2;
 
 }
 
@@ -472,9 +474,9 @@ h1,h2,h3{
 
   border-radius:8px;
 
-  padding:6px 9px;
+  padding:7px 10px;
 
-  font-size:10px;
+  font-size:11px;
 
   font-weight:850;
 
@@ -490,9 +492,9 @@ h1,h2,h3{
 
   display:flex;
 
-  gap:6px;
+  gap:7px;
 
-  z-index:2;
+  z-index:3;
 
 }
 
@@ -504,11 +506,11 @@ h1,h2,h3{
 
   color:#edf2ff;
 
-  border-radius:8px;
+  border-radius:9px;
 
-  padding:7px 10px;
+  padding:8px 11px;
 
-  font-size:11px;
+  font-size:12px;
 
 }
 
@@ -518,13 +520,45 @@ h1,h2,h3{
 
 }
 
+.refresh-row{
+
+  display:flex;
+
+  justify-content:flex-end;
+
+  margin-top:9px;
+
+}
+
+.refresh-btn{
+
+  border:1px solid #31405f;
+
+  background:#0c1322;
+
+  color:#dce5f8;
+
+  border-radius:8px;
+
+  padding:7px 10px;
+
+  font-size:12px;
+
+}
+
+.refresh-btn:active{
+
+  transform:scale(.98);
+
+}
+
 .signal-box{
 
-  border-radius:13px;
+  border-radius:14px;
 
-  padding:15px;
+  padding:17px;
 
-  margin-top:13px;
+  margin-top:14px;
 
   border:1px solid #26334f;
 
@@ -546,7 +580,7 @@ h1,h2,h3{
 
 .signal-action{
 
-  font-size:19px;
+  font-size:20px;
 
   font-weight:950;
 
@@ -572,7 +606,7 @@ h1,h2,h3{
 
 .signal-box p{
 
-  line-height:1.5;
+  line-height:1.6;
 
   margin-bottom:0;
 
@@ -616,9 +650,9 @@ h1,h2,h3{
 
   grid-template-columns:1fr 1fr;
 
-  gap:8px;
+  gap:9px;
 
-  margin-top:11px;
+  margin-top:12px;
 
 }
 
@@ -628,7 +662,7 @@ h1,h2,h3{
 
   border:1px solid #26334f;
 
-  border-radius:9px;
+  border-radius:10px;
 
   padding:11px;
 
@@ -642,7 +676,7 @@ h1,h2,h3{
 
   font-size:11px;
 
-  margin-bottom:4px;
+  margin-bottom:5px;
 
 }
 
@@ -658,21 +692,21 @@ h1,h2,h3{
 
   grid-template-columns:1fr 1fr;
 
-  gap:8px;
+  gap:9px;
 
-  margin-top:11px;
+  margin-top:12px;
 
 }
 
 .level{
 
-  padding:12px;
+  padding:13px;
 
   background:#0c1322;
 
   border:1px solid #26334f;
 
-  border-radius:9px;
+  border-radius:10px;
 
 }
 
@@ -682,7 +716,7 @@ h1,h2,h3{
 
   display:block;
 
-  margin-bottom:4px;
+  margin-bottom:5px;
 
 }
 
@@ -694,35 +728,35 @@ h1,h2,h3{
 
   border:1px solid #5d4c1f;
 
-  border-radius:9px;
+  border-radius:10px;
 
   color:#f7dc88;
 
   font-size:13px;
 
-  line-height:1.45;
+  margin-top:12px;
 
-  margin-top:11px;
+  line-height:1.5;
 
 }
 
 .notice.success{
 
-  background:#102319;
+  background:#10261b;
 
   border-color:#285d42;
 
-  color:#9df1b9;
+  color:#8df2b1;
 
 }
 
 .notice.error{
 
-  background:#29131b;
+  background:#29131a;
 
   border-color:#713244;
 
-  color:#ff9bad;
+  color:#ff9aac;
 
 }
 
@@ -738,13 +772,13 @@ textarea{
 
   border:1px solid #31405f;
 
-  border-radius:8px;
+  border-radius:9px;
 
   color:#fff;
 
   padding:12px;
 
-  margin:5px 0 12px;
+  margin:5px 0 13px;
 
   outline:none;
 
@@ -790,7 +824,7 @@ button.primary{
 
 button.primary:active{
 
-  transform:translateY(1px);
+  transform:scale(.99);
 
 }
 
@@ -811,8 +845,6 @@ td{
   border-bottom:1px solid #26334f;
 
   text-align:left;
-
-  white-space:nowrap;
 
 }
 
@@ -850,13 +882,11 @@ th{
 
 }
 
-.refresh-info{
+.small-muted{
 
   font-size:11px;
 
   color:#71809c;
-
-  margin-top:6px;
 
 }
 
@@ -864,27 +894,43 @@ th{
 
   header{
 
-    height:64px;
+    min-height:78px;
 
-    padding:0 18px;
+    padding:0 22px;
 
   }
 
   .logo{
 
-    font-size:23px;
+    font-size:26px;
+
+  }
+
+  .pill{
+
+    font-size:13px;
+
+    padding:9px 13px;
 
   }
 
   nav{
 
-    top:64px;
+    padding:11px 14px;
+
+  }
+
+  nav button{
+
+    font-size:16px;
+
+    padding:11px 14px;
 
   }
 
   main{
 
-    padding:12px;
+    padding:16px 14px;
 
   }
 
@@ -896,21 +942,21 @@ th{
 
   .card{
 
-    padding:15px;
+    border-radius:17px;
 
-    border-radius:15px;
+    padding:16px;
 
   }
 
   .chart{
 
-    height:350px;
+    height:370px;
 
   }
 
   .price{
 
-    font-size:29px;
+    font-size:34px;
 
   }
 
@@ -932,19 +978,13 @@ th{
 
   }
 
-  .chart-nav button{
-
-    padding:7px 9px;
-
-  }
-
 }
 
 @media(max-width:420px){
 
   .chart{
 
-    height:320px;
+    height:340px;
 
   }
 
@@ -958,15 +998,21 @@ th{
 
   .chart-nav button{
 
-    padding:6px 8px;
-
-    font-size:10px;
+    padding:7px 8px;
 
   }
 
+  .price{
+
+    font-size:31px;
+
+  }
+
+  .structure-grid,
+
   .level-card{
 
-    grid-template-columns:1fr;
+    grid-template-columns:1fr 1fr;
 
   }
 
@@ -1002,11 +1048,11 @@ th{
 
 <main>
 
-<!-- =====================================================
+<!-- ======================================================
 
      DASHBOARD
 
-===================================================== -->
+====================================================== -->
 
 <section id="home" class="page on">
 
@@ -1014,215 +1060,233 @@ th{
 
 <div class="card">
 
-<div class="market-head">
+  <div class="market-head">
 
-<div>
+    <div>
 
-  <div class="muted">XAU/USD · 5 MINUTES</div>
+      <div class="muted">XAU/USD · 5 MINUTES</div>
 
-  <div class="live" id="liveStatus">
+      <div id="liveStatus" class="live">
 
-    <span class="live-dot" id="liveDot"></span>
+        <span class="live-dot"></span>
 
-    <span id="liveText">CONNECTING TO MARKET</span>
+        <span id="liveStatusText">CONNECTING TO MARKET</span>
+
+      </div>
+
+      <div class="data-status">
+
+        <strong id="dataReceived">Waiting for data…</strong>
+
+        <span id="lastUpdated" class="muted">Not updated yet</span>
+
+      </div>
+
+      <div class="small-muted" style="margin-top:5px">
+
+        PriceEdge refreshes the 5-minute market data approximately every 60 seconds.
+
+      </div>
+
+    </div>
+
+    <div id="trendBadge" class="trend-badge side">
+
+      WAITING
+
+    </div>
 
   </div>
 
-  <div class="data-status">
+  <div id="price" class="price">—</div>
 
-    <strong id="dataStatus">Checking market data…</strong>
+  <div class="chart" id="chartWrap">
 
-    <span id="dataTime"></span>
+    <canvas id="chart"></canvas>
+
+    <div class="chart-overlay">
+
+      <div class="chart-tag" id="chartTrend">TREND: —</div>
+
+      <div class="chart-tag" id="chartStructure">STRUCTURE: —</div>
+
+    </div>
+
+    <div class="chart-nav">
+
+      <button onclick="chartOlder()">← Older</button>
+
+      <button onclick="chartLive()">Live</button>
+
+      <button onclick="chartNewer()">Newer →</button>
+
+    </div>
 
   </div>
 
-  <div class="refresh-info">
+  <div class="refresh-row">
 
-    PriceEdge refreshes market data approximately every 60 seconds.
+    <button class="refresh-btn" onclick="manualRefresh()">
+
+      ↻ Refresh market
+
+    </button>
+
+  </div>
+
+  <div id="signal" class="signal-box">
+
+    <div class="signal-title">
+
+      <span class="muted">PRICEEDGE SIGNAL</span>
+
+      <span id="action" class="signal-action action-wait">
+
+        WAIT
+
+      </span>
+
+    </div>
+
+    <p id="signalText" class="muted">
+
+      Waiting for market data…
+
+    </p>
 
   </div>
 
 </div>
 
-<div id="trendBadge" class="trend-badge side">
+<!-- ======================================================
 
-  WAITING
+     MARKET SETUP
 
-</div>
-
-</div>
-
-<div id="price" class="price">—</div>
-
-<div class="chart" id="chartWrap">
-
-<canvas id="chart"></canvas>
-
-<div class="chart-overlay">
-
-  <div class="chart-tag" id="chartTrend">TREND: —</div>
-
-  <div class="chart-tag" id="chartStructure">STRUCTURE: —</div>
-
-</div>
-
-<div class="chart-nav">
-
-  <button onclick="chartOlder()">← Older</button>
-
-  <button onclick="chartLive()">Live</button>
-
-  <button onclick="chartNewer()">Newer →</button>
-
-</div>
-
-</div>
-
-<div id="signal" class="signal-box">
-
-<div class="signal-title">
-
-  <span class="muted">PRICEEDGE SIGNAL</span>
-
-  <span id="action" class="signal-action action-wait">WAIT</span>
-
-</div>
-
-<p id="signalText" class="muted">
-
-  Connecting to live market data…
-
-</p>
-
-</div>
-
-</div>
-
-<!-- MARKET SETUP -->
+====================================================== -->
 
 <div class="card">
 
-<h3>Market Setup</h3>
+  <h3>Market Setup</h3>
 
-<div class="row">
+  <div class="row">
 
-  <span>Bias</span>
+    <span>Bias</span>
 
-  <b id="bias">—</b>
+    <b id="bias">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Trend</span>
+    <span>Trend</span>
 
-  <b id="setupTrend">—</b>
+    <b id="setupTrend">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Structure</span>
+    <span>Structure</span>
 
-  <b id="structure">—</b>
+    <b id="structure">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Momentum</span>
+    <span>Momentum</span>
 
-  <b id="momentum">—</b>
+    <b id="momentum">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Setup quality</span>
+    <span>Setup quality</span>
 
-  <b id="quality">—</b>
+    <b id="quality">—</b>
 
-</div>
+  </div>
 
-<div class="structure-grid">
+  <div class="structure-grid">
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Recent high</span>
+      <span>Recent high</span>
 
-  <b id="recentHigh">—</b>
+      <b id="recentHigh">—</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Recent low</span>
+      <span>Recent low</span>
 
-  <b id="recentLow">—</b>
+      <b id="recentLow">—</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Support</span>
+      <span>Support</span>
 
-  <b id="support">—</b>
+      <b id="support">—</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Resistance</span>
+      <span>Resistance</span>
 
-  <b id="resistance">—</b>
+      <b id="resistance">—</b>
 
-</div>
+    </div>
 
-</div>
+  </div>
 
-<div class="level-card">
+  <div class="level-card">
 
-<div class="level">
+    <div class="level">
 
-  <small>Suggested entry</small>
+      <small>Suggested entry</small>
 
-  <b id="entryLevel">—</b>
+      <b id="entryLevel">—</b>
 
-</div>
+    </div>
 
-<div class="level">
+    <div class="level">
 
-  <small>Stop reference</small>
+      <small>Stop reference</small>
 
-  <b id="stopLevel">—</b>
+      <b id="stopLevel">—</b>
 
-</div>
+    </div>
 
-<div class="level">
+    <div class="level">
 
-  <small>Target reference</small>
+      <small>Target reference</small>
 
-  <b id="targetLevel">—</b>
+      <b id="targetLevel">—</b>
 
-</div>
+    </div>
 
-<div class="level">
+    <div class="level">
 
-  <small>R:R</small>
+      <small>R:R</small>
 
-  <b id="rrLevel">—</b>
+      <b id="rrLevel">—</b>
 
-</div>
+    </div>
 
-</div>
+  </div>
 
-<div class="notice">
+  <div class="notice">
 
-  PriceEdge provides decision-support analysis only.
+    PriceEdge provides decision-support analysis only.
 
-  Always confirm a setup before entering a trade.
+    Always confirm a setup before entering a trade.
 
-</div>
+  </div>
 
 </div>
 
@@ -1230,343 +1294,345 @@ th{
 
 </section>
 
-<!-- =====================================================
+<!-- ======================================================
 
      PRICE ACTION
 
-===================================================== -->
+====================================================== -->
 
 <section id="analysis" class="page">
 
 <div class="card">
 
-<h2>Price Action Scanner</h2>
+  <h2>Price Action Scanner</h2>
 
-<p class="muted">
+  <p class="muted">
 
-PriceEdge evaluates recent XAU/USD 5-minute candles using
+    PriceEdge evaluates recent XAU/USD 5-minute candles using
 
-price-action structure, trend and momentum.
+    trend, momentum, support/resistance and price-action structure.
 
-</p>
+  </p>
 
-<div class="row">
+  <div class="row">
 
-  <span>Trend</span>
+    <span>Trend</span>
 
-  <b id="aTrend">—</b>
+    <b id="aTrend">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Market structure</span>
+    <span>Market structure</span>
 
-  <b id="aStructure">—</b>
+    <b id="aStructure">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Momentum</span>
+    <span>Momentum</span>
 
-  <b id="aMomentum">—</b>
+    <b id="aMomentum">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Setup quality</span>
+    <span>Setup quality</span>
 
-  <b id="aQuality">—</b>
+    <b id="aQuality">—</b>
 
-</div>
+  </div>
 
-<div class="row">
+  <div class="row">
 
-  <span>Signal</span>
+    <span>Signal</span>
 
-  <b id="aSignal">WAIT</b>
+    <b id="aSignal" class="gold">WAIT</b>
 
-</div>
+  </div>
 
 </div>
 
 <div class="card">
 
-<h3>Structure Guide</h3>
+  <h3>Structure Guide</h3>
 
-<div class="structure-grid">
+  <div class="structure-grid">
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Bullish structure</span>
+      <span>Bullish structure</span>
 
-  <b class="green">HH → HL</b>
+      <b class="green">HH → HL</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>Bearish structure</span>
+      <span>Bearish structure</span>
 
-  <b class="red">LH → LL</b>
+      <b class="red">LH → LL</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>HH</span>
+      <span>HH</span>
 
-  <b>Higher High</b>
+      <b>Higher High</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>HL</span>
+      <span>HL</span>
 
-  <b>Higher Low</b>
+      <b>Higher Low</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>LH</span>
+      <span>LH</span>
 
-  <b>Lower High</b>
+      <b>Lower High</b>
 
-</div>
+    </div>
 
-<div class="structure-item">
+    <div class="structure-item">
 
-  <span>LL</span>
+      <span>LL</span>
 
-  <b>Lower Low</b>
+      <b>Lower Low</b>
 
-</div>
+    </div>
 
-</div>
+  </div>
 
 </div>
 
 </section>
 
-<!-- =====================================================
+<!-- ======================================================
 
      RISK
 
-===================================================== -->
+====================================================== -->
 
 <section id="risk" class="page">
 
 <div class="card">
 
-<h2>Risk Calculator</h2>
+  <h2>Risk Calculator</h2>
 
-<label>Account balance</label>
+  <label>Account balance</label>
 
-<input id="bal" type="number" value="1000">
+  <input id="bal" type="number" value="1000">
 
-<label>Risk %</label>
+  <label>Risk %</label>
 
-<input id="rp" type="number" value="1" step=".1">
+  <input id="rp" type="number" value="1" step=".1">
 
-<label>Entry</label>
+  <label>Entry</label>
 
-<input id="en" type="number" value="0">
+  <input id="en" type="number" value="0">
 
-<label>Stop loss</label>
+  <label>Stop loss</label>
 
-<input id="sl" type="number" value="0">
+  <input id="sl" type="number" value="0">
 
-<button class="primary" onclick="risk()">
+  <button class="primary" onclick="risk()">
 
-  Calculate Risk
+    Calculate Risk
 
-</button>
+  </button>
 
-<div id="riskout" class="box">
+  <div id="riskout" class="box">
 
-  Enter your values.
+    Enter your values.
 
-</div>
+  </div>
 
 </div>
 
 </section>
 
-<!-- =====================================================
+<!-- ======================================================
 
      JOURNAL
 
-===================================================== -->
+====================================================== -->
 
 <section id="journal" class="page">
 
 <div class="card">
 
-<h2>Trading Journal</h2>
+  <h2>Trading Journal</h2>
 
-<div id="loginRequired" class="notice">
+  <div id="loginRequired" class="notice">
 
-  Log in to save trades to your account.
+    Log in to save trades to your account.
 
-</div>
+  </div>
 
-<label>Pair</label>
+  <label>Pair</label>
 
-<input id="jp" value="XAU/USD">
+  <input id="jp" value="XAU/USD">
 
-<label>Side</label>
+  <label>Side</label>
 
-<select id="js">
+  <select id="js">
 
-  <option>BUY</option>
+    <option>BUY</option>
 
-  <option>SELL</option>
+    <option>SELL</option>
 
-</select>
+  </select>
 
-<label>Entry</label>
+  <label>Entry</label>
 
-<input id="je" type="number">
+  <input id="je" type="number">
 
-<label>Stop</label>
+  <label>Stop</label>
 
-<input id="jstop" type="number">
+  <input id="jstop" type="number">
 
-<label>Target</label>
+  <label>Target</label>
 
-<input id="jt" type="number">
+  <input id="jt" type="number">
 
-<label>Result ($)</label>
+  <label>Result ($)</label>
 
-<input id="jr" type="number" value="0">
+  <input id="jr" type="number" value="0">
 
-<label>Notes</label>
+  <label>Notes</label>
 
-<textarea id="jn"></textarea>
+  <textarea id="jn"></textarea>
 
-<button class="primary" onclick="saveTrade()">
+  <button class="primary" onclick="saveTrade()">
 
-  Save Trade
+    Save Trade
 
-</button>
+  </button>
 
-<div style="overflow:auto;margin-top:15px">
+  <div style="overflow:auto;margin-top:15px">
 
-<table>
+    <table>
 
-<thead>
+      <thead>
 
-<tr>
+        <tr>
 
-  <th>Pair</th>
+          <th>Pair</th>
 
-  <th>Side</th>
+          <th>Side</th>
 
-  <th>Entry</th>
+          <th>Entry</th>
 
-  <th>Result</th>
+          <th>Result</th>
 
-</tr>
+        </tr>
 
-</thead>
+      </thead>
 
-<tbody id="trades"></tbody>
+      <tbody id="trades"></tbody>
 
-</table>
+    </table>
 
-</div>
+  </div>
 
 </div>
 
 </section>
 
-<!-- =====================================================
+<!-- ======================================================
 
      ACCOUNT
 
-===================================================== -->
+====================================================== -->
 
 <section id="account" class="page">
 
 <div class="card auth" id="authBox">
 
-<h2 id="authTitle">
+  <h2 id="authTitle">Create account</h2>
 
-  Create account
+  <p class="muted">
 
-</h2>
+    Your journal is stored securely on the PriceEdge server.
 
-<p class="muted">
+  </p>
 
-  Your journal is stored securely on the PriceEdge server.
+  <input
 
-</p>
+    id="email"
 
-<input
+    type="email"
 
-  id="email"
+    placeholder="Email"
 
-  type="email"
+    autocomplete="email"
 
-  placeholder="Email"
+  >
 
-  autocomplete="email"
+  <input
 
->
+    id="password"
 
-<input
+    type="password"
 
-  id="password"
+    placeholder="Password (6+ characters)"
 
-  type="password"
+    autocomplete="current-password"
 
-  placeholder="Password (6+ characters)"
+  >
 
-  autocomplete="current-password"
+  <div class="actions">
 
->
+    <button
 
-<div class="actions">
+      class="primary"
 
-<button class="primary" onclick="authAction()">
+      onclick="authAction()"
 
-  Create account
+    >
 
-</button>
+      Create account
 
-<button
+    </button>
 
-  onclick="toggleAuth()"
+    <button
 
-  style="background:#18223a;color:#fff;border:0;border-radius:9px"
+      onclick="toggleAuth()"
 
->
+      style="background:#18223a;color:#fff;border:0;border-radius:9px"
 
-  Use login
+    >
 
-</button>
+      Use login
 
-</div>
+    </button>
 
-<div id="authMsg" class="notice hidden"></div>
+  </div>
+
+  <div id="authMsg" class="notice hidden"></div>
 
 </div>
 
 <div class="card hidden" id="logged">
 
-<h2>Account</h2>
+  <h2>Account</h2>
 
-<p id="who"></p>
+  <p id="who"></p>
 
-<button class="primary" onclick="logout()">
+  <button class="primary" onclick="logout()">
 
-  Log out
+    Log out
 
-</button>
+  </button>
 
 </div>
 
@@ -1576,11 +1642,11 @@ price-action structure, trend and momentum.
 
 <script>
 
-/* =====================================================
+/* =========================================================
 
    PRICEEDGE CORE STATE
 
-===================================================== */
+========================================================= */
 
 let token = localStorage.getItem("pe_token") || "";
 
@@ -1596,39 +1662,37 @@ let chartDragStartX = 0;
 
 let chartDragStartOffset = 0;
 
-let marketRequestRunning = false;
-
-let lastSuccessfulMarketUpdate = 0;
-
-let lastMarketError = "";
-
-let marketTimer = null;
+const CHART_VISIBLE_CANDLES = 40;
 
 /*
 
    IMPORTANT:
 
-   Twelve Data should NOT be called every 5 seconds.
+   Do NOT poll every 5 seconds.
 
-   Five-minute candles do not change every five seconds,
+   XAU/USD is using 5-minute candles and the market
 
-   and repeatedly requesting the API can trigger rate limits.
+   provider can rate-limit excessive requests.
 
-   PriceEdge therefore refreshes approximately once per minute.
+   PriceEdge therefore refreshes approximately every
+
+   60 seconds.
 
 */
 
 const MARKET_REFRESH_MS = 60000;
 
-const CHART_VISIBLE_CANDLES = 40;
+let marketLoading = false;
+
+let lastSuccessfulUpdate = 0;
 
 const $ = id => document.getElementById(id);
 
-/* =====================================================
+/* =========================================================
 
    NAVIGATION
 
-===================================================== */
+========================================================= */
 
 document.querySelectorAll("nav button").forEach(button => {
 
@@ -1660,19 +1724,21 @@ document.querySelectorAll("nav button").forEach(button => {
 
 });
 
-/* =====================================================
+/* =========================================================
 
    AUTH
 
-===================================================== */
+========================================================= */
 
 function toggleAuth(){
 
-  mode = mode === "register"
+  mode =
 
-    ? "login"
+    mode === "register"
 
-    : "register";
+      ? "login"
+
+      : "register";
 
   $("authTitle").textContent =
 
@@ -1682,17 +1748,17 @@ function toggleAuth(){
 
       : "Log in";
 
-  document.querySelector(
+  document
 
-    "#authBox .actions button:first-child"
+    .querySelector("#authBox .actions button:first-child")
 
-  ).textContent =
+    .textContent =
 
-    mode === "register"
+      mode === "register"
 
-      ? "Create account"
+        ? "Create account"
 
-      : "Log in";
+        : "Log in";
 
 }
 
@@ -1720,35 +1786,47 @@ async function authAction(){
 
   try{
 
-    const r = await fetch(
+    const r =
 
-      "/api/" +
+      await fetch(
 
-      (mode === "register" ? "register" : "login"),
+        "/api/" +
 
-      {
+        (
 
-        method:"POST",
+          mode === "register"
 
-        headers:{
+            ? "register"
 
-          "Content-Type":"application/json"
+            : "login"
 
-        },
+        ),
 
-        body:JSON.stringify({
+        {
 
-          email,
+          method:"POST",
 
-          password
+          headers:{
 
-        })
+            "Content-Type":"application/json"
 
-      }
+          },
 
-    );
+          body:JSON.stringify({
 
-    const d = await r.json();
+            email,
+
+            password
+
+          })
+
+        }
+
+      );
+
+    const d =
+
+      await r.json();
 
     if(!r.ok){
 
@@ -1774,13 +1852,11 @@ async function authAction(){
 
     $("authMsg").classList.add("hidden");
 
-    await updateAccount();
+    updateAccount();
 
-    await loadTrades();
+    loadTrades();
 
   }catch(error){
-
-    console.error(error);
 
     $("authMsg").textContent =
 
@@ -1808,21 +1884,25 @@ async function updateAccount(){
 
   try{
 
-    const r = await fetch(
+    const r =
 
-      "/api/me",
+      await fetch(
 
-      {
+        "/api/me",
 
-        headers:{
+        {
 
-          Authorization:"Bearer " + token
+          headers:{
+
+            Authorization:
+
+              "Bearer " + token
+
+          }
 
         }
 
-      }
-
-    );
+      );
 
     if(!r.ok){
 
@@ -1832,7 +1912,9 @@ async function updateAccount(){
 
     }
 
-    const d = await r.json();
+    const d =
+
+      await r.json();
 
     $("authBox").classList.add("hidden");
 
@@ -1846,8 +1928,6 @@ async function updateAccount(){
 
   }catch(error){
 
-    console.error(error);
-
     logout();
 
   }
@@ -1858,51 +1938,53 @@ function logout(){
 
   token = "";
 
-  localStorage.removeItem("pe_token");
+  localStorage.removeItem(
+
+    "pe_token"
+
+  );
 
   updateAccount();
 
 }
 
-/* =====================================================
+/* =========================================================
 
    JOURNAL
 
-===================================================== */
+========================================================= */
 
 async function loadTrades(){
 
-  if(!token){
-
-    return;
-
-  }
+  if(!token)return;
 
   try{
 
-    const r = await fetch(
+    const r =
 
-      "/api/trades",
+      await fetch(
 
-      {
+        "/api/trades",
 
-        headers:{
+        {
 
-          Authorization:"Bearer " + token
+          headers:{
+
+            Authorization:
+
+              "Bearer " + token
+
+          }
 
         }
 
-      }
+      );
 
-    );
+    if(!r.ok)return;
 
-    if(!r.ok){
+    const rows =
 
-      return;
-
-    }
-
-    const rows = await r.json();
+      await r.json();
 
     $("trades").innerHTML =
 
@@ -1938,7 +2020,7 @@ async function loadTrades(){
 
     console.error(
 
-      "LOAD TRADES ERROR:",
+      "Journal error:",
 
       error
 
@@ -1982,37 +2064,51 @@ async function saveTrade(){
 
   try{
 
-    const r = await fetch(
+    const r =
 
-      "/api/trades",
+      await fetch(
 
-      {
+        "/api/trades",
 
-        method:"POST",
+        {
 
-        headers:{
+          method:"POST",
 
-          "Content-Type":"application/json",
+          headers:{
 
-          Authorization:"Bearer " + token
+            "Content-Type":
 
-        },
+              "application/json",
 
-        body:JSON.stringify(body)
+            Authorization:
 
-      }
+              "Bearer " + token
 
-    );
+          },
+
+          body:
+
+            JSON.stringify(body)
+
+        }
+
+      );
 
     if(r.ok){
 
       $("jn").value = "";
 
-      await loadTrades();
+      loadTrades();
 
     }else{
 
-      const d = await r.json().catch(() => ({}));
+      const d =
+
+        await r.json().catch(
+
+          () => ({})
+
+        );
 
       alert(
 
@@ -2026,8 +2122,6 @@ async function saveTrade(){
 
   }catch(error){
 
-    console.error(error);
-
     alert(
 
       "Unable to connect to PriceEdge."
@@ -2038,11 +2132,11 @@ async function saveTrade(){
 
 }
 
-/* =====================================================
+/* =========================================================
 
-   RISK
+   RISK CALCULATOR
 
-===================================================== */
+========================================================= */
 
 function risk(){
 
@@ -2062,53 +2156,187 @@ function risk(){
 
     +$("sl").value;
 
+  if(
+
+    !Number.isFinite(balance) ||
+
+    !Number.isFinite(riskPercent) ||
+
+    !Number.isFinite(entry) ||
+
+    !Number.isFinite(stop)
+
+  ){
+
+    $("riskout").textContent =
+
+      "Please enter valid numbers.";
+
+    return;
+
+  }
+
   const amount =
 
-    balance * riskPercent / 100;
+    balance *
+
+    riskPercent /
+
+    100;
 
   const distance =
 
-    Math.abs(entry - stop);
+    Math.abs(
 
-  $("riskout").innerHTML = `
+      entry - stop
 
-    Maximum planned loss:
+    );
 
-    <b>$${amount.toFixed(2)}</b>
+  $("riskout").innerHTML =
 
-    <br>
+    `Maximum planned loss:
 
-    Stop distance:
+      <b>$${amount.toFixed(2)}</b>
 
-    <b>$${distance.toFixed(2)}</b>
+      <br>
 
-    <br><br>
+      Stop distance:
 
-    <span class="muted">
+      <b>$${distance.toFixed(2)}</b>
 
-      Exact XAU/USD position sizing depends on
+      <br><br>
 
-      your broker's contract specification.
+      <span class="muted">
 
-    </span>
+        Exact XAU/USD position sizing depends on
 
-  `;
+        your broker's contract specification.
+
+      </span>`;
 
 }
 
-/* =====================================================
+/* =========================================================
 
-   PRICE ACTION
+   MARKET MATH
 
-===================================================== */
+========================================================= */
 
-function average(v){
+function average(values){
 
-  return v.length
+  return values.length
 
-    ? v.reduce((a,b) => a+b,0) / v.length
+    ? values.reduce(
+
+        (a,b) => a + b,
+
+        0
+
+      ) / values.length
 
     : 0;
+
+}
+
+/* =========================================================
+
+   PRICE ACTION STRUCTURE
+
+========================================================= */
+
+/*
+
+   We use swing points rather than simply comparing the
+
+   first half of the candles with the second half.
+
+   This gives PriceEdge a more meaningful HH/HL or LH/LL
+
+   structure.
+
+*/
+
+function findSwingHighs(data){
+
+  const result = [];
+
+  for(
+
+    let i = 2;
+
+    i < data.length - 2;
+
+    i++
+
+  ){
+
+    if(
+
+      data[i].high > data[i-1].high &&
+
+      data[i].high > data[i-2].high &&
+
+      data[i].high >= data[i+1].high &&
+
+      data[i].high >= data[i+2].high
+
+    ){
+
+      result.push({
+
+        index:i,
+
+        price:data[i].high
+
+      });
+
+    }
+
+  }
+
+  return result;
+
+}
+
+function findSwingLows(data){
+
+  const result = [];
+
+  for(
+
+    let i = 2;
+
+    i < data.length - 2;
+
+    i++
+
+  ){
+
+    if(
+
+      data[i].low < data[i-1].low &&
+
+      data[i].low < data[i-2].low &&
+
+      data[i].low <= data[i+1].low &&
+
+      data[i].low <= data[i+2].low
+
+    ){
+
+      result.push({
+
+        index:i,
+
+        price:data[i].low
+
+      });
+
+    }
+
+  }
+
+  return result;
 
 }
 
@@ -2120,55 +2348,105 @@ function detectStructure(data){
 
   }
 
-  const r =
+  const highs =
 
-    data.slice(-12);
+    findSwingHighs(
 
-  const a =
+      data.slice(-35)
 
-    r.slice(0,6);
+    );
 
-  const b =
+  const lows =
 
-    r.slice(6);
+    findSwingLows(
 
-  const ah =
+      data.slice(-35)
 
-    Math.max(...a.map(c => c.high));
+    );
 
-  const bh =
+  if(
 
-    Math.max(...b.map(c => c.high));
+    highs.length >= 2 &&
 
-  const al =
+    lows.length >= 2
 
-    Math.min(...a.map(c => c.low));
+  ){
 
-  const bl =
+    const h1 =
 
-    Math.min(...b.map(c => c.low));
+      highs[highs.length - 2].price;
 
-  if(bh > ah && bl > al){
+    const h2 =
 
-    return "HH / HL";
+      highs[highs.length - 1].price;
 
-  }
+    const l1 =
 
-  if(bh < ah && bl < al){
+      lows[lows.length - 2].price;
 
-    return "LH / LL";
+    const l2 =
 
-  }
+      lows[lows.length - 1].price;
 
-  if(bh > ah){
+    const higherHigh =
 
-    return "BULLISH";
+      h2 > h1;
 
-  }
+    const higherLow =
 
-  if(bl < al){
+      l2 > l1;
 
-    return "BEARISH";
+    const lowerHigh =
+
+      h2 < h1;
+
+    const lowerLow =
+
+      l2 < l1;
+
+    if(
+
+      higherHigh &&
+
+      higherLow
+
+    ){
+
+      return "HH / HL";
+
+    }
+
+    if(
+
+      lowerHigh &&
+
+      lowerLow
+
+    ){
+
+      return "LH / LL";
+
+    }
+
+    if(
+
+      higherHigh
+
+    ){
+
+      return "HIGHER HIGH";
+
+    }
+
+    if(
+
+      lowerLow
+
+    ){
+
+      return "LOWER LOW";
+
+    }
 
   }
 
@@ -2176,97 +2454,11 @@ function detectStructure(data){
 
 }
 
-/* =====================================================
+/* =========================================================
 
-   MARKET STATUS
+   MARKET ANALYSIS
 
-===================================================== */
-
-function setMarketStatus(type,text,timeText=""){
-
-  const dot =
-
-    $("liveDot");
-
-  const liveText =
-
-    $("liveText");
-
-  const status =
-
-    $("dataStatus");
-
-  dot.className =
-
-    "live-dot";
-
-  liveText.className = "";
-
-  status.className = "";
-
-  if(type === "fresh"){
-
-    liveText.textContent =
-
-      "LIVE MARKET DATA";
-
-    status.textContent =
-
-      text || "Live";
-
-    status.className =
-
-      "data-fresh";
-
-  }
-
-  else if(type === "stale"){
-
-    dot.classList.add("warning");
-
-    liveText.textContent =
-
-      "DATA DELAYED";
-
-    status.textContent =
-
-      text || "Showing latest valid candles";
-
-    status.className =
-
-      "data-stale";
-
-  }
-
-  else{
-
-    dot.classList.add("error");
-
-    liveText.textContent =
-
-      "MARKET DATA ERROR";
-
-    status.textContent =
-
-      text || "Market data unavailable";
-
-    status.className =
-
-      "data-error";
-
-  }
-
-  $("dataTime").textContent =
-
-    timeText || "";
-
-}
-
-/* =====================================================
-
-   ANALYSIS
-
-===================================================== */
+========================================================= */
 
 function analyze(){
 
@@ -2281,6 +2473,16 @@ function analyze(){
     return;
 
   }
+
+  /*
+
+     IMPORTANT:
+
+     candles are now kept in chronological order.
+
+     candles.at(-1) is therefore the CURRENT/latest candle.
+
+  */
 
   const data =
 
@@ -2320,25 +2522,47 @@ function analyze(){
 
   const closes =
 
-    data.map(c => c.close);
+    data.map(
+
+      c => c.close
+
+    );
 
   const latest =
 
     closes.at(-1);
 
+  const previous =
+
+    closes.at(-2);
+
   const short =
 
-    average(closes.slice(-5));
+    average(
+
+      closes.slice(-5)
+
+    );
 
   const medium =
 
-    average(closes.slice(-10));
+    average(
+
+      closes.slice(-10)
+
+    );
 
   const long =
 
-    average(closes.slice(-20));
+    average(
 
-  let trend = "SIDEWAYS";
+      closes.slice(-20)
+
+    );
+
+  let trend =
+
+    "SIDEWAYS";
 
   if(
 
@@ -2348,11 +2572,11 @@ function analyze(){
 
   ){
 
-    trend = "UPTREND";
+    trend =
 
-  }
+      "UPTREND";
 
-  else if(
+  }else if(
 
     short < medium &&
 
@@ -2360,33 +2584,69 @@ function analyze(){
 
   ){
 
-    trend = "DOWNTREND";
+    trend =
+
+      "DOWNTREND";
 
   }
 
   const structure =
 
-    detectStructure(data);
+    detectStructure(
+
+      data
+
+    );
+
+  /*
+
+     Momentum is based on the difference between
+
+     short and long averages.
+
+  */
 
   const movement =
 
-    Math.abs(short-long) /
+    Math.abs(
 
-    Math.max(Math.abs(long),1);
+      short - long
 
-  let momentum = "LOW";
+    ) /
 
-  if(movement > .0015){
+    Math.max(
 
-    momentum = "MODERATE";
+      Math.abs(long),
+
+      1
+
+    );
+
+  let momentum =
+
+    "LOW";
+
+  if(movement > 0.001){
+
+    momentum =
+
+      "MODERATE";
 
   }
 
-  if(movement > .003){
+  if(movement > 0.0025){
 
-    momentum = "STRONG";
+    momentum =
+
+      "STRONG";
 
   }
+
+  /*
+
+     Recent support/resistance.
+
+  */
 
   const recent =
 
@@ -2396,7 +2656,11 @@ function analyze(){
 
     Math.max(
 
-      ...recent.map(c => c.high)
+      ...recent.map(
+
+        c => c.high
+
+      )
 
     );
 
@@ -2404,15 +2668,27 @@ function analyze(){
 
     Math.min(
 
-      ...recent.map(c => c.low)
+      ...recent.map(
+
+        c => c.low
+
+      )
 
     );
+
+  const lastTen =
+
+    data.slice(-10);
 
   const recentHigh =
 
     Math.max(
 
-      ...data.slice(-10).map(c => c.high)
+      ...lastTen.map(
+
+        c => c.high
+
+      )
 
     );
 
@@ -2420,9 +2696,39 @@ function analyze(){
 
     Math.min(
 
-      ...data.slice(-10).map(c => c.low)
+      ...lastTen.map(
+
+        c => c.low
+
+      )
 
     );
+
+  /*
+
+     Candle direction.
+
+     This helps prevent a directional signal when
+
+     the most recent candle is moving strongly against
+
+     the detected trend.
+
+  */
+
+  const latestBull =
+
+    latest > previous;
+
+  const latestBear =
+
+    latest < previous;
+
+  /*
+
+     Setup quality.
+
+  */
 
   let quality =
 
@@ -2436,11 +2742,11 @@ function analyze(){
 
   ){
 
-    quality = "STRONG";
+    quality =
 
-  }
+      "STRONG";
 
-  else if(
+  }else if(
 
     trend !== "SIDEWAYS" &&
 
@@ -2448,9 +2754,21 @@ function analyze(){
 
   ){
 
-    quality = "MODERATE";
+    quality =
+
+      "MODERATE";
 
   }
+
+  /*
+
+     Signal.
+
+     PriceEdge intentionally remains conservative.
+
+     A trend alone is NOT enough.
+
+  */
 
   let signal =
 
@@ -2464,11 +2782,13 @@ function analyze(){
 
       structure === "HH / HL" ||
 
-      structure === "BULLISH"
+      structure === "HIGHER HIGH"
 
     ) &&
 
-    quality !== "DEVELOPING"
+    quality !== "DEVELOPING" &&
+
+    !latestBear
 
   ){
 
@@ -2486,11 +2806,13 @@ function analyze(){
 
       structure === "LH / LL" ||
 
-      structure === "BEARISH"
+      structure === "LOWER LOW"
 
     ) &&
 
-    quality !== "DEVELOPING"
+    quality !== "DEVELOPING" &&
+
+    !latestBull
 
   ){
 
@@ -2499,6 +2821,28 @@ function analyze(){
       "SELL WATCH";
 
   }
+
+  /*
+
+     Reference levels.
+
+     For bullish conditions:
+
+       entry = latest
+
+       stop  = support
+
+       target = resistance
+
+     For bearish conditions:
+
+       entry = latest
+
+       stop  = resistance
+
+       target = support
+
+  */
 
   let entry =
 
@@ -2512,7 +2856,11 @@ function analyze(){
 
     resistance;
 
-  if(trend === "DOWNTREND"){
+  if(
+
+    trend === "DOWNTREND"
+
+  ){
 
     stop =
 
@@ -2524,75 +2872,91 @@ function analyze(){
 
   }
 
-  const rd =
+  const riskDistance =
 
-    Math.abs(entry-stop);
+    Math.abs(
+
+      entry - stop
+
+    );
 
   const reward =
 
-    Math.abs(target-entry);
+    Math.abs(
+
+      target - entry
+
+    );
 
   const rr =
 
-    rd > 0
+    riskDistance > 0
 
-      ? reward/rd
+      ? reward / riskDistance
 
       : 0;
+
+  /* =====================================================
+
+     DASHBOARD VALUES
+
+  ===================================================== */
 
   $("price").innerHTML =
 
     `$${latest.toFixed(2)}
 
-     <span
+      <span
 
-       class="${
+        class="${
 
-         trend === "UPTREND"
+          trend === "UPTREND"
 
-           ? "green"
+            ? "green"
 
-           : trend === "DOWNTREND"
+            : trend === "DOWNTREND"
 
-             ? "red"
+              ? "red"
 
-             : "gold"
+              : "gold"
 
-       }"
+        }"
 
-       style="font-size:14px"
+        style="font-size:15px"
 
-     >
+      >
 
-       ${trend}
+        ${trend}
 
-     </span>`;
+      </span>`;
 
-  [
+  $("bias").textContent =
 
-    "bias",
+    trend;
 
-    "setupTrend"
+  $("setupTrend").textContent =
 
-  ].forEach(id => {
+    trend;
 
-    $(id).textContent =
+  const trendClass =
 
-      trend;
+    trend === "UPTREND"
 
-    $(id).className =
+      ? "green"
 
-      trend === "UPTREND"
+      : trend === "DOWNTREND"
 
-        ? "green"
+        ? "red"
 
-        : trend === "DOWNTREND"
+        : "gold";
 
-          ? "red"
+  $("bias").className =
 
-          : "gold";
+    trendClass;
 
-  });
+  $("setupTrend").className =
+
+    trendClass;
 
   $("structure").textContent =
 
@@ -2642,6 +3006,12 @@ function analyze(){
 
       : "—";
 
+  /* =====================================================
+
+     TREND BADGE
+
+  ===================================================== */
+
   const badge =
 
     $("trendBadge");
@@ -2676,6 +3046,12 @@ function analyze(){
 
     "STRUCTURE: " + structure;
 
+  /* =====================================================
+
+     SIGNAL
+
+  ===================================================== */
+
   const action =
 
     $("action");
@@ -2708,23 +3084,25 @@ function analyze(){
 
       "Bullish structure detected. PriceEdge is watching for a valid pullback or confirmation before entry.";
 
-  }
-
-  else if(signal === "SELL WATCH"){
+  }else if(signal === "SELL WATCH"){
 
     $("signalText").textContent =
 
       "Bearish structure detected. PriceEdge is watching for a valid retracement or confirmation before entry.";
 
-  }
-
-  else{
+  }else{
 
     $("signalText").textContent =
 
-      "Market conditions are not strong enough for a directional setup.";
+      "Market conditions are not strong enough for a directional setup. PriceEdge is waiting for confirmation.";
 
   }
+
+  /* =====================================================
+
+     PRICE ACTION PAGE
+
+  ===================================================== */
 
   $("aTrend").textContent =
 
@@ -2732,15 +3110,7 @@ function analyze(){
 
   $("aTrend").className =
 
-    trend === "UPTREND"
-
-      ? "green"
-
-      : trend === "DOWNTREND"
-
-        ? "red"
-
-        : "gold";
+    trendClass;
 
   $("aStructure").textContent =
 
@@ -2774,11 +3144,11 @@ function analyze(){
 
 }
 
-/* =====================================================
+/* =========================================================
 
    CHART
 
-===================================================== */
+========================================================= */
 
 function drawChart(){
 
@@ -2810,11 +3180,19 @@ function drawChart(){
 
   canvas.width =
 
-    Math.floor(w*dpr);
+    Math.floor(
+
+      w * dpr
+
+    );
 
   canvas.height =
 
-    Math.floor(h*dpr);
+    Math.floor(
+
+      h * dpr
+
+    );
 
   ctx.setTransform(
 
@@ -2844,6 +3222,22 @@ function drawChart(){
 
   );
 
+  ctx.fillStyle =
+
+    "#0c1322";
+
+  ctx.fillRect(
+
+    0,
+
+    0,
+
+    w,
+
+    h
+
+  );
+
   if(candles.length < 2){
 
     ctx.fillStyle =
@@ -2862,15 +3256,25 @@ function drawChart(){
 
       "Waiting for market data…",
 
-      w/2,
+      w / 2,
 
-      h/2
+      h / 2
 
     );
 
     return;
 
   }
+
+  /*
+
+     Keep the newest candle on the RIGHT.
+
+     candles is chronological:
+
+       oldest → newest
+
+  */
 
   const visible =
 
@@ -2888,7 +3292,7 @@ function drawChart(){
 
       0,
 
-      candles.length-visible
+      candles.length - visible
 
     );
 
@@ -2908,17 +3312,11 @@ function drawChart(){
 
     );
 
-  /*
-
-     candles are now stored oldest → newest.
-
-     This is important for correct chart direction.
-
-  */
-
   const end =
 
-    candles.length-chartOffset;
+    candles.length -
+
+    chartOffset;
 
   const start =
 
@@ -2926,7 +3324,7 @@ function drawChart(){
 
       0,
 
-      end-visible
+      end - visible
 
     );
 
@@ -2942,11 +3340,19 @@ function drawChart(){
 
   const highs =
 
-    data.map(c => +c.high);
+    data.map(
+
+      c => +c.high
+
+    );
 
   const lows =
 
-    data.map(c => +c.low);
+    data.map(
+
+      c => +c.low
+
+    );
 
   let max =
 
@@ -2956,67 +3362,71 @@ function drawChart(){
 
     Math.min(...lows);
 
-  const raw =
+  const rawRange =
 
-    max-min || 1;
+    max - min || 1;
 
-  const pad =
+  const padding =
 
-    raw*.12;
+    rawRange * 0.12;
 
-  max += pad;
+  max += padding;
 
-  min -= pad;
+  min -= padding;
 
-  const left = 12;
+  const left =
 
-  const right = 70;
+    12;
 
-  const top = 30;
+  const right =
 
-  const bottom = 25;
+    72;
+
+  const top =
+
+    35;
+
+  const bottom =
+
+    28;
 
   const cw =
 
-    w-left-right;
+    w - left - right;
 
   const ch =
 
-    h-top-bottom;
+    h - top - bottom;
 
   const range =
 
-    max-min;
+    max - min;
 
-  const y =
+  function y(price){
 
-    p =>
+    return (
 
       top +
 
-      ((max-p)/range)*ch;
+      (
 
-  ctx.fillStyle =
+        (max - price) /
 
-    "#0c1322";
+        range
 
-  ctx.fillRect(
+      ) *
 
-    0,
+      ch
 
-    0,
+    );
 
-    w,
+  }
 
-    h
-
-  );
-
-  /*
+  /* =====================================================
 
      GRID
 
-  */
+  ===================================================== */
 
   ctx.strokeStyle =
 
@@ -3026,13 +3436,21 @@ function drawChart(){
 
     1;
 
-  for(let i=0;i<=6;i++){
+  for(
+
+    let i = 0;
+
+    i <= 6;
+
+    i++
+
+  ){
 
     const gy =
 
       top +
 
-      ch/6*i;
+      (ch / 6) * i;
 
     ctx.beginPath();
 
@@ -3046,7 +3464,7 @@ function drawChart(){
 
     ctx.lineTo(
 
-      w-right,
+      w - right,
 
       gy
 
@@ -3058,7 +3476,7 @@ function drawChart(){
 
       max -
 
-      range/6*i;
+      (range / 6) * i;
 
     ctx.fillStyle =
 
@@ -3076,23 +3494,23 @@ function drawChart(){
 
       level.toFixed(2),
 
-      w-right+7,
+      w - right + 8,
 
-      gy+3
+      gy + 3
 
     );
 
   }
 
-  /*
+  /* =====================================================
 
      CANDLES
 
-  */
+  ===================================================== */
 
   const spacing =
 
-    cw/data.length;
+    cw / data.length;
 
   const bodyWidth =
 
@@ -3104,171 +3522,199 @@ function drawChart(){
 
         12,
 
-        spacing*.62
+        spacing * .62
 
       )
 
     );
 
-  data.forEach((c,index)=>{
+  data.forEach(
 
-    const o =
+    (c,index) => {
 
-      +c.open;
+      const o =
 
-    const hi =
+        +c.open;
 
-      +c.high;
+      const hi =
 
-    const lo =
+        +c.high;
 
-      +c.low;
+      const lo =
 
-    const cl =
+        +c.low;
 
-      +c.close;
+      const cl =
 
-    if(
+        +c.close;
 
-      ![
+      if(
 
-        o,
+        ![
 
-        hi,
+          o,
 
-        lo,
+          hi,
 
-        cl
+          lo,
 
-      ].every(Number.isFinite)
+          cl
 
-    ){
+        ].every(
 
-      return;
+          Number.isFinite
 
-    }
+        )
 
-    const x =
+      ){
 
-      left +
+        return;
 
-      spacing*index +
+      }
 
-      spacing/2;
+      const x =
 
-    const oy =
+        left +
 
-      y(o);
+        spacing * index +
 
-    const cy =
+        spacing / 2;
 
-      y(cl);
+      const oy =
 
-    const hy =
+        y(o);
 
-      y(hi);
+      const cy =
 
-    const ly =
+        y(cl);
 
-      y(lo);
+      const hy =
 
-    const bull =
+        y(hi);
 
-      cl >= o;
+      const ly =
 
-    ctx.beginPath();
+        y(lo);
 
-    ctx.moveTo(
+      const bull =
 
-      x,
+        cl >= o;
 
-      hy
+      /*
 
-    );
+         Wick
 
-    ctx.lineTo(
+      */
 
-      x,
+      ctx.beginPath();
 
-      ly
+      ctx.moveTo(
 
-    );
+        x,
 
-    ctx.strokeStyle =
-
-      bull
-
-        ? "#4ade80"
-
-        : "#fb7185";
-
-    ctx.lineWidth =
-
-      1.5;
-
-    ctx.stroke();
-
-    let bt =
-
-      Math.min(
-
-        oy,
-
-        cy
+        hy
 
       );
 
-    let bb =
+      ctx.lineTo(
 
-      Math.max(
+        x,
 
-        oy,
-
-        cy
+        ly
 
       );
 
-    let bh =
+      ctx.strokeStyle =
 
-      bb-bt;
+        bull
 
-    if(bh < 3){
+          ? "#4ade80"
 
-      bh = 3;
+          : "#fb7185";
 
-      bt =
+      ctx.lineWidth =
 
-        (oy+cy)/2-1.5;
+        1.5;
+
+      ctx.stroke();
+
+      /*
+
+         Body
+
+      */
+
+      let bt =
+
+        Math.min(
+
+          oy,
+
+          cy
+
+        );
+
+      let bb =
+
+        Math.max(
+
+          oy,
+
+          cy
+
+        );
+
+      let bh =
+
+        bb - bt;
+
+      if(bh < 3){
+
+        bh = 3;
+
+        bt =
+
+          (
+
+            oy +
+
+            cy
+
+          ) / 2 -
+
+          1.5;
+
+      }
+
+      ctx.fillStyle =
+
+        bull
+
+          ? "#4ade80"
+
+          : "#fb7185";
+
+      ctx.fillRect(
+
+        x - bodyWidth / 2,
+
+        bt,
+
+        bodyWidth,
+
+        bh
+
+      );
 
     }
 
-    ctx.fillStyle =
+  );
 
-      bull
-
-        ? "#4ade80"
-
-        : "#fb7185";
-
-    ctx.fillRect(
-
-      x-bodyWidth/2,
-
-      bt,
-
-      bodyWidth,
-
-      bh
-
-    );
-
-  });
-
-  /*
+  /* =====================================================
 
      SUPPORT / RESISTANCE
 
-  */
+  ===================================================== */
 
   const recent =
 
@@ -3278,7 +3724,11 @@ function drawChart(){
 
     Math.max(
 
-      ...recent.map(c => +c.high)
+      ...recent.map(
+
+        c => +c.high
+
+      )
 
     );
 
@@ -3286,13 +3736,17 @@ function drawChart(){
 
     Math.min(
 
-      ...recent.map(c => +c.low)
+      ...recent.map(
+
+        c => +c.low
+
+      )
 
     );
 
   function levelLine(
 
-    p,
+    price,
 
     label
 
@@ -3300,7 +3754,7 @@ function drawChart(){
 
     const yy =
 
-      y(p);
+      y(price);
 
     ctx.beginPath();
 
@@ -3314,7 +3768,7 @@ function drawChart(){
 
     ctx.lineTo(
 
-      w-right,
+      w - right,
 
       yy
 
@@ -3326,11 +3780,15 @@ function drawChart(){
 
     ctx.setLineDash([
 
-      5,
+      6,
 
-      5
+      6
 
     ]);
+
+    ctx.lineWidth =
+
+      1.2;
 
     ctx.stroke();
 
@@ -3352,9 +3810,9 @@ function drawChart(){
 
       label,
 
-      left+5,
+      left + 6,
 
-      yy-5
+      yy - 6
 
     );
 
@@ -3376,17 +3834,17 @@ function drawChart(){
 
   );
 
-  /*
+  /* =====================================================
 
      CURRENT PRICE
 
-  */
+  ===================================================== */
 
   const latest =
 
     +data.at(-1).close;
 
-  const cy =
+  const currentY =
 
     y(latest);
 
@@ -3396,15 +3854,15 @@ function drawChart(){
 
     left,
 
-    cy
+    currentY
 
   );
 
   ctx.lineTo(
 
-    w-right,
+    w - right,
 
-    cy
+    currentY
 
   );
 
@@ -3418,9 +3876,9 @@ function drawChart(){
 
   ctx.setLineDash([
 
-    6,
+    7,
 
-    4
+    5
 
   ]);
 
@@ -3444,25 +3902,21 @@ function drawChart(){
 
     latest.toFixed(2),
 
-    w-right+7,
+    w - right + 8,
 
-    cy-5
+    currentY - 6
 
   );
-
-  /*
-
-     CURRENT PRICE DOT
-
-  */
 
   const lastX =
 
     left +
 
-    spacing*(data.length-1) +
+    spacing *
 
-    spacing/2;
+    (data.length - 1) +
+
+    spacing / 2;
 
   ctx.beginPath();
 
@@ -3470,23 +3924,23 @@ function drawChart(){
 
     lastX,
 
-    cy,
+    currentY,
 
-    3.5,
+    4,
 
     0,
 
-    Math.PI*2
+    Math.PI * 2
 
   );
 
   ctx.fill();
 
-  /*
+  /* =====================================================
 
      TREND LABEL
 
-  */
+  ===================================================== */
 
   if(candles.length >= 20){
 
@@ -3520,13 +3974,15 @@ function drawChart(){
 
     if(fast > slow){
 
-      text = "↑ UPTREND";
+      text =
 
-    }
+        "↑ UPTREND";
 
-    if(fast < slow){
+    }else if(fast < slow){
 
-      text = "↓ DOWNTREND";
+      text =
+
+        "↓ DOWNTREND";
 
     }
 
@@ -3554,19 +4010,19 @@ function drawChart(){
 
       text,
 
-      left+6,
+      left + 6,
 
-      top-10
+      top - 14
 
     );
 
   }
 
-  /*
+  /* =====================================================
 
-     CHART FOOTER
+     FOOTER
 
-  */
+  ===================================================== */
 
   ctx.fillStyle =
 
@@ -3584,9 +4040,9 @@ function drawChart(){
 
     "XAU/USD · 5 MIN",
 
-    left+cw/2,
+    left + cw / 2,
 
-    h-8
+    h - 8
 
   );
 
@@ -3608,7 +4064,7 @@ function drawChart(){
 
       "HISTORY MODE",
 
-      w-8,
+      w - 8,
 
       18
 
@@ -3618,27 +4074,33 @@ function drawChart(){
 
 }
 
-/* =====================================================
+/* =========================================================
 
    CHART NAVIGATION
 
-===================================================== */
+========================================================= */
 
 function chartOlder(){
+
+  const maxOffset =
+
+    Math.max(
+
+      0,
+
+      candles.length -
+
+      CHART_VISIBLE_CANDLES
+
+    );
 
   chartOffset =
 
     Math.min(
 
-      chartOffset+10,
+      chartOffset + 10,
 
-      Math.max(
-
-        0,
-
-        candles.length-CHART_VISIBLE_CANDLES
-
-      )
+      maxOffset
 
     );
 
@@ -3654,7 +4116,7 @@ function chartNewer(){
 
       0,
 
-      chartOffset-10
+      chartOffset - 10
 
     );
 
@@ -3672,11 +4134,11 @@ function chartLive(){
 
 }
 
-/* =====================================================
+/* =========================================================
 
    CHART TOUCH / MOUSE
 
-===================================================== */
+========================================================= */
 
 const chartCanvas =
 
@@ -3708,7 +4170,7 @@ function moveChartByPixels(
 
       Math.round(
 
-        Math.abs(deltaX)/12
+        Math.abs(deltaX) / 12
 
       )
 
@@ -3720,7 +4182,7 @@ function moveChartByPixels(
 
       0,
 
-      candles.length-
+      candles.length -
 
       CHART_VISIBLE_CANDLES
 
@@ -3736,15 +4198,15 @@ function moveChartByPixels(
 
         chartDragStartOffset +
 
-        (
+          (
 
-          deltaX < 0
+            deltaX < 0
 
-            ? move
+              ? move
 
-            : -move
+              : -move
 
-        ),
+          ),
 
         maxOffset
 
@@ -3762,11 +4224,7 @@ chartCanvas.addEventListener(
 
   e => {
 
-    if(!e.touches.length){
-
-      return;
-
-    }
+    if(!e.touches.length)return;
 
     chartDragging = true;
 
@@ -3830,7 +4288,9 @@ chartCanvas.addEventListener(
 
   () => {
 
-    chartDragging = false;
+    chartDragging =
+
+      false;
 
   }
 
@@ -3842,7 +4302,9 @@ chartCanvas.addEventListener(
 
   e => {
 
-    chartDragging = true;
+    chartDragging =
+
+      true;
 
     chartDragStartX =
 
@@ -3870,7 +4332,9 @@ window.addEventListener(
 
       moveChartByPixels(
 
-        e.clientX-chartDragStartX
+        e.clientX -
+
+        chartDragStartX
 
       );
 
@@ -3886,7 +4350,9 @@ window.addEventListener(
 
   () => {
 
-    chartDragging = false;
+    chartDragging =
+
+      false;
 
     chartCanvas.style.cursor =
 
@@ -3908,51 +4374,139 @@ chartCanvas.style.cursor =
 
   "grab";
 
-/* =====================================================
+/* =========================================================
+
+   MARKET STATUS
+
+========================================================= */
+
+function setMarketStatus(
+
+  type,
+
+  text
+
+){
+
+  const status =
+
+    $("liveStatus");
+
+  status.className =
+
+    "live " +
+
+    (
+
+      type === "cached"
+
+        ? "cached"
+
+        : type === "error"
+
+          ? "error"
+
+          : ""
+
+    );
+
+  $("liveStatusText").textContent =
+
+    text;
+
+}
+
+function formatUpdateTime(
+
+  timestamp
+
+){
+
+  if(!timestamp){
+
+    return "Not updated yet";
+
+  }
+
+  const date =
+
+    new Date(timestamp);
+
+  return "Updated " +
+
+    date.toLocaleTimeString(
+
+      [],
+
+      {
+
+        hour:"2-digit",
+
+        minute:"2-digit",
+
+        second:"2-digit"
+
+      }
+
+    );
+
+}
+
+/* =========================================================
 
    MARKET DATA
 
-===================================================== */
+========================================================= */
 
-async function loadMarket(){
+async function loadMarket(
+
+  manual = false
+
+){
 
   /*
 
      Prevent duplicate requests.
 
+     This is especially important if the user presses
+
+     Refresh while an existing request is still running.
+
   */
 
-  if(marketRequestRunning){
+  if(marketLoading){
 
     return;
 
   }
 
-  marketRequestRunning = true;
-
-  const previousOffset =
-
-    chartOffset;
+  marketLoading = true;
 
   try{
 
-    /*
+    if(
 
-       Do not constantly show an error while
+      manual ||
 
-       existing valid candles remain on screen.
+      !candles.length
 
-    */
+    ){
 
-    if(!candles.length){
+      setMarketStatus(
 
-      $("signalText").textContent =
+        "live",
 
-        "Connecting to live XAU/USD market data…";
+        "CONNECTING TO MARKET"
+
+      );
+
+      $("dataReceived").textContent =
+
+        "Requesting latest XAU/USD data…";
 
     }
 
-    const r =
+    const response =
 
       await fetch(
 
@@ -3960,25 +4514,21 @@ async function loadMarket(){
 
         {
 
-          cache:"no-store",
-
-          headers:{
-
-            "Accept":"application/json"
-
-          }
+          cache:"no-store"
 
         }
 
       );
 
-    let d = {};
+    let d = null;
 
     try{
 
-      d = await r.json();
+      d =
 
-    }catch(jsonError){
+        await response.json();
+
+    }catch(error){
 
       throw new Error(
 
@@ -3988,13 +4538,17 @@ async function loadMarket(){
 
     }
 
-    if(!r.ok){
+    if(!response.ok){
 
       throw new Error(
 
-        d.error ||
+        d &&
 
-        "Market-data request failed."
+        d.error
+
+          ? d.error
+
+          : "Market-data request failed."
 
       );
 
@@ -4010,7 +4564,7 @@ async function loadMarket(){
 
       throw new Error(
 
-        "No candle data was returned."
+        "No XAU/USD candle data was returned."
 
       );
 
@@ -4018,19 +4572,27 @@ async function loadMarket(){
 
     /*
 
-       IMPORTANT:
+       CRITICAL FIX:
 
-       The PriceEdge server already returns
+       DO NOT REVERSE THE DATA.
 
-       candles in chronological order:
+       The server requests:
 
-       OLD → NEW
+           order: "asc"
 
-       Do NOT reverse them.
+       Therefore Twelve Data returns:
+
+           oldest → newest
+
+       We keep that order so that:
+
+           candles.at(-1)
+
+       is the current candle.
 
     */
 
-    const cleaned =
+    const clean =
 
       d.values
 
@@ -4062,11 +4624,11 @@ async function loadMarket(){
 
         );
 
-    if(!cleaned.length){
+    if(!clean.length){
 
       throw new Error(
 
-        "Market data contained no valid candles."
+        "The market provider returned unusable candle data."
 
       );
 
@@ -4074,7 +4636,7 @@ async function loadMarket(){
 
     candles =
 
-      cleaned;
+      clean;
 
     const maxOffset =
 
@@ -4082,7 +4644,7 @@ async function loadMarket(){
 
         0,
 
-        candles.length-
+        candles.length -
 
         CHART_VISIBLE_CANDLES
 
@@ -4092,89 +4654,73 @@ async function loadMarket(){
 
       Math.min(
 
-        previousOffset,
+        chartOffset,
 
         maxOffset
 
       );
 
-    lastSuccessfulMarketUpdate =
+    lastSuccessfulUpdate =
 
       Date.now();
 
-    lastMarketError =
+    $("dataReceived").textContent =
 
-      "";
+      d.cached
 
-    const serverUpdated =
+        ? "Latest valid data available"
 
-      d.updatedAt
+        : "Live data received";
 
-        ? new Date(d.updatedAt)
+    $("lastUpdated").textContent =
 
-        : new Date();
+      formatUpdateTime(
 
-    const timeText =
+        d.updatedAt ||
 
-      serverUpdated.toLocaleTimeString(
-
-        [],
-
-        {
-
-          hour:"2-digit",
-
-          minute:"2-digit",
-
-          second:"2-digit"
-
-        }
+        Date.now()
 
       );
 
-    if(d.stale || d.cached){
+    if(d.cached){
+
+      /*
+
+         Server successfully returned its cached candles
+
+         because Twelve Data temporarily failed.
+
+      */
 
       setMarketStatus(
 
-        "stale",
+        "cached",
 
-        "Latest valid market data",
-
-        "Updated " + timeText
+        "CACHED MARKET DATA"
 
       );
+
+      if(d.warning){
+
+        $("dataReceived").textContent =
+
+          d.warning;
+
+      }
 
     }else{
 
       setMarketStatus(
 
-        "fresh",
+        "live",
 
-        "Live data received",
-
-        "Updated " + timeText
+        "LIVE MARKET DATA"
 
       );
 
     }
 
     analyze();
-
-    /*
-
-       If server returned cached data,
-
-       tell the user but keep the chart alive.
-
-    */
-
-    if(d.warning){
-
-      $("signalText").textContent =
-
-        d.warning;
-
-    }
 
   }catch(error){
 
@@ -4186,21 +4732,15 @@ async function loadMarket(){
 
     );
 
-    lastMarketError =
-
-      error.message;
-
     /*
 
-       IMPORTANT:
+       If existing candles are available, DO NOT destroy
 
-       If candles already exist, don't destroy
+       the dashboard.
 
-       the analysis just because the provider
+       Keep the last valid chart and tell the user that
 
-       temporarily failed.
-
-       Keep the previous valid chart visible.
+       the newest request failed.
 
     */
 
@@ -4208,41 +4748,35 @@ async function loadMarket(){
 
       setMarketStatus(
 
-        "stale",
+        "cached",
 
-        "Live update temporarily unavailable",
-
-        lastSuccessfulMarketUpdate
-
-          ? "Last good update " +
-
-            new Date(
-
-              lastSuccessfulMarketUpdate
-
-            ).toLocaleTimeString(
-
-              [],
-
-              {
-
-                hour:"2-digit",
-
-                minute:"2-digit",
-
-                second:"2-digit"
-
-              }
-
-            )
-
-          : ""
+        "LAST VALID MARKET DATA"
 
       );
 
-      $("signalText").textContent =
+      $("dataReceived").textContent =
 
-        "Live market update is temporarily unavailable. PriceEdge is continuing to display the latest valid market data.";
+        "Latest refresh failed — showing last valid data";
+
+      $("lastUpdated").textContent =
+
+        lastSuccessfulUpdate
+
+          ? formatUpdateTime(
+
+              lastSuccessfulUpdate
+
+            )
+
+          : "Previous data available";
+
+      /*
+
+         Keep the existing analysis.
+
+         We do NOT replace it with "DATA ERROR".
+
+      */
 
       drawChart();
 
@@ -4252,17 +4786,25 @@ async function loadMarket(){
 
         "error",
 
-        "Market data unavailable"
+        "MARKET DATA UNAVAILABLE"
 
       );
 
+      $("dataReceived").textContent =
+
+        "No valid market data received";
+
+      $("lastUpdated").textContent =
+
+        "Waiting for provider";
+
       $("trendBadge").className =
 
-        "trend-badge side";
+        "trend-badge error";
 
       $("trendBadge").textContent =
 
-        "DATA ERROR";
+        "DATA UNAVAILABLE";
 
       $("action").className =
 
@@ -4274,7 +4816,9 @@ async function loadMarket(){
 
       $("signalText").textContent =
 
-        "Market data is temporarily unavailable. PriceEdge will automatically retry.";
+        error.message ||
+
+        "Market data is temporarily unavailable.";
 
       drawChart();
 
@@ -4282,7 +4826,7 @@ async function loadMarket(){
 
   }finally{
 
-    marketRequestRunning =
+    marketLoading =
 
       false;
 
@@ -4290,11 +4834,23 @@ async function loadMarket(){
 
 }
 
-/* =====================================================
+/* =========================================================
 
-   HTML ESCAPING
+   MANUAL REFRESH
 
-===================================================== */
+========================================================= */
+
+function manualRefresh(){
+
+  loadMarket(true);
+
+}
+
+/* =========================================================
+
+   HTML ESCAPE
+
+========================================================= */
 
 function escapeHtml(v){
 
@@ -4312,11 +4868,11 @@ function escapeHtml(v){
 
 }
 
-/* =====================================================
+/* =========================================================
 
    START PRICEEDGE
 
-===================================================== */
+========================================================= */
 
 window.addEventListener(
 
@@ -4328,7 +4884,7 @@ window.addEventListener(
 
 /*
 
-   Account
+   Restore account.
 
 */
 
@@ -4348,25 +4904,21 @@ loadMarket();
 
    IMPORTANT:
 
-   Previously this was:
+   60 seconds, NOT 5 seconds.
 
-   setInterval(loadMarket,5000);
+   This greatly reduces unnecessary provider requests
 
-   That can trigger Twelve Data rate limits.
-
-   It is now approximately once every 60 seconds.
+   and helps prevent Twelve Data HTTP/rate-limit errors.
 
 */
 
-marketTimer =
+setInterval(
 
-  setInterval(
+  () => loadMarket(false),
 
-    loadMarket,
+  MARKET_REFRESH_MS
 
-    MARKET_REFRESH_MS
-
-  );
+);
 
 </script>
 
