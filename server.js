@@ -40,19 +40,49 @@ const TWELVE_DATA_URL =
 
   "https://api.twelvedata.com/time_series";
 
-/*
-
-   PriceEdge is designed around:
-
-   XAU/USD
-
-   5-minute candles
-
-*/
-
 const DEFAULT_SYMBOL = "XAU/USD";
 
 const DEFAULT_INTERVAL = "5min";
+
+/*
+
+  The browser can request every 5 seconds,
+
+  but we don't need to hit Twelve Data
+
+  every 5 seconds.
+
+*/
+
+const MARKET_REFRESH_MS = 15000;
+
+/*
+
+  Maximum age of cached data that we are
+
+  willing to return during a temporary
+
+  provider problem.
+
+*/
+
+const CACHE_MAX_AGE_MS = 10 * 60 * 1000;
+
+/*
+
+  Provider request timeout.
+
+*/
+
+const PROVIDER_TIMEOUT_MS = 10000;
+
+/*
+
+  Number of attempts for temporary errors.
+
+*/
+
+const MAX_RETRIES = 3;
 
 /* =========================================================
 
@@ -71,6 +101,16 @@ app.use(
     extended: true
 
   })
+
+);
+
+app.use(
+
+  express.static(
+
+    path.join(__dirname, "public")
+
+  )
 
 );
 
@@ -136,22 +176,6 @@ db.exec(`
 
 /* =========================================================
 
-   STATIC FRONTEND
-
-========================================================= */
-
-app.use(
-
-  express.static(
-
-    path.join(__dirname, "public")
-
-  )
-
-);
-
-/* =========================================================
-
    HEALTH CHECK
 
 ========================================================= */
@@ -171,6 +195,10 @@ app.get("/api/health", (req, res) => {
         ? "configured"
 
         : "missing API key",
+
+    market: DEFAULT_SYMBOL,
+
+    interval: DEFAULT_INTERVAL,
 
     time: new Date().toISOString()
 
@@ -388,7 +416,7 @@ app.post(
 
         tokenFor(user);
 
-      return res.status(201).json({
+      res.status(201).json({
 
         token,
 
@@ -406,7 +434,7 @@ app.post(
 
       );
 
-      return res.status(500).json({
+      res.status(500).json({
 
         error:
 
@@ -512,7 +540,7 @@ app.post(
 
         tokenFor(safeUser);
 
-      return res.json({
+      res.json({
 
         token,
 
@@ -530,7 +558,7 @@ app.post(
 
       );
 
-      return res.status(500).json({
+      res.status(500).json({
 
         error:
 
@@ -558,33 +586,61 @@ app.get(
 
   (req, res) => {
 
-    const user =
+    try {
 
-      db.prepare(`
+      const user =
 
-        SELECT id, email, created_at
+        db.prepare(`
 
-        FROM users
+          SELECT
 
-        WHERE id = ?
+            id,
 
-      `).get(req.user.id);
+            email,
 
-    if (!user) {
+            created_at
 
-      return res.status(404).json({
+          FROM users
 
-        error: "User not found."
+          WHERE id = ?
+
+        `).get(req.user.id);
+
+      if (!user) {
+
+        return res.status(404).json({
+
+          error: "User not found."
+
+        });
+
+      }
+
+      res.json({
+
+        user
+
+      });
+
+    } catch (error) {
+
+      console.error(
+
+        "ME ERROR:",
+
+        error
+
+      );
+
+      res.status(500).json({
+
+        error:
+
+          "Unable to load account."
 
       });
 
     }
-
-    res.json({
-
-      user
-
-    });
 
   }
 
@@ -592,265 +648,31 @@ app.get(
 
 /* =========================================================
 
-   TWELVE DATA REQUEST
+   MARKET CACHE
 
 ========================================================= */
 
 /*
 
-   This function handles temporary provider failures.
-
-   Important:
-
-   - HTTP errors are detected properly.
-
-   - Twelve Data API errors are detected even when
-
-     the HTTP status is 200.
-
-   - Timeout is handled.
-
-   - Provider error messages are preserved.
+  Cache is kept separately for each symbol + interval.
 
 */
 
-async function requestTwelveData(params) {
-
-  if (!TWELVE_DATA_API_KEY) {
-
-    throw new Error(
-
-      "Twelve Data API key is not configured on the server."
-
-    );
-
-  }
-
-  const url =
-
-    new URL(
-
-      TWELVE_DATA_URL
-
-    );
-
-  Object.entries({
-
-    ...params,
-
-    apikey: TWELVE_DATA_API_KEY
-
-  }).forEach(
-
-    ([key, value]) => {
-
-      url.searchParams.set(
-
-        key,
-
-        value
-
-      );
-
-    }
-
-  );
-
-  const controller =
-
-    new AbortController();
-
-  const timeout =
-
-    setTimeout(
-
-      () => controller.abort(),
-
-      10000
-
-    );
-
-  try {
-
-    const response =
-
-      await fetch(
-
-        url,
-
-        {
-
-          method: "GET",
-
-          headers: {
-
-            Accept:
-
-              "application/json"
-
-          },
-
-          cache: "no-store",
-
-          signal:
-
-            controller.signal
-
-        }
-
-      );
-
-    let data = null;
-
-    try {
-
-      data =
-
-        await response.json();
-
-    } catch (jsonError) {
-
-      throw new Error(
-
-        "The market-data provider returned invalid JSON."
-
-      );
-
-    }
-
-    /*
-
-       HTTP-level error.
-
-    */
-
-    if (!response.ok) {
-
-      const providerMessage =
-
-        data &&
-
-        (
-
-          data.message ||
-
-          data.code ||
-
-          data.status
-
-        );
-
-      throw new Error(
-
-        providerMessage
-
-          ? `Market-data provider HTTP ${response.status}: ${providerMessage}`
-
-          : `Market-data provider HTTP ${response.status}.`
-
-      );
-
-    }
-
-    /*
-
-       Twelve Data can return an API error
-
-       inside a HTTP 200 response.
-
-    */
-
-    if (
-
-      data &&
-
-      (
-
-        data.status === "error" ||
-
-        data.code === "error" ||
-
-        data.message &&
-
-        !Array.isArray(data.values)
-
-      )
-
-    ) {
-
-      throw new Error(
-
-        data.message ||
-
-        "Twelve Data returned a market-data error."
-
-      );
-
-    }
-
-    return data;
-
-  } catch (error) {
-
-    if (
-
-      error.name ===
-
-      "AbortError"
-
-    ) {
-
-      throw new Error(
-
-        "Market-data provider timed out."
-
-      );
-
-    }
-
-    throw error;
-
-  } finally {
-
-    clearTimeout(timeout);
-
-  }
-
-}
-
-/* =========================================================
-
-   MARKET DATA CACHE
-
-========================================================= */
+const marketCache = new Map();
 
 /*
 
-   This is important for your intermittent error.
+  Prevent multiple simultaneous requests
 
-   If Twelve Data temporarily fails, PriceEdge can return
-
-   the most recent valid candles instead of destroying
-
-   the chart.
+  for the same market.
 
 */
 
-let marketCache = {
-
-  key: null,
-
-  values: [],
-
-  updatedAt: 0,
-
-  lastError: null
-
-};
+const activeRequests = new Map();
 
 /* =========================================================
 
-   CLEAN CANDLE DATA
+   CLEAN CANDLES
 
 ========================================================= */
 
@@ -866,25 +688,15 @@ function cleanCandles(values) {
 
     .map(c => ({
 
-      datetime:
+      datetime: c.datetime,
 
-        c.datetime,
+      open: Number(c.open),
 
-      open:
+      high: Number(c.high),
 
-        Number(c.open),
+      low: Number(c.low),
 
-      high:
-
-        Number(c.high),
-
-      low:
-
-        Number(c.low),
-
-      close:
-
-        Number(c.close)
+      close: Number(c.close)
 
     }))
 
@@ -906,7 +718,711 @@ function cleanCandles(values) {
 
 /* =========================================================
 
-   MARKET CANDLES
+   BUILD TWELVE DATA URL
+
+========================================================= */
+
+function buildTwelveDataUrl(
+
+  symbol,
+
+  interval
+
+) {
+
+  const url =
+
+    new URL(
+
+      TWELVE_DATA_URL
+
+    );
+
+  url.searchParams.set(
+
+    "symbol",
+
+    symbol
+
+  );
+
+  url.searchParams.set(
+
+    "interval",
+
+    interval
+
+  );
+
+  url.searchParams.set(
+
+    "outputsize",
+
+    "200"
+
+  );
+
+  url.searchParams.set(
+
+    "order",
+
+    "asc"
+
+  );
+
+  url.searchParams.set(
+
+    "apikey",
+
+    TWELVE_DATA_API_KEY
+
+  );
+
+  return url;
+
+}
+
+/* =========================================================
+
+   REQUEST TWELVE DATA
+
+========================================================= */
+
+async function requestTwelveData(
+
+  symbol,
+
+  interval
+
+) {
+
+  if (!TWELVE_DATA_API_KEY) {
+
+    throw new Error(
+
+      "Twelve Data API key is not configured on the server."
+
+    );
+
+  }
+
+  const url =
+
+    buildTwelveDataUrl(
+
+      symbol,
+
+      interval
+
+    );
+
+  let lastError = null;
+
+  for (
+
+    let attempt = 1;
+
+    attempt <= MAX_RETRIES;
+
+    attempt++
+
+  ) {
+
+    const controller =
+
+      new AbortController();
+
+    const timeout =
+
+      setTimeout(
+
+        () => {
+
+          controller.abort();
+
+        },
+
+        PROVIDER_TIMEOUT_MS
+
+      );
+
+    try {
+
+      console.log(
+
+        `Market request attempt ${attempt}/${MAX_RETRIES}: ${symbol} ${interval}`
+
+      );
+
+      const response =
+
+        await fetch(
+
+          url,
+
+          {
+
+            method: "GET",
+
+            headers: {
+
+              Accept:
+
+                "application/json"
+
+            },
+
+            cache: "no-store",
+
+            signal:
+
+              controller.signal
+
+          }
+
+        );
+
+      let data;
+
+      try {
+
+        data =
+
+          await response.json();
+
+      } catch (jsonError) {
+
+        throw new Error(
+
+          "Market-data provider returned invalid JSON."
+
+        );
+
+      }
+
+      /* -----------------------------------------
+
+         HTTP ERROR
+
+      ----------------------------------------- */
+
+      if (!response.ok) {
+
+        let message =
+
+          data?.message ||
+
+          data?.code ||
+
+          "Unknown provider error.";
+
+        /*
+
+          Give useful information for
+
+          common provider failures.
+
+        */
+
+        if (
+
+          response.status === 429
+
+        ) {
+
+          message =
+
+            "Provider rate limit reached.";
+
+        }
+
+        lastError =
+
+          new Error(
+
+            `Market-data provider HTTP ${response.status}: ${message}`
+
+          );
+
+        /*
+
+          Retry temporary errors.
+
+        */
+
+        if (
+
+          response.status === 429 ||
+
+          response.status >= 500
+
+        ) {
+
+          await delay(
+
+            700 * attempt
+
+          );
+
+          continue;
+
+        }
+
+        throw lastError;
+
+      }
+
+      /* -----------------------------------------
+
+         TWELVE DATA API ERROR INSIDE HTTP 200
+
+      ----------------------------------------- */
+
+      if (
+
+        data &&
+
+        (
+
+          data.status === "error" ||
+
+          (
+
+            data.message &&
+
+            !Array.isArray(
+
+              data.values
+
+            )
+
+          )
+
+        )
+
+      ) {
+
+        lastError =
+
+          new Error(
+
+            data.message ||
+
+            "Twelve Data returned a market-data error."
+
+          );
+
+        /*
+
+          Provider API errors may be temporary.
+
+          Retry them.
+
+        */
+
+        if (
+
+          attempt < MAX_RETRIES
+
+        ) {
+
+          await delay(
+
+            700 * attempt
+
+          );
+
+          continue;
+
+        }
+
+        throw lastError;
+
+      }
+
+      /* -----------------------------------------
+
+         VALIDATE VALUES
+
+      ----------------------------------------- */
+
+      if (
+
+        !data ||
+
+        !Array.isArray(
+
+          data.values
+
+        )
+
+      ) {
+
+        throw new Error(
+
+          "Twelve Data returned no candle array."
+
+        );
+
+      }
+
+      const values =
+
+        cleanCandles(
+
+          data.values
+
+        );
+
+      if (!values.length) {
+
+        throw new Error(
+
+          "Twelve Data returned no valid candles."
+
+        );
+
+      }
+
+      console.log(
+
+        `Market request successful: ${values.length} candles`
+
+      );
+
+      return values;
+
+    } catch (error) {
+
+      lastError = error;
+
+      if (
+
+        error.name ===
+
+        "AbortError"
+
+      ) {
+
+        lastError =
+
+          new Error(
+
+            "Market-data provider timed out."
+
+          );
+
+      }
+
+      console.error(
+
+        `Market request attempt ${attempt} failed:`,
+
+        lastError.message
+
+      );
+
+      /*
+
+        Retry timeout/network failures.
+
+      */
+
+      if (
+
+        attempt < MAX_RETRIES
+
+      ) {
+
+        await delay(
+
+          700 * attempt
+
+        );
+
+        continue;
+
+      }
+
+    } finally {
+
+      clearTimeout(
+
+        timeout
+
+      );
+
+    }
+
+  }
+
+  throw (
+
+    lastError ||
+
+    new Error(
+
+      "Market-data provider request failed."
+
+    )
+
+  );
+
+}
+
+/* =========================================================
+
+   DELAY
+
+========================================================= */
+
+function delay(ms) {
+
+  return new Promise(
+
+    resolve =>
+
+      setTimeout(
+
+        resolve,
+
+        ms
+
+      )
+
+  );
+
+}
+
+/* =========================================================
+
+   FETCH MARKET DATA WITH CACHE
+
+========================================================= */
+
+async function getMarketData(
+
+  symbol,
+
+  interval
+
+) {
+
+  const key =
+
+    `${symbol}|${interval}`;
+
+  const now =
+
+    Date.now();
+
+  const cached =
+
+    marketCache.get(key);
+
+  /*
+
+    If another request is already running,
+
+    wait for it instead of starting another.
+
+  */
+
+  if (
+
+    activeRequests.has(key)
+
+  ) {
+
+    return activeRequests.get(key);
+
+  }
+
+  /*
+
+    If cache is fresh enough,
+
+    return it immediately.
+
+  */
+
+  if (
+
+    cached &&
+
+    cached.values.length &&
+
+    now - cached.updatedAt <
+
+      MARKET_REFRESH_MS
+
+  ) {
+
+    return {
+
+      values: cached.values,
+
+      cached: true,
+
+      stale: false,
+
+      updatedAt:
+
+        cached.updatedAt
+
+    };
+
+  }
+
+  /*
+
+    Start one provider request.
+
+  */
+
+  const requestPromise =
+
+    (async () => {
+
+      try {
+
+        const values =
+
+          await requestTwelveData(
+
+            symbol,
+
+            interval
+
+          );
+
+        const updatedAt =
+
+          Date.now();
+
+        marketCache.set(
+
+          key,
+
+          {
+
+            values,
+
+            updatedAt,
+
+            lastError: null
+
+          }
+
+        );
+
+        return {
+
+          values,
+
+          cached: false,
+
+          stale: false,
+
+          updatedAt
+
+        };
+
+      } catch (error) {
+
+        console.error(
+
+          "MARKET FETCH FAILED:",
+
+          error.message
+
+        );
+
+        /*
+
+          Return previous successful data
+
+          if it is still reasonably recent.
+
+        */
+
+        const previous =
+
+          marketCache.get(key);
+
+        if (
+
+          previous &&
+
+          previous.values.length &&
+
+          Date.now() -
+
+            previous.updatedAt <=
+
+            CACHE_MAX_AGE_MS
+
+        ) {
+
+          previous.lastError =
+
+            error.message;
+
+          return {
+
+            values:
+
+              previous.values,
+
+            cached: true,
+
+            stale: true,
+
+            updatedAt:
+
+              previous.updatedAt,
+
+            providerError:
+
+              error.message
+
+          };
+
+        }
+
+        throw error;
+
+      }
+
+    })();
+
+  activeRequests.set(
+
+    key,
+
+    requestPromise
+
+  );
+
+  try {
+
+    return await requestPromise;
+
+  } finally {
+
+    activeRequests.delete(
+
+      key
+
+    );
+
+  }
+
+}
+
+/* =========================================================
+
+   MARKET CANDLES API
 
 ========================================================= */
 
@@ -924,7 +1440,7 @@ app.get(
 
         DEFAULT_SYMBOL
 
-      );
+      ).trim();
 
     const interval =
 
@@ -934,15 +1450,7 @@ app.get(
 
         DEFAULT_INTERVAL
 
-      );
-
-    /*
-
-       Only allow the intervals we actually need.
-
-       This prevents accidental unsupported requests.
-
-    */
+      ).trim();
 
     const allowedIntervals = [
 
@@ -974,6 +1482,8 @@ app.get(
 
       return res.status(400).json({
 
+        status: "error",
+
         error:
 
           "Unsupported candle interval."
@@ -982,79 +1492,63 @@ app.get(
 
     }
 
-    const cacheKey =
-
-      `${symbol}|${interval}`;
-
     try {
 
-      const data =
+      const result =
 
-        await requestTwelveData({
+        await getMarketData(
 
           symbol,
 
-          interval,
-
-          outputsize: 200,
-
-          order: "asc"
-
-        });
-
-      const values =
-
-        cleanCandles(
-
-          data.values
+          interval
 
         );
-
-      if (!values.length) {
-
-        throw new Error(
-
-          "Market-data provider returned no candles."
-
-        );
-
-      }
-
-      /*
-
-         Save successful data.
-
-      */
-
-      marketCache = {
-
-        key: cacheKey,
-
-        values,
-
-        updatedAt:
-
-          Date.now(),
-
-        lastError: null
-
-      };
 
       return res.json({
 
         status: "ok",
 
-        values,
+        values:
 
-        source: "Twelve Data",
+          result.values,
 
-        cached: false,
+        source:
+
+          "Twelve Data",
+
+        cached:
+
+          result.cached,
+
+        stale:
+
+          result.stale,
 
         updatedAt:
 
-          new Date()
+          new Date(
 
-            .toISOString()
+            result.updatedAt
+
+          ).toISOString(),
+
+        /*
+
+          This is only informational.
+
+          The frontend can continue using
+
+          the candle data normally.
+
+        */
+
+        warning:
+
+          result.stale
+
+            ? "Live provider data temporarily unavailable. Showing the latest valid market data."
+
+            : null
 
       });
 
@@ -1062,77 +1556,11 @@ app.get(
 
       console.error(
 
-        "MARKET DATA ERROR:",
+        "CANDLES ENDPOINT ERROR:",
 
         error.message
 
       );
-
-      /*
-
-         If we have valid recent data,
-
-         return it instead of failing the
-
-         entire dashboard.
-
-      */
-
-      if (
-
-        marketCache.key === cacheKey &&
-
-        marketCache.values.length > 0
-
-      ) {
-
-        marketCache.lastError =
-
-          error.message;
-
-        return res.json({
-
-          status: "ok",
-
-          values:
-
-            marketCache.values,
-
-          source:
-
-            "Twelve Data",
-
-          cached: true,
-
-          stale: true,
-
-          warning:
-
-            "Live market data temporarily unavailable. Showing the latest valid market data.",
-
-          updatedAt:
-
-            new Date(
-
-              marketCache.updatedAt
-
-            ).toISOString(),
-
-          providerError:
-
-            error.message
-
-        });
-
-      }
-
-      /*
-
-         No previous data exists yet.
-
-         In that case send a clean 503.
-
-      */
 
       return res.status(503).json({
 
@@ -1208,7 +1636,11 @@ app.get(
 
         );
 
-      res.json(rows);
+      res.json(
+
+        rows
+
+      );
 
     } catch (error) {
 
@@ -1268,7 +1700,11 @@ app.post(
 
           ""
 
-        ).trim().toUpperCase();
+        )
+
+          .trim()
+
+          .toUpperCase();
 
       const entry =
 
@@ -1520,9 +1956,17 @@ app.use(
 
     );
 
-    if (res.headersSent) {
+    if (
 
-      return next(error);
+      res.headersSent
+
+    ) {
+
+      return next(
+
+        error
+
+      );
 
     }
 
@@ -1591,6 +2035,12 @@ app.listen(
     console.log(
 
       "Interval: 5min"
+
+    );
+
+    console.log(
+
+      `Provider refresh: ${MARKET_REFRESH_MS / 1000}s`
 
     );
 
