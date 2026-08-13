@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>PriceEdge</title>
@@ -22,7 +23,8 @@ header{
   justify-content:space-between;
   border-bottom:1px solid rgba(72,91,127,.42);
   background:linear-gradient(180deg,#0d1425 0%,#0b1020 100%);
-  position:relative;
+  position:sticky;
+  top:0;
   z-index:20;
   box-shadow:0 8px 28px rgba(0,0,0,.18);
 }
@@ -91,8 +93,8 @@ nav{
   overflow-x:auto;
   background:#0b1020;
   scrollbar-width:none;
-  position:relative;
-  top:auto;
+  position:sticky;
+  top:78px;
   z-index:19;
 }
 nav::-webkit-scrollbar{display:none}
@@ -114,7 +116,7 @@ nav button.on{
   border-color:#304363;
   box-shadow:0 4px 14px rgba(0,0,0,.15);
 }
-main{max-width:1200px;margin:auto;padding:22px 20px 48px}
+main{max-width:1200px;margin:auto;padding:20px 20px 48px}
 .page{display:none}.page.on{display:block}
 .grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:18px}
 .card{
@@ -190,39 +192,22 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 .auth{max-width:430px;margin:30px auto}.hidden{display:none!important}.actions{display:flex;gap:8px}.actions button{flex:1}.small-muted{font-size:11px;color:#71809c}
 @media(max-width:760px){
   header{min-height:72px;padding:0 16px}
-  .brand-mark{width:40px;height:40px;border-radius:12px;flex:0 0 40px}
+  .app-header{top:0}
+  .brand-mark{width:39px;height:39px;border-radius:12px}
   .logo{font-size:24px}
   .brand-subtitle{font-size:7px;letter-spacing:1.7px}
   .market-pill{padding:9px 10px;font-size:12px}
-  nav{top:auto;padding:8px 11px}
-  nav button{font-size:14px;padding:10px 13px}
+  nav{top:72px;padding:8px 11px}
+  nav button{font-size:14px;padding:10px 12px}
   main{padding:14px 12px 32px}.grid{grid-template-columns:1fr}.card{border-radius:17px;padding:16px}
   .chart{height:390px}.price{font-size:35px}.trend-badge{width:100%}
 }
 @media(max-width:420px){
-  .market-pill small{display:none}
-  .brand-subtitle{display:none}
+  .market-pill small{display:inline}
+  .brand-subtitle{display:block;font-size:6.5px;letter-spacing:1.35px}
   .chart{height:350px}.chart-nav{right:6px;bottom:6px}.chart-nav button{padding:8px 8px;font-size:11px}
   .price{font-size:31px}.chart-tag{font-size:10px;padding:6px 8px}
 }
-
-/* FINAL MOBILE POLISH */
-@media(max-width:760px){
-  .app-header{min-height:72px}
-  nav{position:relative;overflow-x:auto}
-  main{padding-top:18px}
-  .chart{height:380px}
-  .chart-nav{right:8px;bottom:8px}
-  .chart-nav button{background:rgba(8,13,25,.97)}
-}
-@media(max-width:420px){
-  main{padding-left:10px;padding-right:10px}
-  .card{padding:15px}
-  .chart{height:345px}
-  .chart-nav{gap:5px}
-  .chart-nav button{padding:8px 7px;font-size:11px}
-}
-
 </style>
 </head>
 <body>
