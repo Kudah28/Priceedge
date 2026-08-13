@@ -1,23 +1,19 @@
 {
-
   "name": "PriceEdge Trading Assistant",
-
   "short_name": "PriceEdge",
-
-  "description": "Price action and trading analysis assistant for XAU/USD.",
-
+  "description": "Price action trading assistant for XAU/USD.",
   "start_url": "/",
-
   "scope": "/",
-
   "display": "standalone",
-
   "background_color": "#080d19",
-
   "theme_color": "#0b1020",
-
-  "orientation": "portrait-primary",
-
-  "icons": []
-
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
