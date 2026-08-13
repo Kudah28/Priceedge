@@ -524,35 +524,104 @@ function analyze(){
 function drawChart(){
  const canvas=$("chart"),ctx=canvas.getContext("2d"),dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;
  if(!w||!h)return;
- canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle="#0c1322";ctx.fillRect(0,0,w,h);
+ canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#0a1220";ctx.fillRect(0,0,w,h);
  if(candles.length<2){ctx.fillStyle="#71809c";ctx.font="13px system-ui";ctx.textAlign="center";ctx.fillText("Waiting for market data…",w/2,h/2);return}
+
  const visible=Math.min(CHART_VISIBLE_CANDLES,candles.length),maxOffset=Math.max(0,candles.length-visible);
  chartOffset=Math.max(0,Math.min(chartOffset,maxOffset));
  const end=candles.length-chartOffset,start=Math.max(0,end-visible),data=candles.slice(start,end);
- let max=Math.max(...data.map(c=>+c.high)),min=Math.min(...data.map(c=>+c.low)),raw=max-min||1,pad=raw*.14;max+=pad;min-=pad;
- const left=12,right=76,top=30,bottom=30,cw=w-left-right,ch=h-top-bottom,range=max-min,y=p=>top+(max-p)/range*ch;
- ctx.strokeStyle="#1b2942";ctx.lineWidth=1;
- for(let i=0;i<=6;i++){let gy=top+ch/6*i;ctx.beginPath();ctx.moveTo(left,gy);ctx.lineTo(w-right,gy);ctx.stroke();ctx.fillStyle="#71809c";ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText((max-range/6*i).toFixed(2),w-right+8,gy+3)}
- const spacing=cw/data.length,bodyWidth=Math.max(4,Math.min(12,spacing*.62));
- data.forEach(c=>{
-  const o=+c.open,hi=+c.high,lo=+c.low,cl=+c.close;if(![o,hi,lo,cl].every(Number.isFinite))return;
-  const x=left+spacing*(data.indexOf(c)+.5),bull=cl>=o,oy=y(o),cy=y(cl);
-  ctx.beginPath();ctx.moveTo(x,y(hi));ctx.lineTo(x,y(lo));ctx.strokeStyle=bull?"#4ade80":"#fb7185";ctx.lineWidth=1.5;ctx.stroke();
-  let bt=Math.min(oy,cy),bh=Math.max(3,Math.abs(cy-oy));if(bh===3)bt=(oy+cy)/2-1.5;ctx.fillStyle=bull?"#4ade80":"#fb7185";ctx.fillRect(x-bodyWidth/2,bt,bodyWidth,bh);
- });
- const completed=data.slice(0,-1),res=Math.max(...completed.map(c=>+c.high)),sup=Math.min(...completed.map(c=>+c.low));
- function levelLine(p,label){
-  const yy=y(p);if(yy<top||yy>h-bottom)return;
-  ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(w-right,yy);ctx.strokeStyle="#71809c";ctx.setLineDash([6,6]);ctx.lineWidth=1.2;ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle="#a8b4cc";ctx.font="bold 10px system-ui";ctx.textAlign="left";ctx.fillText(label,left+6,yy-6);
+ const highs=data.map(c=>+c.high),lows=data.map(c=>+c.low);
+ let max=Math.max(...highs),min=Math.min(...lows),raw=max-min||1;
+ const pad=raw*.10;max+=pad;min-=pad;
+ const left=13,right=72,top=34,bottom=34,cw=Math.max(1,w-left-right),ch=Math.max(1,h-top-bottom),range=max-min;
+ const y=p=>top+(max-p)/range*ch;
+ const xFor=i=>left+(i+.5)*(cw/data.length);
+ const spacing=cw/data.length;
+ const bodyWidth=Math.max(4,Math.min(13,spacing*.58));
+
+ // Grid and price scale
+ ctx.lineWidth=1;
+ for(let i=0;i<=6;i++){
+   const gy=top+ch*i/6;
+   ctx.beginPath();ctx.moveTo(left,gy);ctx.lineTo(w-right,gy);
+   ctx.strokeStyle=i===6?"#1c2a42":"#18263d";ctx.stroke();
+   const pv=max-range*i/6;
+   ctx.fillStyle="#73829e";ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText(pv.toFixed(2),w-right+7,gy+3);
  }
- levelLine(res,"RESISTANCE");levelLine(sup,"SUPPORT");
- const latest=+data.at(-1).close,cy=y(latest);ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(w-right,cy);ctx.strokeStyle="#f5c451";ctx.lineWidth=1.5;ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([]);
- ctx.fillStyle="#f5c451";ctx.font="bold 11px system-ui";ctx.textAlign="left";ctx.fillText(latest.toFixed(2),w-right+8,cy-6);
- const xlast=left+spacing*(data.length-.5);ctx.beginPath();ctx.arc(xlast,cy,4,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#71809c";ctx.font="10px system-ui";ctx.textAlign="center";ctx.fillText("XAU/USD · 5 MIN",left+cw/2,h-8);
- if(chartOffset>0){ctx.fillStyle="#f5c451";ctx.font="bold 10px system-ui";ctx.textAlign="right";ctx.fillText("HISTORY MODE",w-8,18)}
+ // Subtle vertical guides
+ for(let i=0;i<5;i++){
+   const gx=left+cw*i/4;
+   ctx.beginPath();ctx.moveTo(gx,top);ctx.lineTo(gx,top+ch);ctx.strokeStyle="#111e33";ctx.stroke();
+ }
+
+ // Resistance/support based on completed candles, excluding the current candle.
+ const completed=data.slice(0,-1);
+ const res=Math.max(...completed.map(c=>+c.high));
+ const sup=Math.min(...completed.map(c=>+c.low));
+ const current=+data.at(-1).close;
+ const trendText=$("chartTrend")?.textContent||"";
+ const trend=trendText.includes("UPTREND")?"UPTREND":trendText.includes("DOWNTREND")?"DOWNTREND":"SIDEWAYS";
+
+ function line(p,label,value,color,dash=[6,6],alpha=1){
+   const yy=y(p);if(yy<top-2||yy>top+ch+2)return;
+   ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(w-right,yy);
+   ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.setLineDash(dash);ctx.stroke();ctx.restore();
+   const labelY=Math.max(top+12,Math.min(top+ch-5,yy-7));
+   ctx.fillStyle=color;ctx.font="700 9px system-ui";ctx.textAlign="left";ctx.fillText(label.toUpperCase(),left+6,labelY);
+   if(value!==undefined){ctx.textAlign="right";ctx.fillText(Number(value).toFixed(2),w-right-5,labelY)}
+ }
+ line(res,"Resistance",res,"#8b9ab4",[6,6],.9);
+ line(sup,"Support",sup,"#8b9ab4",[6,6],.9);
+
+ // Optional trade levels from the setup panel.
+ const entry=parseFloat($("entryLevel")?.textContent),stop=parseFloat($("stopLevel")?.textContent),target=parseFloat($("targetLevel")?.textContent);
+ if(Number.isFinite(entry)&&Number.isFinite(stop)&&Number.isFinite(target)){
+   if(Math.abs(entry-current)<range*1.2)line(entry,"Entry",entry,"#f5c451",[4,4],.72);
+   if(Math.abs(stop-current)<range*1.2)line(stop,"Stop",stop,"#fb7185",[3,5],.55);
+   if(Math.abs(target-current)<range*1.2)line(target,"Target",target,"#4ade80",[3,5],.55);
+ }
+
+ // Candles
+ data.forEach((c,i)=>{
+   const o=+c.open,hi=+c.high,lo=+c.low,cl=+c.close;
+   if(![o,hi,lo,cl].every(Number.isFinite))return;
+   const x=xFor(i),bull=cl>=o,bodyTop=y(Math.max(o,cl)),bodyBottom=y(Math.min(o,cl));
+   const bodyH=Math.max(2.5,bodyBottom-bodyTop);
+   const candleColor=bull?"#42e58a":"#ff657f";
+   // wick
+   ctx.beginPath();ctx.moveTo(x,y(hi));ctx.lineTo(x,y(lo));ctx.strokeStyle=candleColor;ctx.lineWidth=Math.max(1.2,spacing*.09);ctx.stroke();
+   // body with slight highlight
+   ctx.fillStyle=candleColor;ctx.fillRect(x-bodyWidth/2,bodyTop,bodyWidth,bodyH);
+   if(bodyH>6){ctx.fillStyle=bull?"#56efa0":"#ff7890";ctx.fillRect(x-bodyWidth/2+1,bodyTop+1,Math.max(1,bodyWidth-2),1.5)}
+   // current candle emphasis
+   if(i===data.length-1){
+     ctx.save();ctx.globalAlpha=.22;ctx.strokeStyle="#f5c451";ctx.lineWidth=1;ctx.strokeRect(x-bodyWidth/2-3,bodyTop-3,bodyWidth+6,bodyH+6);ctx.restore();
+   }
+ });
+
+ // Current price line + right-side price pill
+ const cy=y(current);
+ ctx.beginPath();ctx.moveTo(left,cy);ctx.lineTo(w-right,cy);ctx.strokeStyle="#f5c451";ctx.lineWidth=1.4;ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([]);
+ const pillX=w-right+3,pillW=61,pillH=20,pillY=Math.max(top,Math.min(top+ch-pillH,cy-pillH/2));
+ ctx.fillStyle="#f5c451";ctx.beginPath();ctx.roundRect(pillX,pillY,pillW,pillH,6);ctx.fill();
+ ctx.fillStyle="#101725";ctx.font="800 10px system-ui";ctx.textAlign="center";ctx.fillText(current.toFixed(2),pillX+pillW/2,pillY+13);
+ ctx.fillStyle="#f5c451";ctx.beginPath();ctx.arc(xFor(data.length-1),cy,4,0,Math.PI*2);ctx.fill();
+
+ // Time labels, using actual candle timestamps.
+ const labelIndexes=[0,Math.floor((data.length-1)/2),data.length-1];
+ ctx.fillStyle="#667795";ctx.font="9px system-ui";ctx.textAlign="center";
+ labelIndexes.forEach(i=>{
+   const dt=new Date(data[i].datetime);const label=isNaN(dt)?"":dt.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+   ctx.fillText(label,xFor(i),h-9);
+ });
+
+ // Small chart header/status
+ ctx.fillStyle="#71809c";ctx.font="700 9px system-ui";ctx.textAlign="left";ctx.fillText("XAU/USD · 5M",left,17);
+ ctx.textAlign="right";ctx.fillStyle=trend==="UPTREND"?"#42e58a":trend==="DOWNTREND"?"#ff657f":"#f5c451";ctx.fillText(trend,w-right,17);
+ if(chartOffset>0){ctx.textAlign="center";ctx.fillStyle="#f5c451";ctx.fillText("HISTORY MODE · DRAG TO SCROLL",w/2,17)}
 }
+
 function chartOlder(){chartOffset=Math.min(chartOffset+10,Math.max(0,candles.length-CHART_VISIBLE_CANDLES));drawChart()}
 function chartNewer(){chartOffset=Math.max(0,chartOffset-10);drawChart()}
 function chartLive(){chartOffset=0;drawChart()}
