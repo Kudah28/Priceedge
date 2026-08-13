@@ -208,6 +208,37 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
   .chart{height:350px}.chart-nav{right:6px;bottom:6px}.chart-nav button{padding:8px 8px;font-size:11px}
   .price{font-size:31px}.chart-tag{font-size:10px;padding:6px 8px}
 }
+
+/* PriceEdge V3 visual polish */
+.dashboard-card{padding:20px 20px 18px}
+.market-kicker{font-size:12px;font-weight:800;letter-spacing:1.15px;color:#71809c;text-transform:uppercase}
+.price-row{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:14px 0 12px}
+.price{font-size:48px;margin:0;letter-spacing:-2px}
+.price-meta{display:flex;align-items:center;gap:7px;padding-bottom:7px;font-size:12px;font-weight:800}
+.price-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 9px rgba(74,222,128,.75)}
+.price-dot.down{background:#fb7185;box-shadow:0 0 9px rgba(251,113,133,.65)}
+.price-dot.flat{background:#f5c451;box-shadow:0 0 9px rgba(245,196,81,.65)}
+.market-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 13px}
+.market-stat{background:#0c1423;border:1px solid #263754;border-radius:11px;padding:9px 10px;min-width:0}
+.market-stat small{display:block;color:#71809c;font-size:9px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;margin-bottom:4px}
+.market-stat b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart{height:390px;margin-top:9px;border-radius:17px}
+.chart-overlay{top:12px;left:12px}
+.chart-tag{border-radius:10px;padding:8px 11px;font-size:10px;letter-spacing:.2px}
+.chart-nav{right:12px;bottom:12px}
+.refresh-row{justify-content:space-between;align-items:center}
+.refresh-note{font-size:10px;color:#71809c}
+.signal-box{margin-top:13px;padding:17px 18px;border-radius:16px}
+.setup-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.setup-header .muted{font-size:11px}
+@media(max-width:760px){
+.dashboard-card{padding:17px 15px 15px}.price{font-size:39px}
+.market-stats{grid-template-columns:repeat(2,1fr)}.chart{height:350px}.refresh-note{display:none}
+}
+@media(max-width:420px){
+.price{font-size:35px}.market-stats{gap:6px}.market-stat{padding:8px}.chart{height:330px}
+}
+
 </style>
 </head>
 <body>
@@ -234,18 +265,27 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <main>
 <section id="home" class="page on">
 <div class="grid">
-<div class="card">
+<div class="card dashboard-card">
 <div class="market-head">
 <div>
-<div class="muted">XAU/USD · 5 MINUTES</div>
+<div class="market-kicker">XAU/USD · 5 MINUTES</div>
 <div id="liveStatus" class="live"><span class="live-dot"></span><span id="liveStatusText">CONNECTING TO MARKET</span></div>
 <div class="data-status"><strong id="dataReceived">Waiting for data…</strong><span id="lastUpdated" class="muted">Not updated yet</span></div>
-<div class="small-muted" style="margin-top:5px">Market data refreshes approximately every 60 seconds.</div>
 </div>
 <div id="trendBadge" class="trend-badge side">WAITING</div>
 </div>
 
+<div class="price-row">
 <div id="price" class="price">—</div>
+<div id="priceMeta" class="price-meta muted"><span id="priceDot" class="price-dot flat"></span><span id="priceMetaText">Awaiting price</span></div>
+</div>
+
+<div class="market-stats">
+<div class="market-stat"><small>Session</small><b id="statSession">—</b></div>
+<div class="market-stat"><small>Structure</small><b id="statStructure">—</b></div>
+<div class="market-stat"><small>Momentum</small><b id="statMomentum">—</b></div>
+<div class="market-stat"><small>Setup</small><b id="statQuality">—</b></div>
+</div>
 
 <div class="chart" id="chartWrap">
 <canvas id="chart"></canvas>
@@ -256,7 +296,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 <div class="chart-nav"><button onclick="chartOlder()">← Older</button><button onclick="chartLive()">Live</button><button onclick="chartNewer()">Newer →</button></div>
 </div>
 
-<div class="refresh-row"><button class="refresh-btn" onclick="manualRefresh()">↻ Refresh market</button></div>
+<div class="refresh-row"><span class="refresh-note">Swipe chart to review candles · Double-tap to return live</span><button class="refresh-btn" onclick="manualRefresh()">↻ Refresh market</button></div>
 
 <div id="signal" class="signal-box">
 <div class="signal-title"><span class="muted">PRICEEDGE SIGNAL</span><span id="action" class="signal-action action-wait">WAIT</span></div>
@@ -264,8 +304,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px s
 </div>
 </div>
 
-<div class="card">
-<h3>Market Setup</h3>
+<div class="card setup-card">
+<div class="setup-header"><h3>Market Setup</h3><span class="muted">Decision support</span></div>
 <div class="row"><span>Bias</span><b id="bias">—</b></div>
 <div class="row"><span>Trend</span><b id="setupTrend">—</b></div>
 <div class="row"><span>Structure</span><b id="structure">—</b></div>
@@ -464,7 +504,14 @@ function analyze(){
  $("price").innerHTML=`$${latest.toFixed(2)} <span class="${trend==="UPTREND"?"green":trend==="DOWNTREND"?"red":"gold"}" style="font-size:15px">${trend}</span>`;
  const cls=trend==="UPTREND"?"green":trend==="DOWNTREND"?"red":"gold";
  setText("bias",trend,cls);setText("setupTrend",trend,cls);setText("structure",structure);setText("momentum",momentum);setText("quality",quality);
- setText("recentHigh",recentHigh.toFixed(2));setText("recentLow",recentLow.toFixed(2));setText("support",support.toFixed(2));setText("resistance",resistance.toFixed(2));
+ setText("recentHigh",recentHigh.toFixed(2));setText("recentLow",recentLow.toFixed(2));
+  $("priceMetaText").textContent=(priceDelta>0?"+":"")+priceDelta.toFixed(2)+" ("+(priceDeltaPct>0?"+":"")+priceDeltaPct.toFixed(2)+"%)";
+  $("priceMetaText").className=priceDelta>0?"green":priceDelta<0?"red":"gold";
+  $("priceDot").className="price-dot "+(priceDelta<0?"down":priceDelta===0?"flat":"");
+  $("statSession").textContent=priceDelta>0?"Bullish move":priceDelta<0?"Bearish move":"Flat";
+  $("statStructure").textContent=structure;
+  $("statMomentum").textContent=momentum;
+  $("statQuality").textContent=quality;setText("support",support.toFixed(2));setText("resistance",resistance.toFixed(2));
  setText("entryLevel",entry.toFixed(2));setText("stopLevel",stop.toFixed(2));setText("targetLevel",target.toFixed(2));setText("rrLevel",rr>0?"1:"+rr.toFixed(2):"—");
  $("trendBadge").className="trend-badge "+(trend==="UPTREND"?"bull":trend==="DOWNTREND"?"bear":"side");$("trendBadge").textContent=trend;
  $("chartTrend").textContent="TREND: "+trend;$("chartStructure").textContent="STRUCTURE: "+structure;
