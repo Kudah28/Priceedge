@@ -1,14 +1,133 @@
-const fs=require("fs");const path=require("path");const WebSocket=require("ws");const express=require("express");
+const fs=require("fs");
+const path=require("path");
+const WebSocket=require("ws");
+const express=require("express");
 const originalExpress=express,originalStatic=express.static;
 const API_KEY=process.env.TWELVE_DATA_API_KEY||process.env.TWELVEDATA_API_KEY||process.env.TWELVE_DATA_KEY||"";
 const SYMBOLS="XAU/USD,EUR/USD,GBP/USD,USD/JPY";
 const UPSTREAM=API_KEY?`wss://ws.twelvedata.com/v1/quotes/price?apikey=${encodeURIComponent(API_KEY)}`:"";
 let upstream=null,reconnectTimer=null,heartbeatTimer=null,browserWss=null,latestBySymbol=new Map(),attached=false;
-function broadcast(x){if(!browserWss)return;const m=JSON.stringify(x);for(const c of browserWss.clients)if(c.readyState===WebSocket.OPEN){try{c.send(m);}catch(_){}}}
-function reconnect(){if(reconnectTimer||!API_KEY)return;reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},3000);}
-function heartbeat(){if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=setInterval(()=>{if(upstream?.readyState===WebSocket.OPEN){try{upstream.send(JSON.stringify({action:"heartbeat"}));}catch(_){}}},10000);}
-function parse(raw){let d;try{d=JSON.parse(raw);}catch(_){return null;}if(d.event!=="price")return null;const price=Number(d.price);if(!Number.isFinite(price)||price<=0)return null;const ts=Number(d.timestamp);return{type:"tick",symbol:d.symbol||"XAU/USD",price,time:Number.isFinite(ts)?ts*1000:Date.now(),receivedAt:Date.now()};}
-function connect(){if(!API_KEY){broadcast({type:"status",status:"disabled",message:"Twelve Data WebSocket API key is not configured."});return;}if(upstream&&(upstream.readyState===WebSocket.OPEN||upstream.readyState===WebSocket.CONNECTING))return;try{upstream=new WebSocket(UPSTREAM);upstream.on("open",()=>{heartbeat();upstream.send(JSON.stringify({action:"subscribe",params:{symbols:SYMBOLS}}));broadcast({type:"status",status:"connected",message:"LIVE TICK STREAM"});});upstream.on("message",raw=>{const t=parse(raw.toString());if(!t)return;latestBySymbol.set(t.symbol,t);broadcast(t);});upstream.on("error",()=>broadcast({type:"status",status:"error",message:"Live tick stream reconnecting"}));upstream.on("close",()=>{if(heartbeatTimer)clearInterval(heartbeatTimer);heartbeatTimer=null;upstream=null;broadcast({type:"status",status:"reconnecting",message:"LIVE TICK STREAM RECONNECTING"});reconnect();});}catch(e){upstream=null;reconnect();}}
-function patch(){function patched(...args){const app=originalExpress(...args);const use=app.use.bind(app),listen=app.listen.bind(app),post=app.post.bind(app);let injected=false;app.use=function(...a){const mw=a[a.length-1];if(mw&&mw.name==="serveStatic"&&!injected){injected=true;use((req,res,next)=>{if(req.path!=="/"&&req.path!=="/index.html")return next();const file=path.join(__dirname,"public","index.html");fs.readFile(file,"utf8",(err,html)=>{if(err)return next();if(html.includes('/live-ticks.js'))return res.type("html").send(html);const tag='<script src="/live-ticks.js" defer></script>';res.type("html").send(html.includes("</body>")?html.replace("</body>",`${tag}</body>`):html+tag);});});}return use(...a);};app.post=function(route,...handlers){if(route==="/api/stripe/webhook")return post(route,express.raw({type:"application/json",limit:"2mb"}),...handlers);return post(route,...handlers);};app.listen=function(...a){const s=listen(...a);attach(s);return s;};return app;}Object.assign(patched,originalExpress);patched.static=originalStatic;const p=require.resolve("express");if(require.cache[p])require.cache[p].exports=patched;}
-function attach(server){if(attached)return;attached=true;browserWss=new WebSocket.Server({server,path:"/ws/live"});browserWss.on("connection",client=>{client.send(JSON.stringify({type:"status",status:upstream?.readyState===WebSocket.OPEN?"connected":"reconnecting",message:upstream?.readyState===WebSocket.OPEN?"LIVE TICK STREAM":"WAITING FOR LIVE TICK STREAM"}));for(const t of latestBySymbol.values())client.send(JSON.stringify(t));});connect();}
+
+function broadcast(x){
+  if(!browserWss)return;
+  const m=JSON.stringify(x);
+  for(const c of browserWss.clients){
+    if(c.readyState===WebSocket.OPEN){try{c.send(m);}catch(_){}}
+  }
+}
+function reconnect(){
+  if(reconnectTimer||!API_KEY)return;
+  reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},3000);
+}
+function heartbeat(){
+  if(heartbeatTimer)clearInterval(heartbeatTimer);
+  heartbeatTimer=setInterval(()=>{
+    if(upstream?.readyState===WebSocket.OPEN){try{upstream.send(JSON.stringify({action:"heartbeat"}));}catch(_){}
+    }
+  },10000);
+}
+function parse(raw){
+  let d;try{d=JSON.parse(raw);}catch(_){return null;}
+  if(d.event==="price"){
+    const price=Number(d.price);
+    if(!Number.isFinite(price)||price<=0)return null;
+    const ts=Number(d.timestamp);
+    return {type:"tick",symbol:d.symbol||"XAU/USD",price,time:Number.isFinite(ts)?ts*1000:Date.now(),receivedAt:Date.now()};
+  }
+  if(d.event==="subscribe-status"){
+    const status=String(d.status||"").toLowerCase();
+    const symbols=d.params?.symbols||d.symbols||"";
+    const message=d.message||`${status||"subscription"} ${symbols}`.trim();
+    return {type:"subscription",status,message,raw:d};
+  }
+  if(d.status==="error"||d.event==="error"||d.code>=400){
+    return {type:"status",status:"error",message:d.message||"Twelve Data WebSocket error",detail:d};
+  }
+  return null;
+}
+function connect(){
+  if(!API_KEY){broadcast({type:"status",status:"disabled",message:"Twelve Data WebSocket API key is not configured."});return;}
+  if(upstream&&(upstream.readyState===WebSocket.OPEN||upstream.readyState===WebSocket.CONNECTING))return;
+  try{
+    upstream=new WebSocket(UPSTREAM);
+    upstream.on("open",()=>{
+      heartbeat();
+      upstream.send(JSON.stringify({action:"subscribe",params:{symbols:SYMBOLS}}));
+      broadcast({type:"status",status:"connecting",message:"Subscribing to live prices…"});
+    });
+    upstream.on("message",raw=>{
+      const d=parse(raw.toString());
+      if(!d)return;
+      if(d.type==="tick"){
+        latestBySymbol.set(d.symbol,d);
+        broadcast(d);
+      }else if(d.type==="subscription"){
+        const ok=d.status.includes("success")||d.status.includes("ok")||d.status.includes("partial");
+        broadcast({type:"status",status:ok?"connected":"error",message:d.message||"Subscription status received",subscription:d});
+      }else if(d.type==="status")broadcast(d);
+    });
+    upstream.on("error",e=>broadcast({type:"status",status:"error",message:`Live tick stream error: ${e.message||"connection error"}`}));
+    upstream.on("close",()=>{
+      if(heartbeatTimer)clearInterval(heartbeatTimer);
+      heartbeatTimer=null;upstream=null;
+      broadcast({type:"status",status:"reconnecting",message:"LIVE TICK STREAM RECONNECTING"});
+      reconnect();
+    });
+  }catch(e){upstream=null;broadcast({type:"status",status:"error",message:e.message||"Unable to start live tick stream"});reconnect();}
+}
+function patch(){
+  function patched(...args){
+    const app=originalExpress(...args);
+    const use=app.use.bind(app),listen=app.listen.bind(app),post=app.post.bind(app),get=app.get.bind(app);
+    let injected=false;
+    app.use=function(...a){
+      const mw=a[a.length-1];
+      if(mw&&mw.name==="serveStatic"&&!injected){
+        injected=true;
+        use((req,res,next)=>{
+          if(req.path!=="/"&&req.path!=="/index.html")return next();
+          const file=path.join(__dirname,"public","index.html");
+          fs.readFile(file,"utf8",(err,html)=>{
+            if(err)return next();
+            if(html.includes('/live-ticks.js'))return res.type("html").send(html);
+            const tag='<script src="/live-ticks.js" defer></script>';
+            res.type("html").send(html.includes("</body>")?html.replace("</body>",`${tag}</body>`):html+tag);
+          });
+        });
+      }
+      return use(...a);
+    };
+    app.post=function(route,...handlers){
+      if(route==="/api/stripe/webhook")return post(route,express.raw({type:"application/json",limit:"2mb"}),...handlers);
+      return post(route,...handlers);
+    };
+    app.get=function(route,...handlers){
+      if(route==="/api/live-status"){
+        return get(route,(req,res)=>res.json({
+          websocketConfigured:Boolean(API_KEY),
+          connected:upstream?.readyState===WebSocket.OPEN,
+          symbols:SYMBOLS.split(","),
+          latest:Object.fromEntries([...latestBySymbol.entries()].map(([k,v])=>[k,v]))
+        }));
+      }
+      return get(route,...handlers);
+    };
+    app.listen=function(...a){const s=listen(...a);attach(s);return s;};
+    return app;
+  }
+  Object.assign(patched,originalExpress);
+  patched.static=originalStatic;
+  const p=require.resolve("express");
+  if(require.cache[p])require.cache[p].exports=patched;
+}
+function attach(server){
+  if(attached)return;
+  attached=true;
+  browserWss=new WebSocket.Server({server,path:"/ws/live"});
+  browserWss.on("connection",client=>{
+    client.send(JSON.stringify({type:"status",status:upstream?.readyState===WebSocket.OPEN?"connected":"reconnecting",message:upstream?.readyState===WebSocket.OPEN?"LIVE TICK STREAM":"WAITING FOR LIVE TICK STREAM"}));
+    for(const t of latestBySymbol.values())client.send(JSON.stringify(t));
+  });
+  connect();
+}
 patch();
