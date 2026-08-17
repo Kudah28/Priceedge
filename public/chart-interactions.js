@@ -10,14 +10,12 @@
 
   window.visible=70;
 
-  /* Make the existing renderer respect the zoom level. */
   try{
     const source=window.draw.toString();
     const patched=source.replace("Math.min(70,candles.length)","Math.min(window.visible,candles.length)");
     window.draw=eval("("+patched+")");
   }catch(_){}
 
-  /* Remove the original gesture listeners from the inline renderer. */
   const fresh=chart.cloneNode(true);
   chart.replaceWith(fresh);
   chart=fresh;
@@ -54,12 +52,10 @@
   window.zoomOut=()=>zoom(window.visible/0.8);
   window.resetZoom=()=>{window.visible=70;offset=0;draw();showZoom();};
 
-  /* Button direction matches touch direction. */
   window.older=()=>{offset=clamp()+Math.max(10,Math.round(window.visible*.28));clamp();draw();};
   window.newer=()=>{offset=clamp()-Math.max(10,Math.round(window.visible*.28));clamp();draw();};
   window.live=()=>{offset=0;draw();};
 
-  /* ---------- Live candle / tick panel ---------- */
   function ensureLivePanel(){
     let panel=document.getElementById("peLiveCandle");
     if(panel)return panel;
@@ -86,11 +82,9 @@
   function updateLivePanel(){
     const panel=ensureLivePanel();
     if(!panel)return;
-
     const t=typeof tick!=="undefined"?tick:null;
     const f=typeof forming!=="undefined"?forming:null;
     const livePrice=t&&Number.isFinite(Number(t.price))?Number(t.price):(f?Number(f.close):NaN);
-
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
     set("peTick",num(livePrice));
     set("peOpen",f?num(f.open):"—");
@@ -103,12 +97,8 @@
       set("peTickState",age<=3?"LIVE TICK RECEIVED":"LAST TICK "+age+"s AGO");
       const state=document.getElementById("peTickState");
       if(state)state.style.color=age<=3?"#4ade80":"#8e9cb7";
-    }else{
-      set("peTickState","WAITING FOR LIVE TICK");
-    }
+    }else set("peTickState","WAITING FOR LIVE TICK");
 
-    /* Correct countdown: always counts down to the next timeframe boundary.
-       It can never show a value longer than the selected candle duration. */
     const ms=intervalMs();
     const now=Date.now();
     const next=Math.floor(now/ms+1)*ms;
@@ -120,17 +110,14 @@
     set("peCandleCountdown","CANDLE CLOSES "+label);
   }
 
-  /* ---------- Gestures ---------- */
   const pointers=new Map();
   let startX=0,startOffset=0,pinchStart=0,pinchVisible=70,pinchRatio=.5;
 
   chart.addEventListener("pointerdown",e=>{
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{chart.setPointerCapture(e.pointerId);}catch(_){}
-    if(pointers.size===1){
-      startX=e.clientX;
-      startOffset=offset;
-    }else if(pointers.size===2){
+    if(pointers.size===1){startX=e.clientX;startOffset=offset;}
+    else if(pointers.size===2){
       const p=[...pointers.values()];
       pinchStart=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);
       pinchVisible=window.visible;
@@ -142,7 +129,6 @@
   chart.addEventListener("pointermove",e=>{
     if(!pointers.has(e.pointerId))return;
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-
     if(pointers.size===2){
       const p=[...pointers.values()];
       const dist=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);
@@ -150,11 +136,8 @@
       e.preventDefault();
       return;
     }
-
     const dx=e.clientX-startX;
     if(Math.abs(dx)>5){
-      /* Finger LEFT (dx<0) => offset decreases => NEWER.
-         Finger RIGHT (dx>0) => offset increases => OLDER. */
       offset=startOffset+Math.round(dx/Math.max(4,Math.min(12,window.visible/8)));
       clamp();
       draw();
@@ -186,9 +169,131 @@
     }
   }
 
+  /* ================= PRICEEDGE SETTINGS ================= */
+  const PE_SETTINGS_KEY="priceedge_settings_v1";
+  let peSettings=Object.assign({theme:"dark",notifications:true,sound:true},JSON.parse(localStorage.getItem(PE_SETTINGS_KEY)||"{}"));
+  let audioCtx=null;
+  let lastAlertKey="";
+
+  function peSave(){localStorage.setItem(PE_SETTINGS_KEY,JSON.stringify(peSettings));}
+
+  function peInjectStyle(){
+    if(document.getElementById("peSettingsStyle"))return;
+    const s=document.createElement("style");
+    s.id="peSettingsStyle";
+    s.textContent=`
+      .pe-settings-btn{border:1px solid #31405f;background:#0c1322;color:#dce5fa;border-radius:9px;padding:7px 10px;font-weight:800;line-height:1}
+      .pe-settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:70px 14px 20px;overflow:auto}
+      .pe-settings-modal{width:min(440px,100%);background:#111a2d;color:#edf2ff;border:1px solid #31405f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:18px}
+      .pe-settings-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.pe-settings-head h2{margin:0;font-size:20px}
+      .pe-close{border:1px solid #31405f;background:#0c1322;color:#fff;border-radius:8px;padding:6px 10px;font-size:18px}
+      .pe-setting-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #26334f}.pe-setting-row:last-child{border-bottom:0}
+      .pe-setting-label b{display:block}.pe-setting-label span{display:block;color:#8e9cb7;font-size:11px;margin-top:3px}
+      .pe-switch{width:48px;height:28px;border-radius:999px;border:1px solid #31405f;background:#0c1322;position:relative;flex:0 0 auto}.pe-switch i{position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#8e9cb7;transition:.18s}.pe-switch.on{background:#f5c451;border-color:#f5c451}.pe-switch.on i{left:23px;background:#17130a}
+      .pe-theme-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.pe-theme-buttons button{border:1px solid #31405f;background:#0c1322;color:#dce5fa;border-radius:9px;padding:10px}.pe-theme-buttons button.on{border-color:#f5c451;color:#f5c451}
+      .pe-test{width:100%;margin-top:12px;border:1px solid #31405f;background:#18223a;color:#fff;border-radius:9px;padding:10px;font-weight:800}
+      body.pe-light{background:#f5f7fb!important;color:#172033!important} body.pe-light header{background:rgba(255,255,255,.94);border-color:#d7deea} body.pe-light nav{background:#fff;border-color:#d7deea} body.pe-light nav button{color:#647089} body.pe-light nav button.on{background:#e9eef7;color:#172033}
+      body.pe-light .card{background:#fff;border-color:#d7deea;box-shadow:0 8px 25px rgba(30,50,80,.08)} body.pe-light .metric,body.pe-light .level,body.pe-light input,body.pe-light select,body.pe-light textarea{background:#f7f9fc;border-color:#cbd5e5;color:#172033} body.pe-light .controls button,body.pe-light .ghost{background:#fff;border-color:#cbd5e5;color:#24324a} body.pe-light .chartwrap{background:#f8fafc;border-color:#d7deea} body.pe-light .signal{background:#eef2f8} body.pe-light .notice{background:#fff8df} body.pe-light .muted{color:#647089} body.pe-light th,body.pe-light td{border-color:#d7deea} body.pe-light .premium{background:#fffaf0} body.pe-light .pe-settings-modal{background:#fff;color:#172033;border-color:#d7deea} body.pe-light .pe-setting-row{border-color:#d7deea} body.pe-light .pe-close,body.pe-light .pe-switch{background:#f7f9fc;color:#172033;border-color:#cbd5e5} body.pe-light .pe-theme-buttons button{background:#f7f9fc;color:#24324a;border-color:#cbd5e5} body.pe-light #peLiveCandle{background:#f7f9fc!important;color:#172033!important;border-color:#cbd5e5!important}
+      @media(max-width:500px){.pe-settings-overlay{padding-top:55px}.pe-settings-modal{padding:14px}.pe-settings-btn{padding:7px 8px}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  function peApplyTheme(){
+    document.body.classList.toggle("pe-light",peSettings.theme==="light");
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta)meta.setAttribute("content",peSettings.theme==="light"?"#ffffff":"#080d19");
+  }
+
+  function peEnsureButton(){
+    peInjectStyle();
+    peApplyTheme();
+    if(document.getElementById("peSettingsButton"))return;
+    const top=document.querySelector("header .top")||document.querySelector("header");
+    if(!top)return;
+    const btn=document.createElement("button");
+    btn.id="peSettingsButton";btn.className="pe-settings-btn";btn.type="button";btn.title="Settings";btn.setAttribute("aria-label","Settings");btn.textContent="⚙";
+    btn.onclick=peOpen;
+    top.insertBefore(btn,top.firstChild);
+  }
+
+  function peOpen(){
+    if(document.getElementById("peSettingsOverlay"))return;
+    const o=document.createElement("div");o.id="peSettingsOverlay";o.className="pe-settings-overlay";
+    o.innerHTML='<div class="pe-settings-modal" role="dialog" aria-modal="true" aria-label="PriceEdge settings"><div class="pe-settings-head"><h2>PriceEdge Settings</h2><button class="pe-close" type="button" aria-label="Close">×</button></div><div><b>Theme</b><div class="pe-theme-buttons"><button id="peDark" type="button">🌙 Dark</button><button id="peLight" type="button">☀️ White</button></div></div><div class="pe-setting-row"><div class="pe-setting-label"><b>Notifications</b><span>Receive alerts when PriceEdge detects an important event.</span></div><button id="peNotif" class="pe-switch" type="button" aria-label="Toggle notifications"><i></i></button></div><div class="pe-setting-row"><div class="pe-setting-label"><b>Notification sound</b><span>Play a short sound with PriceEdge alerts.</span></div><button id="peSound" class="pe-switch" type="button" aria-label="Toggle notification sound"><i></i></button></div><button id="pePermission" class="pe-test" type="button">Enable browser notifications</button><button id="peTest" class="pe-test" type="button">Test notification + sound</button></div>';
+    document.body.appendChild(o);
+    o.querySelector(".pe-close").onclick=()=>o.remove();
+    o.addEventListener("click",e=>{if(e.target===o)o.remove();});
+    o.querySelector("#peDark").onclick=()=>{peSettings.theme="dark";peSave();peApplyTheme();peRefreshModal();};
+    o.querySelector("#peLight").onclick=()=>{peSettings.theme="light";peSave();peApplyTheme();peRefreshModal();};
+    o.querySelector("#peNotif").onclick=async()=>{peSettings.notifications=!peSettings.notifications;peSave();if(peSettings.notifications)await peRequestPermission();peRefreshModal();};
+    o.querySelector("#peSound").onclick=async()=>{peSettings.sound=!peSettings.sound;peSave();if(peSettings.sound)peUnlockAudio();peRefreshModal();};
+    o.querySelector("#pePermission").onclick=peRequestPermission;
+    o.querySelector("#peTest").onclick=()=>peNotify("PriceEdge test","Notifications and sound are working.","test");
+    peRefreshModal();
+  }
+
+  function peRefreshModal(){
+    const o=document.getElementById("peSettingsOverlay");if(!o)return;
+    ["peDark","peLight"].forEach(id=>document.getElementById(id)?.classList.toggle("on",document.getElementById(id).id==="peDark"?peSettings.theme==="dark":peSettings.theme==="light"));
+    [["peNotif",peSettings.notifications],["peSound",peSettings.sound]].forEach(([id,on])=>document.getElementById(id)?.classList.toggle("on",on));
+    const p=document.getElementById("pePermission");if(p)p.textContent=("Notification" in window&&Notification.permission==="granted")?"Browser notifications enabled":"Enable browser notifications";
+  }
+
+  async function peRequestPermission(){
+    if(!("Notification" in window)){alert("This browser does not support web notifications.");return false;}
+    try{const result=await Notification.requestPermission();peRefreshModal();return result==="granted";}catch(_){return false;}
+  }
+
+  function peUnlockAudio(){
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      audioCtx=audioCtx||new C();
+      if(audioCtx.state==="suspended")audioCtx.resume();
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.08,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.12);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.13);
+    }catch(_){ }
+  }
+
+  function peSoundAlert(){
+    if(!peSettings.sound)return;
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      audioCtx=audioCtx||new C();if(audioCtx.state==="suspended")audioCtx.resume();
+      [660,880].forEach((freq,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+i*.11;o.type="sine";o.frequency.value=freq;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.09,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.12);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+.13);});
+    }catch(_){ }
+  }
+
+  function peNotify(title,body,key){
+    if(!peSettings.notifications)return;
+    if(key&&key===lastAlertKey)return;
+    if(key)lastAlertKey=key;
+    peSoundAlert();
+    if("Notification" in window&&Notification.permission==="granted"){
+      try{new Notification(title,{body,tag:"priceedge-"+key});}catch(_){ }
+    }
+  }
+
+  function peWatchSignal(){
+    const el=document.getElementById("signal");
+    if(!el)return;
+    const heading=el.querySelector("h3");
+    const signal=(heading?.textContent||"").trim().toUpperCase();
+    if(signal==="BUY"||signal==="SELL"){
+      const text=(el.innerText||signal).replace(/\s+/g," ").trim();
+      peNotify("PriceEdge "+signal,text,"signal-"+signal+"-"+text.slice(0,80));
+    }
+  }
+
+  window.peOpenSettings=peOpen;
+  peEnsureButton();
+  setTimeout(peEnsureButton,500);
+  peApplyTheme();
+  if("serviceWorker" in navigator){try{navigator.serviceWorker.register("/sw.js").catch(()=>{});}catch(_){} }
+
   ensureLivePanel();
   showZoom();
   updateLivePanel();
   setInterval(updateLivePanel,1000);
+  setInterval(peWatchSignal,1500);
   draw();
 })();
