@@ -1,7 +1,7 @@
 /* PriceEdge live XAU/USD tick client.
-   The server keeps the Twelve Data API key private and relays real ticks
-   over the same-origin /ws/live socket. This script turns those ticks into
-   a continuously forming 5-minute candle without inventing prices.
+   Twelve Data stays server-side. The browser receives real ticks over
+   the same-origin /ws/live socket and uses them to continuously form the
+   current 5-minute candle without inventing market prices.
 */
 (function () {
   "use strict";
@@ -11,26 +11,42 @@
   let frameQueued = false;
   let analysisTimer = null;
   let lastTick = 0;
+  let lastTickTime = 0;
 
   const $id = id => document.getElementById(id);
 
-  function status(text, type) {
-    const el = $id("liveStatusText");
-    if (el) el.textContent = text;
-    const wrap = $id("liveStatus");
-    if (wrap) {
-      wrap.className = "live " + (type === "error" ? "error" : type === "cached" ? "cached" : "");
+  function setStatus(text, type) {
+    const candidates = ["liveStatusText", "streamText"];
+    for (const id of candidates) {
+      const el = $id(id);
+      if (el) el.textContent = text;
     }
+
+    const wrappers = ["liveStatus", "stream"];
+    for (const id of wrappers) {
+      const el = $id(id);
+      if (!el) continue;
+      el.className = type === "error"
+        ? "status off"
+        : type === "cached"
+          ? "status"
+          : "status";
+    }
+
+    const dot = $id("dot");
+    if (dot) dot.className = "dot" + (type === "error" ? " off" : "");
   }
 
   function ensureTickMeta() {
     let el = $id("liveTickMeta");
     if (el) return el;
-    const parent = $id("liveStatus")?.parentElement;
+
+    const parent = $id("streamText")?.parentElement || $id("liveStatus")?.parentElement;
     if (!parent) return null;
+
     el = document.createElement("div");
     el.id = "liveTickMeta";
-    el.style.cssText = "margin-top:4px;font-size:11px;opacity:.72;font-variant-numeric:tabular-nums;";
+    el.style.cssText = "margin-top:3px;font-size:10px;opacity:.72;font-variant-numeric:tabular-nums;";
     parent.appendChild(el);
     return el;
   }
@@ -42,13 +58,13 @@
   function candleStartMs(candle) {
     const raw = candle?.datetime;
     if (!raw) return NaN;
-    let t = Date.parse(raw);
-    if (!Number.isFinite(t)) return NaN;
-    return candleBucket(t);
+    const t = Date.parse(raw);
+    return Number.isFinite(t) ? candleBucket(t) : NaN;
   }
 
   function formatCandleClock(ms) {
-    const left = Math.max(0, 300000 - (Date.now() - ms));
+    const elapsed = Date.now() - ms;
+    const left = Math.max(0, 300000 - elapsed);
     const total = Math.ceil(left / 1000);
     const m = Math.floor(total / 60);
     const s = total % 60;
@@ -58,39 +74,32 @@
   function updatePriceUi(price, previousPrice) {
     const priceEl = $id("price");
     if (priceEl) {
-      const trend = previousPrice == null
+      const direction = previousPrice == null
         ? ""
         : price > previousPrice ? " ▲" : price < previousPrice ? " ▼" : "";
-      priceEl.innerHTML = `$${price.toFixed(2)} <span style="font-size:15px" class="${price >= (previousPrice ?? price) ? "green" : "red"}">${trend}</span>`;
+      const cls = previousPrice == null || price >= previousPrice ? "green" : "red";
+      priceEl.innerHTML = `$${price.toFixed(2)} <span style="font-size:15px" class="${cls}">${direction}</span>`;
     }
 
-    const deltaEl = $id("priceMetaText");
-    if (deltaEl && previousPrice != null) {
+    const changeEl = $id("change") || $id("priceMetaText");
+    if (changeEl && previousPrice != null) {
       const delta = price - previousPrice;
-      deltaEl.textContent = `${delta > 0 ? "+" : ""}${delta.toFixed(2)} LIVE`;
-      deltaEl.className = delta > 0 ? "green" : delta < 0 ? "red" : "gold";
-    }
-
-    const dot = $id("priceDot");
-    if (dot) {
-      dot.className = "price-dot " + (previousPrice != null && price < previousPrice ? "down" : previousPrice === price ? "flat" : "");
+      changeEl.textContent = `${delta > 0 ? "+" : ""}${delta.toFixed(2)} LIVE`;
+      changeEl.className = delta > 0 ? "green" : delta < 0 ? "red" : "gold";
     }
   }
 
   function updateFormingCandle(price, time) {
-    if (!Array.isArray(window.candles) && typeof candles === "undefined") return;
+    if (!Array.isArray(window.candles)) return;
 
-    const list = candles;
-    if (!Array.isArray(list)) return;
-
+    const list = window.candles;
     const bucket = candleBucket(time);
     let last = list[list.length - 1];
     let lastBucket = candleStartMs(last);
 
     if (!Number.isFinite(lastBucket) || bucket > lastBucket) {
-      const iso = new Date(bucket).toISOString();
       last = {
-        datetime: iso,
+        datetime: new Date(bucket).toISOString(),
         open: price,
         high: price,
         low: price,
@@ -98,7 +107,7 @@
         live: true
       };
       list.push(last);
-      while (list.length > 250) list.shift();
+      while (list.length > 300) list.shift();
     } else if (bucket < lastBucket) {
       return;
     } else {
@@ -110,42 +119,51 @@
 
     const meta = ensureTickMeta();
     if (meta) {
-      meta.textContent = `LIVE TICK • ${price.toFixed(2)} • NEW 5M CANDLE IN ${formatCandleClock(bucket)}`;
+      meta.textContent = `LIVE TICK • ${price.toFixed(2)} • CANDLE CLOSES IN ${formatCandleClock(bucket)}`;
     }
 
     if (!frameQueued) {
       frameQueued = true;
       requestAnimationFrame(() => {
         frameQueued = false;
-        if (typeof drawChart === "function") drawChart();
+        if (typeof window.drawChart === "function") window.drawChart();
       });
     }
 
     if (!analysisTimer) {
       analysisTimer = setTimeout(() => {
         analysisTimer = null;
-        if (typeof analyze === "function") analyze();
-      }, 250);
+        if (typeof window.analyze === "function") window.analyze();
+      }, 500);
     }
   }
 
   function handleTick(msg) {
     if (msg.symbol && msg.symbol !== "XAU/USD") return;
+
     const price = Number(msg.price);
     if (!Number.isFinite(price) || price <= 0) return;
 
     const previousPrice = lastTick || null;
     lastTick = price;
-    const time = Number(msg.time) || Date.now();
+    lastTickTime = Number(msg.time) || Date.now();
 
     updatePriceUi(price, previousPrice);
-    updateFormingCandle(price, time);
+    updateFormingCandle(price, lastTickTime);
 
     const received = $id("dataReceived");
-    if (received) received.textContent = `Live tick received • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+    if (received) {
+      received.textContent = `Live tick received • ${new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      })}`;
+    }
+
     const updated = $id("lastUpdated");
-    if (updated) updated.textContent = "Live tick stream";
-    status("LIVE TICK STREAM", "live");
+    if (updated) updated.textContent = "LIVE TICK STREAM";
+
+    setStatus("LIVE TICK STREAM", "live");
   }
 
   function connect() {
@@ -155,17 +173,27 @@
     socket = new WebSocket(`${protocol}//${location.host}/ws/live`);
 
     socket.addEventListener("open", () => {
-      status("LIVE TICK STREAM", "live");
+      setStatus("LIVE TICK STREAM", "live");
     });
 
     socket.addEventListener("message", event => {
       let msg;
-      try { msg = JSON.parse(event.data); } catch (_) { return; }
+      try {
+        msg = JSON.parse(event.data);
+      } catch (_) {
+        return;
+      }
 
       if (msg.type === "status") {
-        if (msg.status === "connected") status("LIVE TICK STREAM", "live");
-        else if (msg.status === "reconnecting") status("RECONNECTING LIVE TICKS", "cached");
-        else if (msg.status === "error") status("LIVE TICK ERROR", "error");
+        if (msg.status === "connected") {
+          setStatus("LIVE TICK STREAM", "live");
+        } else if (msg.status === "reconnecting") {
+          setStatus("RECONNECTING LIVE TICKS", "cached");
+        } else if (msg.status === "error") {
+          setStatus("LIVE TICK ERROR", "error");
+        } else if (msg.status === "disabled") {
+          setStatus("LIVE STREAM UNAVAILABLE", "error");
+        }
         return;
       }
 
@@ -173,22 +201,23 @@
     });
 
     socket.addEventListener("close", () => {
-      status("RECONNECTING LIVE TICKS", "cached");
+      setStatus("RECONNECTING LIVE TICKS", "cached");
       clearTimeout(reconnectTimer);
       reconnectTimer = setTimeout(connect, 3000);
     });
 
     socket.addEventListener("error", () => {
-      status("LIVE TICK ERROR", "error");
+      setStatus("LIVE TICK ERROR", "error");
     });
   }
 
   function countdownRefresh() {
     const meta = $id("liveTickMeta");
-    if (!meta || !lastTick || typeof candles === "undefined" || !candles.length) return;
-    const bucket = candleStartMs(candles[candles.length - 1]);
+    if (!meta || !lastTick || !lastTickTime || !Array.isArray(window.candles) || !window.candles.length) return;
+
+    const bucket = candleStartMs(window.candles[window.candles.length - 1]);
     if (Number.isFinite(bucket)) {
-      meta.textContent = `LIVE TICK • ${lastTick.toFixed(2)} • NEW 5M CANDLE IN ${formatCandleClock(bucket)}`;
+      meta.textContent = `LIVE TICK • ${lastTick.toFixed(2)} • CANDLE CLOSES IN ${formatCandleClock(bucket)}`;
     }
   }
 
