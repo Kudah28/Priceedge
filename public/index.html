@@ -1,150 +1,238 @@
 <script>
 
-const $=id=>document.getElementById(id);
+/* =========================================================
 
-let token=localStorage.getItem("pe_token")||"";
+   PRICEEDGE — MARKET ANALYSIS + CHART + AUTH + JOURNAL
 
-let mode="register";
+   ========================================================= */
 
-let candles=[];
+const $ = id => document.getElementById(id);
 
-let chartOffset=0;
+let token = localStorage.getItem("pe_token") || "";
 
-let chartDragging=false;
+let mode = "register";
 
-let chartDragStartX=0;
+let candles = [];
 
-let chartDragStartOffset=0;
+let chartOffset = 0;
 
-const CHART_VISIBLE_CANDLES=45;
+let chartDragging = false;
 
-const MARKET_REFRESH_MS=60000;
+let chartDragStartX = 0;
 
-let marketLoading=false;
+let chartDragStartOffset = 0;
 
-let lastSuccessfulUpdate=0;
+const CHART_VISIBLE_CANDLES = 45;
 
-/* =========================
+const MARKET_REFRESH_MS = 60000;
+
+let marketLoading = false;
+
+let lastSuccessfulUpdate = 0;
+
+/* =========================================================
 
    NAVIGATION
 
-========================= */
+   ========================================================= */
 
-document.querySelectorAll("nav button").forEach(b=>{
+document.querySelectorAll("nav button").forEach(button => {
 
-  b.onclick=()=>{
+  button.addEventListener("click", () => {
 
-    document.querySelectorAll("nav button")
+    document
 
-      .forEach(x=>x.classList.remove("on"));
+      .querySelectorAll("nav button")
 
-    b.classList.add("on");
+      .forEach(x => x.classList.remove("on"));
 
-    document.querySelectorAll(".page")
+    button.classList.add("on");
 
-      .forEach(x=>x.classList.remove("on"));
+    document
 
-    $(b.dataset.page).classList.add("on");
+      .querySelectorAll(".page")
 
-    if(b.dataset.page==="home"){
+      .forEach(page => page.classList.remove("on"));
 
-      setTimeout(drawChart,50);
+    const page = $(button.dataset.page);
+
+    if (page) {
+
+      page.classList.add("on");
 
     }
 
-  };
+    if (button.dataset.page === "home") {
+
+      setTimeout(drawChart, 50);
+
+    }
+
+  });
 
 });
 
-/* =========================
+/* =========================================================
 
    AUTHENTICATION
 
-========================= */
+   ========================================================= */
 
-function toggleAuth(){
+function toggleAuth() {
 
-  mode=mode==="register"?"login":"register";
+  mode = mode === "register" ? "login" : "register";
 
-  $("authTitle").textContent=
+  if ($("authTitle")) {
 
-    mode==="register"?"Create account":"Log in";
+    $("authTitle").textContent =
 
-  document.querySelector(
+      mode === "register"
 
-    "#authBox .actions button:first-child"
+        ? "Create account"
 
-  ).textContent=
+        : "Log in";
 
-    mode==="register"?"Create account":"Log in";
+  }
 
-  document.querySelector(
+  const firstButton =
 
-    "#authBox .actions button:last-child"
+    document.querySelector("#authBox .actions button:first-child");
 
-  ).textContent=
+  const lastButton =
 
-    mode==="register"?"Use login":"Create account";
+    document.querySelector("#authBox .actions button:last-child");
+
+  if (firstButton) {
+
+    firstButton.textContent =
+
+      mode === "register"
+
+        ? "Create account"
+
+        : "Log in";
+
+  }
+
+  if (lastButton) {
+
+    lastButton.textContent =
+
+      mode === "register"
+
+        ? "Use login"
+
+        : "Create account";
+
+  }
 
 }
 
-async function authAction(){
+async function authAction() {
 
-  const email=$("email").value.trim();
+  const email =
 
-  const password=$("password").value;
+    $("email")?.value.trim() || "";
 
-  if(!email||!password){
+  const password =
 
-    showAuth("Please enter your email and password.");
+    $("password")?.value || "";
+
+  if (!email || !password) {
+
+    showAuth(
+
+      "Please enter your email and password."
+
+    );
 
     return;
 
   }
 
-  try{
+  try {
 
-    const r=await fetch(
+    const response = await fetch(
 
-      "/api/"+(mode==="register"?"register":"login"),
+      "/api/" +
+
+      (mode === "register" ? "register" : "login"),
 
       {
 
-        method:"POST",
+        method: "POST",
 
-        headers:{
+        headers: {
 
-          "Content-Type":"application/json"
+          "Content-Type": "application/json"
 
         },
 
-        body:JSON.stringify({email,password})
+        body: JSON.stringify({
+
+          email,
+
+          password
+
+        })
 
       }
 
     );
 
-    const d=await r.json();
+    const data =
 
-    if(!r.ok){
+      await response.json().catch(() => ({}));
 
-      showAuth(d.error||"Unable to complete request.");
+    if (!response.ok) {
+
+      showAuth(
+
+        data.error ||
+
+        "Unable to complete request."
+
+      );
 
       return;
 
     }
 
-    token=d.token;
+    token = data.token || "";
 
-    localStorage.setItem("pe_token",token);
+    if (!token) {
 
-    $("authMsg").classList.add("hidden");
+      showAuth(
 
-    updateAccount();
+        "Server did not return an authentication token."
 
-    loadTrades();
+      );
 
-  }catch(e){
+      return;
+
+    }
+
+    localStorage.setItem(
+
+      "pe_token",
+
+      token
+
+    );
+
+    if ($("authMsg")) {
+
+      $("authMsg").classList.add("hidden");
+
+    }
+
+    await updateAccount();
+
+    await loadTrades();
+
+  } catch (error) {
+
+    console.error("Authentication error:", error);
 
     showAuth(
 
@@ -156,39 +244,41 @@ async function authAction(){
 
 }
 
-function showAuth(msg){
+function showAuth(message) {
 
-  $("authMsg").textContent=msg;
+  if (!$("authMsg")) return;
+
+  $("authMsg").textContent = message;
 
   $("authMsg").classList.remove("hidden");
 
 }
 
-async function updateAccount(){
+async function updateAccount() {
 
-  if(!token){
+  if (!token) {
 
-    $("authBox").classList.remove("hidden");
+    $("authBox")?.classList.remove("hidden");
 
-    $("logged").classList.add("hidden");
+    $("logged")?.classList.add("hidden");
 
-    $("loginRequired").classList.remove("hidden");
+    $("loginRequired")?.classList.remove("hidden");
 
     return;
 
   }
 
-  try{
+  try {
 
-    const r=await fetch(
+    const response = await fetch(
 
       "/api/me",
 
       {
 
-        headers:{
+        headers: {
 
-          Authorization:"Bearer "+token
+          Authorization: "Bearer " + token
 
         }
 
@@ -196,7 +286,7 @@ async function updateAccount(){
 
     );
 
-    if(!r.ok){
+    if (!response.ok) {
 
       logout();
 
@@ -204,17 +294,27 @@ async function updateAccount(){
 
     }
 
-    const d=await r.json();
+    const data =
 
-    $("authBox").classList.add("hidden");
+      await response.json();
 
-    $("logged").classList.remove("hidden");
+    $("authBox")?.classList.add("hidden");
 
-    $("who").textContent=d.user.email;
+    $("logged")?.classList.remove("hidden");
 
-    $("loginRequired").classList.add("hidden");
+    if ($("who")) {
 
-  }catch(e){
+      $("who").textContent =
+
+        data.user?.email || "";
+
+    }
+
+    $("loginRequired")?.classList.add("hidden");
+
+  } catch (error) {
+
+    console.error("Account error:", error);
 
     logout();
 
@@ -222,9 +322,9 @@ async function updateAccount(){
 
 }
 
-function logout(){
+function logout() {
 
-  token="";
+  token = "";
 
   localStorage.removeItem("pe_token");
 
@@ -232,21 +332,27 @@ function logout(){
 
 }
 
-async function loadTrades(){
+/* =========================================================
 
-  if(!token)return;
+   TRADING JOURNAL
 
-  try{
+   ========================================================= */
 
-    const r=await fetch(
+async function loadTrades() {
+
+  if (!token) return;
+
+  try {
+
+    const response = await fetch(
 
       "/api/trades",
 
       {
 
-        headers:{
+        headers: {
 
-          Authorization:"Bearer "+token
+          Authorization: "Bearer " + token
 
         }
 
@@ -254,47 +360,61 @@ async function loadTrades(){
 
     );
 
-    if(!r.ok)return;
+    if (!response.ok) return;
 
-    const rows=await r.json();
+    const rows =
 
-    $("trades").innerHTML=rows.map(t=>{
+      await response.json();
 
-      const result=Number(t.result||0);
+    if (!$("trades")) return;
 
-      return `
+    $("trades").innerHTML =
 
-        <tr>
+      rows.map(trade => {
 
-          <td>${escapeHtml(t.pair)}</td>
+        const result =
 
-          <td>${escapeHtml(t.side)}</td>
+          Number(trade.result || 0);
 
-          <td>${t.entry??""}</td>
+        return `
 
-          <td class="${result>=0?"green":"red"}">
+          <tr>
 
-            ${result>=0?"+":""}$${result.toFixed(2)}
+            <td>${escapeHtml(trade.pair)}</td>
 
-          </td>
+            <td>${escapeHtml(trade.side)}</td>
 
-        </tr>
+            <td>${trade.entry ?? ""}</td>
 
-      `;
+            <td class="${result >= 0 ? "green" : "red"}">
 
-    }).join("");
+              ${result >= 0 ? "+" : ""}$${result.toFixed(2)}
 
-  }catch(e){
+            </td>
 
-    console.error("Journal error:",e);
+          </tr>
+
+        `;
+
+      }).join("");
+
+  } catch (error) {
+
+    console.error(
+
+      "Journal error:",
+
+      error
+
+    );
 
   }
 
 }
 
-async function saveTrade(){
+async function saveTrade() {
 
-  if(!token){
+  if (!token) {
 
     alert(
 
@@ -306,61 +426,67 @@ async function saveTrade(){
 
   }
 
-  const body={
+  const body = {
 
-    pair:$("jp").value,
+    pair: $("jp")?.value || "",
 
-    side:$("js").value,
+    side: $("js")?.value || "",
 
-    entry:+$("je").value,
+    entry: Number($("je")?.value || 0),
 
-    stop:+$("jstop").value,
+    stop: Number($("jstop")?.value || 0),
 
-    target:+$("jt").value,
+    target: Number($("jt")?.value || 0),
 
-    result:+$("jr").value,
+    result: Number($("jr")?.value || 0),
 
-    notes:$("jn").value
+    notes: $("jn")?.value || ""
 
   };
 
-  try{
+  try {
 
-    const r=await fetch(
+    const response = await fetch(
 
       "/api/trades",
 
       {
 
-        method:"POST",
+        method: "POST",
 
-        headers:{
+        headers: {
 
-          "Content-Type":"application/json",
+          "Content-Type": "application/json",
 
-          Authorization:"Bearer "+token
+          Authorization: "Bearer " + token
 
         },
 
-        body:JSON.stringify(body)
+        body: JSON.stringify(body)
 
       }
 
     );
 
-    if(r.ok){
+    if (response.ok) {
 
-      $("jn").value="";
+      if ($("jn")) {
 
-      loadTrades();
+        $("jn").value = "";
 
-    }else{
+      }
 
-      const d=await r.json().catch(()=>({}));
+      await loadTrades();
+
+    } else {
+
+      const data =
+
+        await response.json().catch(() => ({}));
 
       alert(
 
-        d.error||
+        data.error ||
 
         "Could not save trade."
 
@@ -368,7 +494,15 @@ async function saveTrade(){
 
     }
 
-  }catch(e){
+  } catch (error) {
+
+    console.error(
+
+      "Save trade error:",
+
+      error
+
+    );
 
     alert(
 
@@ -380,143 +514,165 @@ async function saveTrade(){
 
 }
 
-/* =========================
+/* =========================================================
 
    RISK CALCULATOR
 
-========================= */
+   ========================================================= */
 
-function risk(){
+function risk() {
 
-  const balance=+$("bal").value;
+  const balance =
 
-  const riskPercent=+$("rp").value;
+    Number($("bal")?.value || 0);
 
-  const entry=+$("en").value;
+  const riskPercent =
 
-  const stop=+$("sl").value;
+    Number($("rp")?.value || 0);
 
-  if(
+  const entry =
 
-    ![balance,riskPercent,entry,stop]
+    Number($("en")?.value || 0);
 
-      .every(Number.isFinite)||
+  const stop =
 
-    balance<=0||
+    Number($("sl")?.value || 0);
 
-    riskPercent<=0||
+  if (
 
-    entry<=0||
+    ![
 
-    stop<=0
+      balance,
 
-  ){
+      riskPercent,
 
-    $("riskout").textContent=
+      entry,
 
-      "Please enter valid positive numbers.";
+      stop
+
+    ].every(Number.isFinite) ||
+
+    balance <= 0 ||
+
+    riskPercent <= 0 ||
+
+    entry <= 0 ||
+
+    stop <= 0
+
+  ) {
+
+    if ($("riskout")) {
+
+      $("riskout").textContent =
+
+        "Please enter valid positive numbers.";
+
+    }
 
     return;
 
   }
 
-  const amount=
+  const amount =
 
-    balance*riskPercent/100;
+    balance * riskPercent / 100;
 
-  const distance=
+  const distance =
 
-    Math.abs(entry-stop);
+    Math.abs(entry - stop);
 
-  $("riskout").innerHTML=`
+  if ($("riskout")) {
 
-    Maximum planned loss:
+    $("riskout").innerHTML = `
 
-    <b>$${amount.toFixed(2)}</b>
+      Maximum planned loss:
 
-    <br>
+      <b>$${amount.toFixed(2)}</b>
 
-    Stop distance:
+      <br>
 
-    <b>$${distance.toFixed(2)}</b>
+      Stop distance:
 
-    <br><br>
+      <b>$${distance.toFixed(2)}</b>
 
-    <span class="muted">
+      <br><br>
 
-      Exact XAU/USD position sizing depends on
+      <span class="muted">
 
-      your broker's contract specification.
+        Exact XAU/USD position sizing depends on
 
-    </span>
+        your broker's contract specification.
 
-  `;
+      </span>
+
+    `;
+
+  }
 
 }
 
-/* =========================
+/* =========================================================
 
    MATH HELPERS
 
-========================= */
+   ========================================================= */
 
-function average(values){
+function average(values) {
 
-  if(!values.length)return 0;
+  if (!values.length) return 0;
 
   return values.reduce(
 
-    (a,b)=>a+b,
+    (sum, value) => sum + value,
 
     0
 
-  )/values.length;
+  ) / values.length;
 
 }
 
-function clamp(value,min,max){
+function clamp(value, min, max) {
 
   return Math.max(
 
     min,
 
-    Math.min(max,value)
+    Math.min(max, value)
 
   );
 
 }
 
-function findSwingHighs(data){
+/* =========================================================
 
-  const result=[];
+   SWING DETECTION
 
-  for(
+   ========================================================= */
 
-    let i=2;
+function findSwingHighs(data) {
 
-    i<data.length-2;
+  const result = [];
 
-    i++
+  for (let i = 2; i < data.length - 2; i++) {
 
-  ){
+    if (
 
-    if(
+      data[i].high > data[i - 1].high &&
 
-      data[i].high>data[i-1].high &&
+      data[i].high > data[i - 2].high &&
 
-      data[i].high>data[i-2].high &&
+      data[i].high >= data[i + 1].high &&
 
-      data[i].high>=data[i+1].high &&
+      data[i].high >= data[i + 2].high
 
-      data[i].high>=data[i+2].high
-
-    ){
+    ) {
 
       result.push({
 
-        index:i,
+        index: i,
 
-        price:data[i].high
+        price: data[i].high
 
       });
 
@@ -528,37 +684,29 @@ function findSwingHighs(data){
 
 }
 
-function findSwingLows(data){
+function findSwingLows(data) {
 
-  const result=[];
+  const result = [];
 
-  for(
+  for (let i = 2; i < data.length - 2; i++) {
 
-    let i=2;
+    if (
 
-    i<data.length-2;
+      data[i].low < data[i - 1].low &&
 
-    i++
+      data[i].low < data[i - 2].low &&
 
-  ){
+      data[i].low <= data[i + 1].low &&
 
-    if(
+      data[i].low <= data[i + 2].low
 
-      data[i].low<data[i-1].low &&
-
-      data[i].low<data[i-2].low &&
-
-      data[i].low<=data[i+1].low &&
-
-      data[i].low<=data[i+2].low
-
-    ){
+    ) {
 
       result.push({
 
-        index:i,
+        index: i,
 
-        price:data[i].low
+        price: data[i].low
 
       });
 
@@ -570,149 +718,155 @@ function findSwingLows(data){
 
 }
 
-/* =========================
+/* =========================================================
 
-   STRUCTURE ENGINE
+   MARKET STRUCTURE
 
-========================= */
+   ========================================================= */
 
-function detectStructure(data){
+function detectStructure(data) {
 
-  if(data.length<15){
+  if (data.length < 15) {
 
     return {
 
-      label:"INSUFFICIENT DATA",
+      label: "INSUFFICIENT DATA",
 
-      bullish:false,
+      bullish: false,
 
-      bearish:false,
+      bearish: false,
 
-      score:0
+      score: 0
 
     };
 
   }
 
-  const d=data.slice(-40);
+  const d =
 
-  const highs=findSwingHighs(d);
+    data.slice(-40);
 
-  const lows=findSwingLows(d);
+  const highs =
 
-  if(
+    findSwingHighs(d);
 
-    highs.length<2||
+  const lows =
 
-    lows.length<2
+    findSwingLows(d);
 
-  ){
+  if (
+
+    highs.length < 2 ||
+
+    lows.length < 2
+
+  ) {
 
     return {
 
-      label:"RANGE",
+      label: "RANGE",
 
-      bullish:false,
+      bullish: false,
 
-      bearish:false,
+      bearish: false,
 
-      score:0
+      score: 0
 
     };
 
   }
 
-  const previousHigh=
+  const previousHigh =
 
-    highs[highs.length-2].price;
+    highs[highs.length - 2].price;
 
-  const latestHigh=
+  const latestHigh =
 
-    highs[highs.length-1].price;
+    highs[highs.length - 1].price;
 
-  const previousLow=
+  const previousLow =
 
-    lows[lows.length-2].price;
+    lows[lows.length - 2].price;
 
-  const latestLow=
+  const latestLow =
 
-    lows[lows.length-1].price;
+    lows[lows.length - 1].price;
 
-  const higherHigh=
+  const higherHigh =
 
-    latestHigh>previousHigh;
+    latestHigh > previousHigh;
 
-  const higherLow=
+  const higherLow =
 
-    latestLow>previousLow;
+    latestLow > previousLow;
 
-  const lowerHigh=
+  const lowerHigh =
 
-    latestHigh<previousHigh;
+    latestHigh < previousHigh;
 
-  const lowerLow=
+  const lowerLow =
 
-    latestLow<previousLow;
+    latestLow < previousLow;
 
-  if(higherHigh&&higherLow){
+  if (higherHigh && higherLow) {
 
     return {
 
-      label:"HH / HL",
+      label: "HH / HL",
 
-      bullish:true,
+      bullish: true,
 
-      bearish:false,
+      bearish: false,
 
-      score:2
+      score: 2
 
     };
 
   }
 
-  if(lowerHigh&&lowerLow){
+  if (lowerHigh && lowerLow) {
 
     return {
 
-      label:"LH / LL",
+      label: "LH / LL",
 
-      bullish:false,
+      bullish: false,
 
-      bearish:true,
+      bearish: true,
 
-      score:2
+      score: 2
 
     };
 
   }
 
-  if(higherHigh){
+  if (higherHigh) {
 
     return {
 
-      label:"HIGHER HIGH",
+      label: "HIGHER HIGH",
 
-      bullish:true,
+      bullish: true,
 
-      bearish:false,
+      bearish: false,
 
-      score:1
+      score: 1
 
     };
 
   }
 
-  if(lowerLow){
+  if (lowerLow) {
 
     return {
 
-      label:"LOWER LOW",
+      label: "LOWER LOW",
 
-      bullish:false,
+      bullish: false,
 
-      bearish:true,
+      bearish: true,
 
-      score:1
+      score: 1
 
     };
 
@@ -720,70 +874,99 @@ function detectStructure(data){
 
   return {
 
-    label:"RANGE",
+    label: "RANGE",
 
-    bullish:false,
+    bullish: false,
 
-    bearish:false,
+    bearish: false,
 
-    score:0
+    score: 0
 
   };
 
 }
 
-/* =========================
+/* =========================================================
 
    MOMENTUM ENGINE
 
-========================= */
+   ========================================================= */
 
-function calculateMomentum(data){
+function calculateMomentum(data) {
 
-  const closes=data.map(c=>c.close);
-  const priceDelta=latest-previous;
+  const closes =
 
-const priceDeltaPct=previous!==0?(priceDelta/previous)*100:0;
+    data.map(c => c.close);
 
-  const recent=closes.slice(-5);
-
-  const previous=closes.slice(-10,-5);
-
-  if(
-
-    recent.length<5||
-
-    previous.length<5
-
-  ){
+  if (closes.length < 10) {
 
     return {
 
-      label:"LOW",
+      label: "LOW",
 
-      direction:"NEUTRAL",
+      direction: "NEUTRAL",
 
-      score:0,
+      score: 0,
 
-      percent:0
+      percent: 0,
+
+      priceDelta: 0,
+
+      priceDeltaPct: 0
 
     };
 
   }
 
-  const recentAverage=
+  /* FIXED:
+
+     latest and previous are now defined
+
+     BEFORE they are used.
+
+  */
+
+  const latest =
+
+    closes[closes.length - 1];
+
+  const previous =
+
+    closes[closes.length - 2];
+
+  const priceDelta =
+
+    latest - previous;
+
+  const priceDeltaPct =
+
+    previous !== 0
+
+      ? (priceDelta / previous) * 100
+
+      : 0;
+
+  const recent =
+
+    closes.slice(-5);
+
+  const previousWindow =
+
+    closes.slice(-10, -5);
+
+  const recentAverage =
 
     average(recent);
 
-  const previousAverage=
+  const previousAverage =
 
-    average(previous);
+    average(previousWindow);
 
-  const change=
+  const change =
 
-    recentAverage-previousAverage;
+    recentAverage - previousAverage;
 
-  const base=
+  const base =
 
     Math.max(
 
@@ -793,19 +976,31 @@ const priceDeltaPct=previous!==0?(priceDelta/previous)*100:0;
 
     );
 
-  const percent=
+  const percent =
 
-    Math.abs(change/base)*100;
+    Math.abs(change / base) * 100;
 
-  let label="LOW";
+  let label = "LOW";
 
-  if(percent>=0.20){
+  if (percent >= 0.20) {
 
-    label="STRONG";
+    label = "STRONG";
 
-  }else if(percent>=0.08){
+  } else if (percent >= 0.08) {
 
-    label="MODERATE";
+    label = "MODERATE";
+
+  }
+
+  let direction = "NEUTRAL";
+
+  if (change > 0) {
+
+    direction = "BULLISH";
+
+  } else if (change < 0) {
+
+    direction = "BEARISH";
 
   }
 
@@ -813,99 +1008,85 @@ const priceDeltaPct=previous!==0?(priceDelta/previous)*100:0;
 
     label,
 
-    direction:
-
-      change>0?
-
-      "BULLISH":
-
-      change<0?
-
-      "BEARISH":
-
-      "NEUTRAL",
+    direction,
 
     score:
 
-      label==="STRONG"?
+      label === "STRONG"
 
-      2:
+        ? 2
 
-      label==="MODERATE"?
+        : label === "MODERATE"
 
-      1:
+          ? 1
 
-      0,
+          : 0,
 
-    percent
+    percent,
+
+    priceDelta,
+
+    priceDeltaPct
 
   };
 
 }
 
-/* =========================
+/* =========================================================
 
    CANDLE STRENGTH
 
-========================= */
+   ========================================================= */
 
-function candleStrength(candle){
+function candleStrength(candle) {
 
-  const range=
+  const range =
 
-    candle.high-candle.low;
+    candle.high - candle.low;
 
-  if(range<=0){
+  if (range <= 0) {
 
     return {
 
-      direction:"NEUTRAL",
+      direction: "NEUTRAL",
 
-      strength:0
+      strength: 0
 
     };
 
   }
 
-  const body=
+  const body =
 
     Math.abs(
 
-      candle.close-candle.open
+      candle.close - candle.open
 
     );
 
-  const bodyRatio=
+  const bodyRatio =
 
-    body/range;
+    body / range;
 
-  if(
-
-    candle.close>candle.open
-
-  ){
+  if (candle.close > candle.open) {
 
     return {
 
-      direction:"BULLISH",
+      direction: "BULLISH",
 
-      strength:bodyRatio
+      strength: bodyRatio
 
     };
 
   }
 
-  if(
-
-    candle.close<candle.open
-
-  ){
+  if (candle.close < candle.open) {
 
     return {
 
-      direction:"BEARISH",
+      direction: "BEARISH",
 
-      strength:bodyRatio
+      strength: bodyRatio
 
     };
 
@@ -913,51 +1094,51 @@ function candleStrength(candle){
 
   return {
 
-    direction:"NEUTRAL",
+    direction: "NEUTRAL",
 
-    strength:0
+    strength: 0
 
   };
 
 }
 
-/* =========================
+/* =========================================================
 
    SUPPORT / RESISTANCE
 
-========================= */
+   ========================================================= */
 
-function calculateLevels(data){
+function calculateLevels(data) {
 
-  const completed=
+  const completed =
 
-    data.slice(-21,-1);
+    data.slice(-21, -1);
 
-  if(!completed.length){
+  if (!completed.length) {
 
     return {
 
-      support:null,
+      support: null,
 
-      resistance:null
+      resistance: null
 
     };
 
   }
 
-  const support=
+  const support =
 
     Math.min(
 
-      ...completed.map(c=>c.low)
+      ...completed.map(c => c.low)
 
     );
 
-  const resistance=
+  const resistance =
 
     Math.max(
 
-      ...completed.map(c=>c.high)
+      ...completed.map(c => c.high)
 
     );
 
@@ -971,21 +1152,21 @@ function calculateLevels(data){
 
 }
 
-/* =========================
+/* =========================================================
 
-   MAIN MARKET ANALYSIS
+   MAIN ANALYSIS
 
-========================= */
+   ========================================================= */
 
-function buildAnalysis(data){
+function buildAnalysis(data) {
 
-  if(data.length<20){
+  if (data.length < 20) {
 
     return {
 
-      valid:false,
+      valid: false,
 
-      signal:"WAIT",
+      signal: "WAIT",
 
       message:
 
@@ -995,145 +1176,147 @@ function buildAnalysis(data){
 
   }
 
-  const latest=
+  const latest =
 
-    data[data.length-1];
+    data[data.length - 1];
 
-  const previous=
+  const previous =
 
-    data[data.length-2];
+    data[data.length - 2];
 
-  /* FIX:
+  const priceDelta =
 
-     These variables were missing from the
+    latest.close - previous.close;
 
-     previous version and caused the analysis
+  const priceDeltaPct =
 
-     function to crash.
+    previous.close !== 0
 
-  */
+      ? (priceDelta / previous.close) * 100
 
-  const priceDelta=
+      : 0;
 
-    latest.close-previous.close;
+  const closes =
 
-  const priceDeltaPct=
+    data.map(c => c.close);
 
-    previous.close!==0?
-
-    (priceDelta/previous.close)*100:
-
-    0;
-
-  const closes=
-
-    data.map(c=>c.close);
-
-  const sma5=
+  const sma5 =
 
     average(closes.slice(-5));
 
-  const sma10=
+  const sma10 =
 
     average(closes.slice(-10));
 
-  const sma20=
+  const sma20 =
 
     average(closes.slice(-20));
 
-  let trend="SIDEWAYS";
+  let trend = "SIDEWAYS";
 
-  if(
+  if (
 
-    sma5>sma10 &&
+    sma5 > sma10 &&
 
-    sma10>sma20
+    sma10 > sma20
 
-  ){
+  ) {
 
-    trend="UPTREND";
+    trend = "UPTREND";
 
-  }else if(
+  } else if (
 
-    sma5<sma10 &&
+    sma5 < sma10 &&
 
-    sma10<sma20
+    sma10 < sma20
 
-  ){
+  ) {
 
-    trend="DOWNTREND";
+    trend = "DOWNTREND";
 
   }
 
-  const structure=
+  const structure =
 
     detectStructure(data);
 
-  const momentum=
+  const momentum =
 
     calculateMomentum(data);
 
-  const candle=
+  const candle =
 
     candleStrength(latest);
 
-  const levels=
+  const levels =
 
     calculateLevels(data);
 
-  let bullishScore=0;
+  let bullishScore = 0;
 
-  let bearishScore=0;
+  let bearishScore = 0;
 
-  if(trend==="UPTREND")
+  if (trend === "UPTREND") {
 
-    bullishScore+=2;
+    bullishScore += 2;
 
-  if(trend==="DOWNTREND")
+  }
 
-    bearishScore+=2;
+  if (trend === "DOWNTREND") {
 
-  if(structure.bullish)
+    bearishScore += 2;
 
-    bullishScore+=structure.score;
+  }
 
-  if(structure.bearish)
+  if (structure.bullish) {
 
-    bearishScore+=structure.score;
+    bullishScore += structure.score;
 
-  if(momentum.direction==="BULLISH")
+  }
 
-    bullishScore+=momentum.score;
+  if (structure.bearish) {
 
-  if(momentum.direction==="BEARISH")
+    bearishScore += structure.score;
 
-    bearishScore+=momentum.score;
+  }
 
-  if(
+  if (momentum.direction === "BULLISH") {
 
-    candle.direction==="BULLISH" &&
+    bullishScore += momentum.score;
 
-    candle.strength>=0.45
+  }
 
-  ){
+  if (momentum.direction === "BEARISH") {
+
+    bearishScore += momentum.score;
+
+  }
+
+  if (
+
+    candle.direction === "BULLISH" &&
+
+    candle.strength >= 0.45
+
+  ) {
 
     bullishScore++;
 
   }
 
-  if(
+  if (
 
-    candle.direction==="BEARISH" &&
+    candle.direction === "BEARISH" &&
 
-    candle.strength>=0.45
+    candle.strength >= 0.45
 
-  ){
+  ) {
 
     bearishScore++;
 
   }
 
-  const totalDirectionalScore=
+  const totalDirectionalScore =
 
     Math.max(
 
@@ -1143,13 +1326,13 @@ function buildAnalysis(data){
 
     );
 
-  const quality=
+  const quality =
 
     clamp(
 
       Math.round(
 
-        totalDirectionalScore/8*100
+        totalDirectionalScore / 8 * 100
 
       ),
 
@@ -1159,139 +1342,145 @@ function buildAnalysis(data){
 
     );
 
-  let signal="WAIT";
+  let signal = "WAIT";
 
-  if(
+  if (
 
-    bullishScore>=6 &&
+    bullishScore >= 6 &&
 
-    bullishScore>bearishScore &&
+    bullishScore > bearishScore &&
 
     structure.bullish &&
 
-    momentum.direction!=="BEARISH"
+    momentum.direction !== "BEARISH"
 
-  ){
+  ) {
 
-    signal="BUY WATCH";
+    signal = "BUY WATCH";
 
-  }else if(
+  } else if (
 
-    bearishScore>=6 &&
+    bearishScore >= 6 &&
 
-    bearishScore>bullishScore &&
+    bearishScore > bullishScore &&
 
     structure.bearish &&
 
-    momentum.direction!=="BULLISH"
+    momentum.direction !== "BULLISH"
 
-  ){
+  ) {
 
-    signal="SELL WATCH";
+    signal = "SELL WATCH";
 
   }
 
-  let bias="NEUTRAL";
+  let bias = "NEUTRAL";
 
-  if(bullishScore>bearishScore)
+  if (bullishScore > bearishScore) {
 
-    bias="BULLISH";
+    bias = "BULLISH";
 
-  if(bearishScore>bullishScore)
+  }
 
-    bias="BEARISH";
+  if (bearishScore > bullishScore) {
 
-  let entry=latest.close;
+    bias = "BEARISH";
 
-  let stop=null;
+  }
 
-  let target=null;
+  const entry =
 
-  if(
+    latest.close;
+
+  let stop = null;
+
+  let target = null;
+
+  if (
 
     signal.startsWith("BUY") &&
 
-    levels.support!==null &&
+    levels.support !== null &&
 
-    levels.resistance!==null
+    levels.resistance !== null
 
-  ){
+  ) {
 
-    stop=levels.support;
+    stop = levels.support;
 
-    target=levels.resistance;
+    target = levels.resistance;
 
-  }else if(
+  } else if (
 
     signal.startsWith("SELL") &&
 
-    levels.support!==null &&
+    levels.support !== null &&
 
-    levels.resistance!==null
+    levels.resistance !== null
 
-  ){
+  ) {
 
-    stop=levels.resistance;
+    stop = levels.resistance;
 
-    target=levels.support;
+    target = levels.support;
 
-  }else{
+  } else {
 
-    stop=
+    stop =
 
-      bias==="BEARISH"?
+      bias === "BEARISH"
 
-      levels.resistance:
+        ? levels.resistance
 
-      levels.support;
+        : levels.support;
 
-    target=
+    target =
 
-      bias==="BEARISH"?
+      bias === "BEARISH"
 
-      levels.support:
+        ? levels.support
 
-      levels.resistance;
+        : levels.resistance;
 
   }
 
-  const riskDistance=
+  const riskDistance =
 
-    Number.isFinite(stop)?
+    Number.isFinite(stop)
 
-    Math.abs(entry-stop):
+      ? Math.abs(entry - stop)
 
-    0;
+      : 0;
 
-  const rewardDistance=
+  const rewardDistance =
 
-    Number.isFinite(target)?
+    Number.isFinite(target)
 
-    Math.abs(target-entry):
+      ? Math.abs(target - entry)
 
-    0;
+      : 0;
 
-  const rr=
+  const rr =
 
-    riskDistance>0?
+    riskDistance > 0
 
-    rewardDistance/riskDistance:
+      ? rewardDistance / riskDistance
 
-    0;
+      : 0;
 
-  let message=
+  let message =
 
     "Market conditions are not strong enough for a directional setup. PriceEdge is waiting for confirmation.";
 
-  if(signal==="BUY WATCH"){
+  if (signal === "BUY WATCH") {
 
-    message=
+    message =
 
       "Bullish trend and structure are aligned. PriceEdge is watching for a pullback or confirmation before entry.";
 
-  }else if(signal==="SELL WATCH"){
+  } else if (signal === "SELL WATCH") {
 
-    message=
+    message =
 
       "Bearish trend and structure are aligned. PriceEdge is watching for a retracement or confirmation before entry.";
 
@@ -1299,7 +1488,7 @@ function buildAnalysis(data){
 
   return {
 
-    valid:true,
+    valid: true,
 
     latest,
 
@@ -1323,9 +1512,9 @@ function buildAnalysis(data){
 
     quality,
 
-    support:levels.support,
+    support: levels.support,
 
-    resistance:levels.resistance,
+    resistance: levels.resistance,
 
     entry,
 
@@ -1345,47 +1534,45 @@ function buildAnalysis(data){
 
 }
 
-/* =========================
+/* =========================================================
 
    UI HELPERS
 
-========================= */
+   ========================================================= */
 
-function setText(
+function setText(id, value, cls = "") {
 
-  id,
+  const element = $(id);
 
-  value,
+  if (!element) return;
 
-  cls=""
+  element.textContent = value;
 
-){
+  if (cls) {
 
-  const el=$(id);
+    element.className = cls;
 
-  if(!el)return;
-
-  el.textContent=value;
-
-  if(cls)
-
-    el.className=cls;
+  }
 
 }
 
-/* =========================
+/* =========================================================
 
-   APPLY ANALYSIS TO UI
+   APPLY ANALYSIS
 
-========================= */
+   ========================================================= */
 
-function applyAnalysis(result){
+function applyAnalysis(result) {
 
-  if(!result.valid){
+  if (!result.valid) {
 
-    $("signalText").textContent=
+    if ($("signalText")) {
 
-      result.message;
+      $("signalText").textContent =
+
+        result.message;
+
+    }
 
     drawChart();
 
@@ -1427,129 +1614,107 @@ function applyAnalysis(result){
 
     message
 
-  }=result;
+  } = result;
 
-  const trendClass=
+  const trendClass =
 
-    trend==="UPTREND"?
+    trend === "UPTREND"
 
-    "green":
+      ? "green"
 
-    trend==="DOWNTREND"?
+      : trend === "DOWNTREND"
 
-    "red":
+        ? "red"
 
-    "gold";
+        : "gold";
 
   /* PRICE */
 
-  $("price").innerHTML=`
+  if ($("price")) {
 
-    $${latest.close.toFixed(2)}
+    $("price").innerHTML = `
 
-    <span
+      $${latest.close.toFixed(2)}
 
-      class="${trendClass}"
+      <span
 
-      style="font-size:15px"
+        class="${trendClass}"
 
-    >
+        style="font-size:15px"
 
-      ${trend}
+      >
 
-    </span>
+        ${trend}
 
-  `;
+      </span>
 
-  $("priceMetaText").textContent=
+    `;
 
-    (priceDelta>0?"+":"")+
+  }
 
-    priceDelta.toFixed(2)+
+  if ($("priceMetaText")) {
 
-    " ("+
+    $("priceMetaText").textContent =
 
-    (priceDeltaPct>0?"+":"")+
+      (priceDelta > 0 ? "+" : "") +
 
-    priceDeltaPct.toFixed(2)+
+      priceDelta.toFixed(2) +
 
-    "%)";
+      " (" +
 
-  $("priceMetaText").className=
+      (priceDeltaPct > 0 ? "+" : "") +
 
-    priceDelta>0?
+      priceDeltaPct.toFixed(2) +
 
-    "green":
+      "%)";
 
-    priceDelta<0?
+    $("priceMetaText").className =
 
-    "red":
+      priceDelta > 0
 
-    "gold";
+        ? "green"
 
-  $("priceDot").className=
+        : priceDelta < 0
 
-    "price-dot "+
+          ? "red"
 
-    (
+          : "gold";
 
-      priceDelta<0?
+  }
 
-      "down":
+  if ($("priceDot")) {
 
-      priceDelta===0?
+    $("priceDot").className =
 
-      "flat":
+      "price-dot " +
 
-      ""
+      (
 
-    );
+        priceDelta < 0
+
+          ? "down"
+
+          : priceDelta === 0
+
+            ? "flat"
+
+            : ""
+
+      );
+
+  }
 
   /* SETUP */
 
-  setText(
+  setText("bias", bias, trendClass);
 
-    "bias",
+  setText("setupTrend", trend, trendClass);
 
-    bias,
+  setText("structure", structure.label);
 
-    trendClass
+  setText("momentum", momentum.label);
 
-  );
-
-  setText(
-
-    "setupTrend",
-
-    trend,
-
-    trendClass
-
-  );
-
-  setText(
-
-    "structure",
-
-    structure.label
-
-  );
-
-  setText(
-
-    "momentum",
-
-    momentum.label
-
-  );
-
-  setText(
-
-    "quality",
-
-    quality+"%"
-
-  );
+  setText("quality", quality + "%");
 
   /* LEVELS */
 
@@ -1557,11 +1722,11 @@ function applyAnalysis(result){
 
     "support",
 
-    Number.isFinite(support)?
+    Number.isFinite(support)
 
-    support.toFixed(2):
+      ? support.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
@@ -1569,11 +1734,11 @@ function applyAnalysis(result){
 
     "resistance",
 
-    Number.isFinite(resistance)?
+    Number.isFinite(resistance)
 
-    resistance.toFixed(2):
+      ? resistance.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
@@ -1581,11 +1746,11 @@ function applyAnalysis(result){
 
     "entryLevel",
 
-    Number.isFinite(entry)?
+    Number.isFinite(entry)
 
-    entry.toFixed(2):
+      ? entry.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
@@ -1593,11 +1758,11 @@ function applyAnalysis(result){
 
     "stopLevel",
 
-    Number.isFinite(stop)?
+    Number.isFinite(stop)
 
-    stop.toFixed(2):
+      ? stop.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
@@ -1605,11 +1770,11 @@ function applyAnalysis(result){
 
     "targetLevel",
 
-    Number.isFinite(target)?
+    Number.isFinite(target)
 
-    target.toFixed(2):
+      ? target.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
@@ -1617,97 +1782,133 @@ function applyAnalysis(result){
 
     "rrLevel",
 
-    rr>0?
+    rr > 0
 
-    "1:"+rr.toFixed(2):
+      ? "1:" + rr.toFixed(2)
 
-    "—"
+      : "—"
 
   );
 
   /* MARKET STATS */
 
-  $("statSession").textContent=
+  if ($("statSession")) {
 
-    priceDelta>0?
+    $("statSession").textContent =
 
-    "Bullish move":
+      priceDelta > 0
 
-    priceDelta<0?
+        ? "Bullish move"
 
-    "Bearish move":
+        : priceDelta < 0
 
-    "Flat";
+          ? "Bearish move"
 
-  $("statStructure").textContent=
+          : "Flat";
 
-    structure.label;
+  }
 
-  $("statMomentum").textContent=
+  setText(
 
-    momentum.label;
+    "statStructure",
 
-  $("statQuality").textContent=
+    structure.label
 
-    quality+"%";
+  );
+
+  setText(
+
+    "statMomentum",
+
+    momentum.label
+
+  );
+
+  setText(
+
+    "statQuality",
+
+    quality + "%"
+
+  );
 
   /* TREND BADGE */
 
-  $("trendBadge").className=
+  if ($("trendBadge")) {
 
-    "trend-badge "+
+    $("trendBadge").className =
 
-    (
+      "trend-badge " +
 
-      trend==="UPTREND"?
+      (
 
-      "bull":
+        trend === "UPTREND"
 
-      trend==="DOWNTREND"?
+          ? "bull"
 
-      "bear":
+          : trend === "DOWNTREND"
 
-      "side"
+            ? "bear"
 
-    );
+            : "side"
 
-  $("trendBadge").textContent=
+      );
 
-    trend;
+    $("trendBadge").textContent =
 
-  $("chartTrend").textContent=
+      trend;
 
-    "TREND: "+trend;
+  }
 
-  $("chartStructure").textContent=
+  setText(
 
-    "STRUCTURE: "+structure.label;
+    "chartTrend",
+
+    "TREND: " + trend
+
+  );
+
+  setText(
+
+    "chartStructure",
+
+    "STRUCTURE: " + structure.label
+
+  );
 
   /* SIGNAL */
 
-  const actionClass=
+  const actionClass =
 
-    signal.startsWith("BUY")?
+    signal.startsWith("BUY")
 
-    "action-buy":
+      ? "action-buy"
 
-    signal.startsWith("SELL")?
+      : signal.startsWith("SELL")
 
-    "action-sell":
+        ? "action-sell"
 
-    "action-wait";
+        : "action-wait";
 
-  $("action").className=
+  if ($("action")) {
 
-    "signal-action "+actionClass;
+    $("action").className =
 
-  $("action").textContent=
+      "signal-action " + actionClass;
 
-    signal;
+    $("action").textContent =
 
-  $("signalText").textContent=
+      signal;
 
-    message;
+  }
+
+  if ($("signalText")) {
+
+    $("signalText").textContent =
+
+      message;
+
+  }
 
   /* PRICE ACTION PAGE */
 
@@ -1741,7 +1942,7 @@ function applyAnalysis(result){
 
     "aQuality",
 
-    quality+"%"
+    quality + "%"
 
   );
 
@@ -1751,15 +1952,15 @@ function applyAnalysis(result){
 
     signal,
 
-    signal.startsWith("BUY")?
+    signal.startsWith("BUY")
 
-    "green":
+      ? "green"
 
-    signal.startsWith("SELL")?
+      : signal.startsWith("SELL")
 
-    "red":
+        ? "red"
 
-    "gold"
+        : "gold"
 
   );
 
@@ -1767,33 +1968,33 @@ function applyAnalysis(result){
 
 }
 
-/* =========================
+/* =========================================================
 
    ANALYZE
 
-========================= */
+   ========================================================= */
 
-function analyze(){
+function analyze() {
 
-  const data=
+  const data =
 
     candles
 
-      .map(c=>({
+      .map(c => ({
 
-        open:+c.open,
+        open: Number(c.open),
 
-        high:+c.high,
+        high: Number(c.high),
 
-        low:+c.low,
+        low: Number(c.low),
 
-        close:+c.close,
+        close: Number(c.close),
 
-        datetime:c.datetime
+        datetime: c.datetime
 
       }))
 
-      .filter(c=>
+      .filter(c =>
 
         [
 
@@ -1809,7 +2010,7 @@ function analyze(){
 
       );
 
-  const result=
+  const result =
 
     buildAnalysis(data);
 
@@ -1817,73 +2018,111 @@ function analyze(){
 
 }
 
-/* =========================
+/* =========================================================
 
    CHART
 
-========================= */
+   ========================================================= */
 
-function drawChart(){
+function drawChart() {
 
-  const canvas=$("chart");
+  const canvas = $("chart");
 
-  const ctx=
+  if (!canvas) return;
+
+  const ctx =
 
     canvas.getContext("2d");
 
-  const dpr=
+  if (!ctx) return;
 
-    window.devicePixelRatio||1;
+  const dpr =
 
-  const w=canvas.clientWidth;
+    window.devicePixelRatio || 1;
 
-  const h=canvas.clientHeight;
+  const w =
 
-  if(!w||!h)return;
+    canvas.clientWidth;
 
-  canvas.width=
+  const h =
 
-    Math.floor(w*dpr);
+    canvas.clientHeight;
 
-  canvas.height=
+  if (!w || !h) return;
 
-    Math.floor(h*dpr);
+  canvas.width =
+
+    Math.floor(w * dpr);
+
+  canvas.height =
+
+    Math.floor(h * dpr);
 
   ctx.setTransform(
 
-    dpr,0,0,dpr,0,0
+    dpr,
+
+    0,
+
+    0,
+
+    dpr,
+
+    0,
+
+    0
 
   );
 
   ctx.clearRect(
 
-    0,0,w,h
+    0,
+
+    0,
+
+    w,
+
+    h
 
   );
 
-  ctx.fillStyle="#0a1220";
+  ctx.fillStyle =
+
+    "#0a1220";
 
   ctx.fillRect(
 
-    0,0,w,h
+    0,
+
+    0,
+
+    w,
+
+    h
 
   );
 
-  if(candles.length<2){
+  if (candles.length < 2) {
 
-    ctx.fillStyle="#71809c";
+    ctx.fillStyle =
 
-    ctx.font="13px system-ui";
+      "#71809c";
 
-    ctx.textAlign="center";
+    ctx.font =
+
+      "13px system-ui";
+
+    ctx.textAlign =
+
+      "center";
 
     ctx.fillText(
 
       "Waiting for market data…",
 
-      w/2,
+      w / 2,
 
-      h/2
+      h / 2
 
     );
 
@@ -1891,7 +2130,7 @@ function drawChart(){
 
   }
 
-  const visible=
+  const visible =
 
     Math.min(
 
@@ -1901,17 +2140,17 @@ function drawChart(){
 
     );
 
-  const maxOffset=
+  const maxOffset =
 
     Math.max(
 
       0,
 
-      candles.length-visible
+      candles.length - visible
 
     );
 
-  chartOffset=
+  chartOffset =
 
     Math.max(
 
@@ -1927,21 +2166,21 @@ function drawChart(){
 
     );
 
-  const end=
+  const end =
 
-    candles.length-chartOffset;
+    candles.length - chartOffset;
 
-  const start=
+  const start =
 
     Math.max(
 
       0,
 
-      end-visible
+      end - visible
 
     );
 
-  const data=
+  const data =
 
     candles.slice(
 
@@ -1951,77 +2190,85 @@ function drawChart(){
 
     );
 
-  const highs=
+  const highs =
 
-    data.map(c=>+c.high);
+    data.map(c => Number(c.high));
 
-  const lows=
+  const lows =
 
-    data.map(c=>+c.low);
+    data.map(c => Number(c.low));
 
-  let max=Math.max(...highs);
+  let max =
 
-  let min=Math.min(...lows);
+    Math.max(...highs);
 
-  const raw=
+  let min =
 
-    max-min||1;
+    Math.min(...lows);
 
-  const pad=
+  const raw =
 
-    raw*.10;
+    max - min || 1;
 
-  max+=pad;
+  const pad =
 
-  min-=pad;
+    raw * 0.10;
 
-  const left=13;
+  max += pad;
 
-  const right=72;
+  min -= pad;
 
-  const top=34;
+  const left = 13;
 
-  const bottom=34;
+  const right = 72;
 
-  const cw=
+  const top = 34;
 
-    Math.max(
+  const bottom = 34;
 
-      1,
-
-      w-left-right
-
-    );
-
-  const ch=
+  const cw =
 
     Math.max(
 
       1,
 
-      h-top-bottom
+      w - left - right
 
     );
 
-  const range=max-min;
+  const ch =
 
-  const y=p=>
+    Math.max(
 
-    top+
+      1,
 
-    (max-p)/range*ch;
+      h - top - bottom
 
-  const xFor=i=>
+    );
 
-    left+
+  const range =
 
-    (i+.5)*(cw/data.length);
+    max - min;
 
-  const spacing=
+  const y = price =>
 
-    cw/data.length;
+    top +
 
-  const bodyWidth=
+    ((max - price) / range) * ch;
+
+  const xFor = index =>
+
+    left +
+
+    (index + 0.5) *
+
+    (cw / data.length);
+
+  const spacing =
+
+    cw / data.length;
+
+  const bodyWidth =
 
     Math.max(
 
@@ -2031,7 +2278,7 @@ function drawChart(){
 
         13,
 
-        spacing*.58
+        spacing * 0.58
 
       )
 
@@ -2039,47 +2286,65 @@ function drawChart(){
 
   /* GRID */
 
-  ctx.lineWidth=1;
+  ctx.lineWidth = 1;
 
-  for(let i=0;i<=6;i++){
+  for (let i = 0; i <= 6; i++) {
 
-    const gy=
+    const gy =
 
-      top+ch*i/6;
+      top + ch * i / 6;
 
     ctx.beginPath();
 
-    ctx.moveTo(left,gy);
+    ctx.moveTo(
 
-    ctx.lineTo(w-right,gy);
+      left,
 
-    ctx.strokeStyle=
+      gy
 
-      i===6?
+    );
 
-      "#1c2a42":
+    ctx.lineTo(
 
-      "#18263d";
+      w - right,
+
+      gy
+
+    );
+
+    ctx.strokeStyle =
+
+      i === 6
+
+        ? "#1c2a42"
+
+        : "#18263d";
 
     ctx.stroke();
 
-    const pv=
+    const price =
 
-      max-range*i/6;
+      max - range * i / 6;
 
-    ctx.fillStyle="#73829e";
+    ctx.fillStyle =
 
-    ctx.font="10px system-ui";
+      "#73829e";
 
-    ctx.textAlign="left";
+    ctx.font =
+
+      "10px system-ui";
+
+    ctx.textAlign =
+
+      "left";
 
     ctx.fillText(
 
-      pv.toFixed(2),
+      price.toFixed(2),
 
-      w-right+7,
+      w - right + 7,
 
-      gy+3
+      gy + 3
 
     );
 
@@ -2087,67 +2352,43 @@ function drawChart(){
 
   /* VERTICAL GUIDES */
 
-  for(let i=0;i<5;i++){
+  for (let i = 0; i < 5; i++) {
 
-    const gx=
+    const gx =
 
-      left+cw*i/4;
+      left + cw * i / 4;
 
     ctx.beginPath();
 
-    ctx.moveTo(gx,top);
+    ctx.moveTo(
+
+      gx,
+
+      top
+
+    );
 
     ctx.lineTo(
 
       gx,
 
-      top+ch
+      top + ch
 
     );
 
-    ctx.strokeStyle="#111e33";
+    ctx.strokeStyle =
+
+      "#111e33";
 
     ctx.stroke();
 
   }
 
-  /* LEVELS */
-
-  const completed=
-
-    data.slice(0,-1);
-
-  const res=
-
-    completed.length?
-
-    Math.max(
-
-      ...completed.map(c=>+c.high)
-
-    ):
-
-    null;
-
-  const sup=
-
-    completed.length?
-
-    Math.min(
-
-      ...completed.map(c=>+c.low)
-
-    ):
-
-    null;
-
-  const current=
-
-    +data.at(-1).close;
+  /* LEVEL DRAWER */
 
   function line(
 
-    p,
+    price,
 
     label,
 
@@ -2155,91 +2396,123 @@ function drawChart(){
 
     color,
 
-    dash=[6,6],
+    dash = [6, 6],
 
-    alpha=1
+    alpha = 1
 
-  ){
+  ) {
 
-    if(!Number.isFinite(p))return;
+    if (!Number.isFinite(price)) {
 
-    const yy=y(p);
+      return;
 
-    if(
+    }
 
-      yy<top-2||
+    const yy =
 
-      yy>top+ch+2
+      y(price);
 
-    )return;
+    if (
+
+      yy < top - 2 ||
+
+      yy > top + ch + 2
+
+    ) {
+
+      return;
+
+    }
 
     ctx.save();
 
-    ctx.globalAlpha=alpha;
+    ctx.globalAlpha =
+
+      alpha;
 
     ctx.beginPath();
 
-    ctx.moveTo(left,yy);
+    ctx.moveTo(
 
-    ctx.lineTo(
-
-      w-right,
+      left,
 
       yy
 
     );
 
-    ctx.strokeStyle=color;
+    ctx.lineTo(
 
-    ctx.lineWidth=1.2;
+      w - right,
 
-    ctx.setLineDash(dash);
+      yy
+
+    );
+
+    ctx.strokeStyle =
+
+      color;
+
+    ctx.lineWidth =
+
+      1.2;
+
+    ctx.setLineDash(
+
+      dash
+
+    );
 
     ctx.stroke();
 
     ctx.restore();
 
-    const labelY=
+    const labelY =
 
       Math.max(
 
-        top+12,
+        top + 12,
 
         Math.min(
 
-          top+ch-5,
+          top + ch - 5,
 
-          yy-7
+          yy - 7
 
         )
 
       );
 
-    ctx.fillStyle=color;
+    ctx.fillStyle =
 
-    ctx.font=
+      color;
+
+    ctx.font =
 
       "700 9px system-ui";
 
-    ctx.textAlign="left";
+    ctx.textAlign =
+
+      "left";
 
     ctx.fillText(
 
       label.toUpperCase(),
 
-      left+6,
+      left + 6,
 
       labelY
 
     );
 
-    ctx.textAlign="right";
+    ctx.textAlign =
+
+      "right";
 
     ctx.fillText(
 
       Number(value).toFixed(2),
 
-      w-right-5,
+      w - right - 5,
 
       labelY
 
@@ -2247,45 +2520,87 @@ function drawChart(){
 
   }
 
-  if(res!==null)
+  /* SUPPORT / RESISTANCE */
+
+  const completed =
+
+    data.slice(0, -1);
+
+  const resistance =
+
+    completed.length
+
+      ? Math.max(
+
+          ...completed.map(
+
+            c => Number(c.high)
+
+          )
+
+        )
+
+      : null;
+
+  const support =
+
+    completed.length
+
+      ? Math.min(
+
+          ...completed.map(
+
+            c => Number(c.low)
+
+          )
+
+        )
+
+      : null;
+
+  if (resistance !== null) {
 
     line(
 
-      res,
+      resistance,
 
       "Resistance",
 
-      res,
+      resistance,
 
       "#8b9ab4",
 
-      [6,6],
+      [6, 6],
 
-      .9
+      0.9
 
     );
 
-  if(sup!==null)
+  }
+
+  if (support !== null) {
 
     line(
 
-      sup,
+      support,
 
       "Support",
 
-      sup,
+      support,
 
       "#8b9ab4",
 
-      [6,6],
+      [6, 6],
 
-      .9
+      0.9
 
     );
 
+  }
+
   /* TRADE LEVELS */
 
-  const entry=
+  const entry =
 
     parseFloat(
 
@@ -2293,7 +2608,7 @@ function drawChart(){
 
     );
 
-  const stop=
+  const stop =
 
     parseFloat(
 
@@ -2301,7 +2616,7 @@ function drawChart(){
 
     );
 
-  const target=
+  const target =
 
     parseFloat(
 
@@ -2309,11 +2624,7 @@ function drawChart(){
 
     );
 
-  if(
-
-    Number.isFinite(entry)
-
-  ){
+  if (Number.isFinite(entry)) {
 
     line(
 
@@ -2325,19 +2636,15 @@ function drawChart(){
 
       "#f5c451",
 
-      [4,4],
+      [4, 4],
 
-      .72
+      0.72
 
     );
 
   }
 
-  if(
-
-    Number.isFinite(stop)
-
-  ){
+  if (Number.isFinite(stop)) {
 
     line(
 
@@ -2349,19 +2656,15 @@ function drawChart(){
 
       "#fb7185",
 
-      [3,5],
+      [3, 5],
 
-      .55
+      0.55
 
     );
 
   }
 
-  if(
-
-    Number.isFinite(target)
-
-  ){
+  if (Number.isFinite(target)) {
 
     line(
 
@@ -2373,9 +2676,9 @@ function drawChart(){
 
       "#4ade80",
 
-      [3,5],
+      [3, 5],
 
-      .55
+      0.55
 
     );
 
@@ -2383,57 +2686,77 @@ function drawChart(){
 
   /* CANDLES */
 
-  data.forEach((c,i)=>{
+  data.forEach((candle, index) => {
 
-    const o=+c.open;
+    const open =
 
-    const hi=+c.high;
+      Number(candle.open);
 
-    const lo=+c.low;
+    const high =
 
-    const cl=+c.close;
+      Number(candle.high);
 
-    if(
+    const low =
+
+      Number(candle.low);
+
+    const close =
+
+      Number(candle.close);
+
+    if (
 
       ![
 
-        o,hi,lo,cl
+        open,
+
+        high,
+
+        low,
+
+        close
 
       ].every(Number.isFinite)
 
-    )return;
+    ) {
 
-    const x=xFor(i);
+      return;
 
-    const bull=
+    }
 
-      cl>=o;
+    const x =
 
-    const bodyTop=
+      xFor(index);
 
-      y(Math.max(o,cl));
+    const bullish =
 
-    const bodyBottom=
+      close >= open;
 
-      y(Math.min(o,cl));
+    const bodyTop =
 
-    const bodyH=
+      y(Math.max(open, close));
+
+    const bodyBottom =
+
+      y(Math.min(open, close));
+
+    const bodyHeight =
 
       Math.max(
 
         2.5,
 
-        bodyBottom-bodyTop
+        bodyBottom - bodyTop
 
       );
 
-    const candleColor=
+    const candleColor =
 
-      bull?
+      bullish
 
-      "#42e58a":
+        ? "#42e58a"
 
-      "#ff657f";
+        : "#ff657f";
 
     /* WICK */
 
@@ -2443,7 +2766,7 @@ function drawChart(){
 
       x,
 
-      y(hi)
+      y(high)
 
     );
 
@@ -2451,21 +2774,21 @@ function drawChart(){
 
       x,
 
-      y(lo)
+      y(low)
 
     );
 
-    ctx.strokeStyle=
+    ctx.strokeStyle =
 
       candleColor;
 
-    ctx.lineWidth=
+    ctx.lineWidth =
 
       Math.max(
 
         1.2,
 
-        spacing*.09
+        spacing * 0.09
 
       );
 
@@ -2473,45 +2796,45 @@ function drawChart(){
 
     /* BODY */
 
-    ctx.fillStyle=
+    ctx.fillStyle =
 
       candleColor;
 
     ctx.fillRect(
 
-      x-bodyWidth/2,
+      x - bodyWidth / 2,
 
       bodyTop,
 
       bodyWidth,
 
-      bodyH
+      bodyHeight
 
     );
 
-    /* HIGHLIGHT */
+    /* BODY HIGHLIGHT */
 
-    if(bodyH>6){
+    if (bodyHeight > 6) {
 
-      ctx.fillStyle=
+      ctx.fillStyle =
 
-        bull?
+        bullish
 
-        "#56efa0":
+          ? "#56efa0"
 
-        "#ff7890";
+          : "#ff7890";
 
       ctx.fillRect(
 
-        x-bodyWidth/2+1,
+        x - bodyWidth / 2 + 1,
 
-        bodyTop+1,
+        bodyTop + 1,
 
         Math.max(
 
           1,
 
-          bodyWidth-2
+          bodyWidth - 2
 
         ),
 
@@ -2523,29 +2846,35 @@ function drawChart(){
 
     /* CURRENT CANDLE */
 
-    if(
+    if (
 
-      i===data.length-1
+      index === data.length - 1
 
-    ){
+    ) {
 
       ctx.save();
 
-      ctx.globalAlpha=.22;
+      ctx.globalAlpha =
 
-      ctx.strokeStyle="#f5c451";
+        0.22;
 
-      ctx.lineWidth=1;
+      ctx.strokeStyle =
+
+        "#f5c451";
+
+      ctx.lineWidth =
+
+        1;
 
       ctx.strokeRect(
 
-        x-bodyWidth/2-3,
+        x - bodyWidth / 2 - 3,
 
-        bodyTop-3,
+        bodyTop - 3,
 
-        bodyWidth+6,
+        bodyWidth + 6,
 
-        bodyH+6
+        bodyHeight + 6
 
       );
 
@@ -2557,7 +2886,17 @@ function drawChart(){
 
   /* CURRENT PRICE */
 
-  const cy=y(current);
+  const current =
+
+    Number(
+
+      data[data.length - 1].close
+
+    );
+
+  const currentY =
+
+    y(current);
 
   ctx.beginPath();
 
@@ -2565,37 +2904,47 @@ function drawChart(){
 
     left,
 
-    cy
+    currentY
 
   );
 
   ctx.lineTo(
 
-    w-right,
+    w - right,
 
-    cy
+    currentY
 
   );
 
-  ctx.strokeStyle="#f5c451";
+  ctx.strokeStyle =
 
-  ctx.lineWidth=1.4;
+    "#f5c451";
 
-  ctx.setLineDash([7,5]);
+  ctx.lineWidth =
+
+    1.4;
+
+  ctx.setLineDash(
+
+    [7, 5]
+
+  );
 
   ctx.stroke();
 
   ctx.setLineDash([]);
 
-  const pillX=
+  /* PRICE PILL */
 
-    w-right+3;
+  const pillX =
 
-  const pillW=61;
+    w - right + 3;
 
-  const pillH=20;
+  const pillW = 61;
 
-  const pillY=
+  const pillH = 20;
+
+  const pillY =
 
     Math.max(
 
@@ -2603,67 +2952,95 @@ function drawChart(){
 
       Math.min(
 
-        top+ch-pillH,
+        top + ch - pillH,
 
-        cy-pillH/2
+        currentY - pillH / 2
 
       )
 
     );
 
-  ctx.fillStyle="#f5c451";
+  ctx.fillStyle =
+
+    "#f5c451";
 
   ctx.beginPath();
 
-  ctx.roundRect(
+  if (ctx.roundRect) {
 
-    pillX,
+    ctx.roundRect(
 
-    pillY,
+      pillX,
 
-    pillW,
+      pillY,
 
-    pillH,
+      pillW,
 
-    6
+      pillH,
 
-  );
+      6
+
+    );
+
+  } else {
+
+    ctx.rect(
+
+      pillX,
+
+      pillY,
+
+      pillW,
+
+      pillH
+
+    );
+
+  }
 
   ctx.fill();
 
-  ctx.fillStyle="#101725";
+  ctx.fillStyle =
 
-  ctx.font=
+    "#101725";
+
+  ctx.font =
 
     "800 10px system-ui";
 
-  ctx.textAlign="center";
+  ctx.textAlign =
+
+    "center";
 
   ctx.fillText(
 
     current.toFixed(2),
 
-    pillX+pillW/2,
+    pillX + pillW / 2,
 
-    pillY+13
+    pillY + 13
 
   );
 
-  ctx.fillStyle="#f5c451";
+  /* CURRENT PRICE DOT */
+
+  ctx.fillStyle =
+
+    "#f5c451";
 
   ctx.beginPath();
 
   ctx.arc(
 
-    xFor(data.length-1),
+    xFor(data.length - 1),
 
-    cy,
+    currentY,
 
     4,
 
     0,
 
-    Math.PI*2
+    Math.PI * 2
 
   );
 
@@ -2671,77 +3048,87 @@ function drawChart(){
 
   /* TIME LABELS */
 
-  const labelIndexes=[
+  const labelIndexes = [
 
     0,
 
     Math.floor(
 
-      (data.length-1)/2
+      (data.length - 1) / 2
 
     ),
 
-    data.length-1
+    data.length - 1
 
   ];
 
-  ctx.fillStyle="#667795";
+  ctx.fillStyle =
 
-  ctx.font="9px system-ui";
+    "#667795";
 
-  ctx.textAlign="center";
+  ctx.font =
 
-  labelIndexes.forEach(i=>{
+    "9px system-ui";
 
-    const dt=
+  ctx.textAlign =
+
+    "center";
+
+  labelIndexes.forEach(index => {
+
+    const date =
 
       new Date(
 
-        data[i].datetime
+        data[index].datetime
 
       );
 
-    const label=
+    const label =
 
-      isNaN(dt)?
+      isNaN(date.getTime())
 
-      "":
+        ? ""
 
-      dt.toLocaleTimeString(
+        : date.toLocaleTimeString(
 
-        [],
+            [],
 
-        {
+            {
 
-          hour:"2-digit",
+              hour: "2-digit",
 
-          minute:"2-digit"
+              minute: "2-digit"
 
-        }
+            }
 
-      );
+          );
 
     ctx.fillText(
 
       label,
 
-      xFor(i),
+      xFor(index),
 
-      h-9
+      h - 9
 
     );
 
   });
 
-  /* HEADER */
+  /* CHART HEADER */
 
-  ctx.fillStyle="#71809c";
+  ctx.fillStyle =
 
-  ctx.font=
+    "#71809c";
+
+  ctx.font =
 
     "700 9px system-ui";
 
-  ctx.textAlign="left";
+  ctx.textAlign =
+
+    "left";
 
   ctx.fillText(
 
@@ -2753,47 +3140,55 @@ function drawChart(){
 
   );
 
-  const trendText=
+  const trendText =
 
-    $("trendBadge")?.textContent||
+    $("trendBadge")?.textContent ||
 
     "SIDEWAYS";
 
-  ctx.textAlign="right";
+  ctx.textAlign =
 
-  ctx.fillStyle=
+    "right";
 
-    trendText==="UPTREND"?
+  ctx.fillStyle =
 
-    "#42e58a":
+    trendText === "UPTREND"
 
-    trendText==="DOWNTREND"?
+      ? "#42e58a"
 
-    "#ff657f":
+      : trendText === "DOWNTREND"
 
-    "#f5c451";
+        ? "#ff657f"
+
+        : "#f5c451";
 
   ctx.fillText(
 
     trendText,
 
-    w-right,
+    w - right,
 
     17
 
   );
 
-  if(chartOffset>0){
+  /* HISTORY MODE */
 
-    ctx.textAlign="center";
+  if (chartOffset > 0) {
 
-    ctx.fillStyle="#f5c451";
+    ctx.textAlign =
+
+      "center";
+
+    ctx.fillStyle =
+
+      "#f5c451";
 
     ctx.fillText(
 
       "HISTORY MODE · DRAG TO SCROLL",
 
-      w/2,
+      w / 2,
 
       17
 
@@ -2803,25 +3198,25 @@ function drawChart(){
 
 }
 
-/* =========================
+/* =========================================================
 
    CHART CONTROLS
 
-========================= */
+   ========================================================= */
 
-function chartOlder(){
+function chartOlder() {
 
-  chartOffset=
+  chartOffset =
 
     Math.min(
 
-      chartOffset+10,
+      chartOffset + 10,
 
       Math.max(
 
         0,
 
-        candles.length-
+        candles.length -
 
         CHART_VISIBLE_CANDLES
 
@@ -2833,15 +3228,15 @@ function chartOlder(){
 
 }
 
-function chartNewer(){
+function chartNewer() {
 
-  chartOffset=
+  chartOffset =
 
     Math.max(
 
       0,
 
-      chartOffset-10
+      chartOffset - 10
 
     );
 
@@ -2849,25 +3244,29 @@ function chartNewer(){
 
 }
 
-function chartLive(){
+function chartLive() {
 
-  chartOffset=0;
+  chartOffset = 0;
 
   drawChart();
 
 }
 
-function moveChart(delta){
+function moveChart(delta) {
 
-  if(
+  if (
 
-    candles.length<=
+    candles.length <=
 
     CHART_VISIBLE_CANDLES
 
-  )return;
+  ) {
 
-  const move=
+    return;
+
+  }
+
+  const move =
 
     Math.max(
 
@@ -2875,25 +3274,25 @@ function moveChart(delta){
 
       Math.round(
 
-        Math.abs(delta)/12
+        Math.abs(delta) / 12
 
       )
 
     );
 
-  const max=
+  const max =
 
     Math.max(
 
       0,
 
-      candles.length-
+      candles.length -
 
       CHART_VISIBLE_CANDLES
 
     );
 
-  chartOffset=
+  chartOffset =
 
     Math.max(
 
@@ -2901,15 +3300,15 @@ function moveChart(delta){
 
       Math.min(
 
-        chartDragStartOffset+
+        chartDragStartOffset +
 
         (
 
-          delta<0?
+          delta < 0
 
-          move:
+            ? move
 
-          -move
+            : -move
 
         ),
 
@@ -2923,111 +3322,151 @@ function moveChart(delta){
 
 }
 
-const chartCanvas=$("chart");
+/* =========================================================
 
-chartCanvas.addEventListener(
+   CHART TOUCH / MOUSE
 
-  "touchstart",
+   ========================================================= */
 
-  e=>{
+const chartCanvas =
 
-    if(!e.touches.length)return;
+  $("chart");
 
-    chartDragging=true;
+if (chartCanvas) {
 
-    chartDragStartX=
+  chartCanvas.addEventListener(
 
-      e.touches[0].clientX;
+    "touchstart",
 
-    chartDragStartOffset=
+    event => {
 
-      chartOffset;
+      if (!event.touches.length) {
 
-  },
+        return;
 
-  {passive:true}
+      }
 
-);
+      chartDragging = true;
 
-chartCanvas.addEventListener(
+      chartDragStartX =
 
-  "touchmove",
+        event.touches[0].clientX;
 
-  e=>{
+      chartDragStartOffset =
 
-    if(
+        chartOffset;
 
-      chartDragging&&
+    },
 
-      e.touches.length
+    {
 
-    ){
+      passive: true
+
+    }
+
+  );
+
+  chartCanvas.addEventListener(
+
+    "touchmove",
+
+    event => {
+
+      if (
+
+        chartDragging &&
+
+        event.touches.length
+
+      ) {
+
+        moveChart(
+
+          event.touches[0].clientX -
+
+          chartDragStartX
+
+        );
+
+      }
+
+    },
+
+    {
+
+      passive: true
+
+    }
+
+  );
+
+  chartCanvas.addEventListener(
+
+    "touchend",
+
+    () => {
+
+      chartDragging = false;
+
+    }
+
+  );
+
+  chartCanvas.addEventListener(
+
+    "mousedown",
+
+    event => {
+
+      chartDragging = true;
+
+      chartDragStartX =
+
+        event.clientX;
+
+      chartDragStartOffset =
+
+        chartOffset;
+
+      chartCanvas.style.cursor =
+
+        "grabbing";
+
+    }
+
+  );
+
+  chartCanvas.addEventListener(
+
+    "dblclick",
+
+    chartLive
+
+  );
+
+  chartCanvas.style.cursor =
+
+    "grab";
+
+}
+
+window.addEventListener(
+
+  "mousemove",
+
+  event => {
+
+    if (chartDragging) {
 
       moveChart(
 
-        e.touches[0].clientX-
+        event.clientX -
 
         chartDragStartX
 
       );
 
     }
-
-  },
-
-  {passive:true}
-
-);
-
-chartCanvas.addEventListener(
-
-  "touchend",
-
-  ()=>{
-
-    chartDragging=false;
-
-  }
-
-);
-
-chartCanvas.addEventListener(
-
-  "mousedown",
-
-  e=>{
-
-    chartDragging=true;
-
-    chartDragStartX=e.clientX;
-
-    chartDragStartOffset=
-
-      chartOffset;
-
-    chartCanvas.style.cursor=
-
-      "grabbing";
-
-  }
-
-);
-
-window.addEventListener(
-
-  "mousemove",
-
-  e=>{
-
-    if(chartDragging)
-
-      moveChart(
-
-        e.clientX-
-
-        chartDragStartX
-
-      );
 
   }
 
@@ -3037,33 +3476,27 @@ window.addEventListener(
 
   "mouseup",
 
-  ()=>{
+  () => {
 
-    chartDragging=false;
+    chartDragging = false;
 
-    chartCanvas.style.cursor=
+    if (chartCanvas) {
 
-      "grab";
+      chartCanvas.style.cursor =
+
+        "grab";
+
+    }
 
   }
 
 );
 
-chartCanvas.addEventListener(
-
-  "dblclick",
-
-  chartLive
-
-);
-
-chartCanvas.style.cursor="grab";
-
-/* =========================
+/* =========================================================
 
    MARKET STATUS
 
-========================= */
+   ========================================================= */
 
 function setMarketStatus(
 
@@ -3071,41 +3504,61 @@ function setMarketStatus(
 
   text
 
-){
+) {
 
-  $("liveStatus").className=
+  const status =
 
-    "live "+
+    $("liveStatus");
 
-    (
+  const statusText =
 
-      type==="cached"?
+    $("liveStatusText");
 
-      "cached":
+  if (status) {
 
-      type==="error"?
+    status.className =
 
-      "error":
+      "live " +
 
-      ""
+      (
 
-    );
+        type === "cached"
 
-  $("liveStatusText")
+          ? "cached"
 
-    .textContent=text;
+          : type === "error"
+
+            ? "error"
+
+            : ""
+
+      );
+
+  }
+
+  if (statusText) {
+
+    statusText.textContent =
+
+      text;
+
+  }
 
 }
 
-function formatUpdateTime(t){
+function formatUpdateTime(time) {
 
-  if(!t)
+  if (!time) {
 
     return "Not updated yet";
 
-  return "Updated "+
+  }
 
-    new Date(t)
+  return (
+
+    "Updated " +
+
+    new Date(time)
 
       .toLocaleTimeString(
 
@@ -3113,45 +3566,49 @@ function formatUpdateTime(t){
 
         {
 
-          hour:"2-digit",
+          hour: "2-digit",
 
-          minute:"2-digit",
+          minute: "2-digit",
 
-          second:"2-digit"
+          second: "2-digit"
 
         }
 
-      );
+      )
+
+  );
 
 }
 
-/* =========================
+/* =========================================================
 
    LIVE MARKET DATA
 
-========================= */
+   ========================================================= */
 
 async function loadMarket(
 
-  manual=false
+  manual = false
 
-){
+) {
 
-  if(marketLoading)
+  if (marketLoading) {
 
     return;
 
-  marketLoading=true;
+  }
 
-  try{
+  marketLoading = true;
 
-    if(
+  try {
 
-      manual||
+    if (
+
+      manual ||
 
       !candles.length
 
-    ){
+    ) {
 
       setMarketStatus(
 
@@ -3161,15 +3618,17 @@ async function loadMarket(
 
       );
 
-      $("dataReceived")
+      if ($("dataReceived")) {
 
-        .textContent=
+        $("dataReceived").textContent =
 
-        "Requesting latest XAU/USD data…";
+          "Requesting latest XAU/USD data…";
+
+      }
 
     }
 
-    const response=
+    const response =
 
       await fetch(
 
@@ -3177,19 +3636,21 @@ async function loadMarket(
 
         {
 
-          cache:"no-store"
+          cache: "no-store"
 
         }
 
       );
 
-    let d;
+    let data;
 
-    try{
+    try {
 
-      d=await response.json();
+      data =
 
-    }catch(e){
+        await response.json();
+
+    } catch (error) {
 
       throw new Error(
 
@@ -3199,11 +3660,11 @@ async function loadMarket(
 
     }
 
-    if(!response.ok){
+    if (!response.ok) {
 
       throw new Error(
 
-        d?.error||
+        data?.error ||
 
         "Market-data request failed."
 
@@ -3211,13 +3672,13 @@ async function loadMarket(
 
     }
 
-    if(
+    if (
 
-      !Array.isArray(d.values)||
+      !Array.isArray(data.values) ||
 
-      !d.values.length
+      !data.values.length
 
-    ){
+    ) {
 
       throw new Error(
 
@@ -3227,43 +3688,53 @@ async function loadMarket(
 
     }
 
-    const clean=
+    const clean =
 
-      d.values
+      data.values
 
-        .map(c=>({
+        .map(candle => ({
 
-          datetime:c.datetime,
+          datetime:
 
-          open:+c.open,
+            candle.datetime,
 
-          high:+c.high,
+          open:
 
-          low:+c.low,
+            Number(candle.open),
 
-          close:+c.close
+          high:
+
+            Number(candle.high),
+
+          low:
+
+            Number(candle.low),
+
+          close:
+
+            Number(candle.close)
 
         }))
 
-        .filter(c=>
+        .filter(candle =>
 
-          c.datetime&&
+          candle.datetime &&
 
           [
 
-            c.open,
+            candle.open,
 
-            c.high,
+            candle.high,
 
-            c.low,
+            candle.low,
 
-            c.close
+            candle.close
 
           ].every(Number.isFinite)
 
         );
 
-    if(!clean.length){
+    if (!clean.length) {
 
       throw new Error(
 
@@ -3273,47 +3744,51 @@ async function loadMarket(
 
     }
 
-    candles=
+    candles =
 
       clean.sort(
 
-        (a,b)=>
+        (a, b) =>
 
-          new Date(a.datetime)-
+          new Date(a.datetime) -
 
           new Date(b.datetime)
 
       );
 
-    chartOffset=0;
+    chartOffset = 0;
 
-    lastSuccessfulUpdate=
+    lastSuccessfulUpdate =
 
       Date.now();
 
-    $("dataReceived")
+    if ($("dataReceived")) {
 
-      .textContent=
+      $("dataReceived").textContent =
 
-      d.cached?
+        data.cached
 
-      "Latest valid data available":
+          ? "Latest valid data available"
 
-      "Live data received";
+          : "Live data received";
 
-    $("lastUpdated")
+    }
 
-      .textContent=
+    if ($("lastUpdated")) {
 
-      formatUpdateTime(
+      $("lastUpdated").textContent =
 
-        d.updatedAt||
+        formatUpdateTime(
 
-        Date.now()
+          data.updatedAt ||
 
-      );
+          Date.now()
 
-    if(d.cached){
+        );
+
+    }
+
+    if (data.cached) {
 
       setMarketStatus(
 
@@ -3323,17 +3798,17 @@ async function loadMarket(
 
       );
 
-      if(d.warning){
+      if (data.warning &&
 
-        $("dataReceived")
+          $("dataReceived")) {
 
-          .textContent=
+        $("dataReceived").textContent =
 
-          d.warning;
+          data.warning;
 
       }
 
-    }else{
+    } else {
 
       setMarketStatus(
 
@@ -3347,17 +3822,17 @@ async function loadMarket(
 
     analyze();
 
-  }catch(e){
+  } catch (error) {
 
     console.error(
 
       "PriceEdge market error:",
 
-      e
+      error
 
     );
 
-    if(candles.length){
+    if (candles.length) {
 
       setMarketStatus(
 
@@ -3367,29 +3842,33 @@ async function loadMarket(
 
       );
 
-      $("dataReceived")
+      if ($("dataReceived")) {
 
-        .textContent=
+        $("dataReceived").textContent =
 
-        "Latest refresh failed — showing last valid data";
+          "Latest refresh failed — showing last valid data";
 
-      $("lastUpdated")
+      }
 
-        .textContent=
+      if ($("lastUpdated")) {
 
-        lastSuccessfulUpdate?
-
-        formatUpdateTime(
+        $("lastUpdated").textContent =
 
           lastSuccessfulUpdate
 
-        ):
+            ? formatUpdateTime(
 
-        "Previous data available";
+                lastSuccessfulUpdate
+
+              )
+
+            : "Previous data available";
+
+      }
 
       analyze();
 
-    }else{
+    } else {
 
       setMarketStatus(
 
@@ -3399,89 +3878,107 @@ async function loadMarket(
 
       );
 
-      $("dataReceived")
+      if ($("dataReceived")) {
 
-        .textContent=
+        $("dataReceived").textContent =
 
-        "No valid market data received";
+          "No valid market data received";
 
-      $("lastUpdated")
+      }
 
-        .textContent=
+      if ($("lastUpdated")) {
 
-        "Waiting for provider";
+        $("lastUpdated").textContent =
 
-      $("trendBadge").className=
+          "Waiting for provider";
 
-        "trend-badge error";
+      }
 
-      $("trendBadge")
+      if ($("trendBadge")) {
 
-        .textContent=
+        $("trendBadge").className =
 
-        "DATA UNAVAILABLE";
+          "trend-badge error";
 
-      $("action").className=
+        $("trendBadge").textContent =
 
-        "signal-action action-wait";
+          "DATA UNAVAILABLE";
 
-      $("action").textContent=
+      }
 
-        "WAIT";
+      if ($("action")) {
 
-      $("signalText")
+        $("action").className =
 
-        .textContent=
+          "signal-action action-wait";
 
-        e.message||
+        $("action").textContent =
 
-        "Market data is temporarily unavailable.";
+          "WAIT";
+
+      }
+
+      if ($("signalText")) {
+
+        $("signalText").textContent =
+
+          error.message ||
+
+          "Market data is temporarily unavailable.";
+
+      }
 
       drawChart();
 
     }
 
-  }finally{
+  } finally {
 
-    marketLoading=false;
+    marketLoading = false;
 
   }
 
 }
 
-function manualRefresh(){
+/* =========================================================
+
+   MANUAL REFRESH
+
+   ========================================================= */
+
+function manualRefresh() {
 
   loadMarket(true);
 
 }
 
-/* =========================
+/* =========================================================
 
    SECURITY
 
-========================= */
+   ========================================================= */
 
-function escapeHtml(v){
+function escapeHtml(value) {
 
-  return String(v)
+  return String(value ?? "")
 
-    .replaceAll("&","&amp;")
+    .replaceAll("&", "&amp;")
 
-    .replaceAll("<","&lt;")
+    .replaceAll("<", "&lt;")
 
-    .replaceAll(">","&gt;")
+    .replaceAll(">", "&gt;")
 
-    .replaceAll('"',"&quot;")
+    .replaceAll('"', "&quot;")
 
-    .replaceAll("'","&#039;");
+    .replaceAll("'", "&#039;");
 
 }
 
-/* =========================
+/* =========================================================
 
    START PRICEEDGE
 
-========================= */
+   ========================================================= */
 
 window.addEventListener(
 
@@ -3499,7 +3996,7 @@ loadMarket();
 
 setInterval(
 
-  ()=>loadMarket(false),
+  () => loadMarket(false),
 
   MARKET_REFRESH_MS
 
