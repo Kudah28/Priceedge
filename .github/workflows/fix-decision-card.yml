@@ -1,0 +1,88 @@
+name: Fix PriceEdge decision card
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-decision-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch decision logic
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('public/index.html')
+          text = p.read_text(encoding='utf-8')
+
+          new_fn = r'''function applyBasic(data){
+          if(data.length<20){
+            $("signal").innerHTML='<h3>WAIT</h3><span class="muted">Collecting enough candles for market structure…</span>';
+            return;
+          }
+          const a=analyzeLocal(data);
+          $("price").textContent='$'+a.price.toFixed(2);
+          $("change").textContent=(a.delta>=0?'+':'')+a.delta.toFixed(2)+' · '+a.trend;
+          $("change").className=a.delta>=0?'priceup':'pricedown';
+          $("bias").textContent=a.trend;
+          $("bias").className=a.trend==='Bullish'?'green':a.trend==='Bearish'?'red':'gold';
+          $("trend").textContent=a.trend;
+          $("structure").textContent=a.structure;
+          $("momentum").textContent=a.momentum;
+          $("quality").textContent=a.quality+'%';
+          $("confluence").textContent=a.confluence;
+          $("support").textContent=a.support.toFixed(2);
+          $("resistance").textContent=a.resistance.toFixed(2);
+          $("d1h").textContent='—';
+          $("d1l").textContent='—';
+          $("w1h").textContent='—';
+          $("w1l").textContent='—';
+
+          let action='WAIT', reason='Market structure is not strong enough for a directional setup.';
+          if(a.trend==='Bullish' && a.structure==='HH / HL' && a.momentum==='Strong' && a.quality>=70){
+            action='BUY';
+            reason='Bullish HH / HL structure with strong momentum and sufficient setup quality.';
+          }else if(a.trend==='Bearish' && a.structure==='LH / LL' && a.momentum==='Strong' && a.quality>=70){
+            action='SELL';
+            reason='Bearish LH / LL structure with strong momentum and sufficient setup quality.';
+          }else if(a.trend==='Sideways'){
+            reason='Market is ranging; wait for a clean breakout and retest before considering direction.';
+          }else if(a.momentum!=='Strong'){
+            reason='Trend is present, but momentum is not strong enough yet.';
+          }else{
+            reason='Directional bias exists, but confluence is below the strict entry threshold.';
+          }
+
+          const signal=$("signal");
+          signal.className='signal '+(action==='BUY'?'buy':action==='SELL'?'sell':'');
+          signal.innerHTML=`<h3>${action}</h3><span class="muted">${esc(reason)}</span>`;
+          draw();
+          }'''
+
+          pattern = r'function applyBasic\(data\)\{.*?\}\nfunction analyzeLocal'
+          replacement = new_fn + '\nfunction analyzeLocal'
+          patched, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not locate applyBasic() safely; no changes made.')
+          if patched == text:
+              raise SystemExit('Decision patch produced no change.')
+          p.write_text(patched, encoding='utf-8')
+          print('Decision card patched successfully.')
+          PY
+
+      - name: Commit fix
+        run: |
+          git config user.name "PriceEdge Bot"
+          git config user.email "actions@github.com"
+          git add public/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Fix market structure decision display"
+          git push
