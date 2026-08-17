@@ -1,161 +1,27 @@
 "use strict";
 
-/**
- * PriceEdge price-action engine.
- *
- * Input candles must contain: open, high, low, close, datetime.
- * The engine is intentionally indicator-light: structure, momentum,
- * volatility, support/resistance and candle quality are derived from price.
- */
-
-function finite(n) {
-  return Number.isFinite(Number(n));
-}
-
+const TIMEFRAMES = ["5min", "15min", "1h", "4h", "1day"];
+function n(v) { return Number(v); }
+function finite(v) { return Number.isFinite(n(v)); }
+function avg(a) { return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
+function clamp(v,lo,hi) { return Math.max(lo,Math.min(hi,v)); }
+function range(c) { return Math.max(0,c.high-c.low); }
+function body(c) { return Math.abs(c.close-c.open); }
+function dir(c) { return c.close>c.open?1:c.close<c.open?-1:0; }
 function normalizeCandles(candles) {
-  return (Array.isArray(candles) ? candles : [])
-    .map((c) => ({
-      datetime: c.datetime,
-      open: Number(c.open),
-      high: Number(c.high),
-      low: Number(c.low),
-      close: Number(c.close)
-    }))
-    .filter((c) => [c.open, c.high, c.low, c.close].every(finite) && c.high >= c.low)
-    .filter((c) => c.high >= Math.max(c.open, c.close) && c.low <= Math.min(c.open, c.close));
+  return (Array.isArray(candles)?candles:[]).map(c=>({datetime:c.datetime,open:n(c.open),high:n(c.high),low:n(c.low),close:n(c.close)}))
+    .filter(c=>c.datetime&&[c.open,c.high,c.low,c.close].every(finite))
+    .filter(c=>c.high>=Math.max(c.open,c.close)&&c.low<=Math.min(c.open,c.close));
 }
-
-function average(values) {
-  if (!values.length) return 0;
-  return values.reduce((a, b) => a + b, 0) / values.length;
-}
-
-function range(c) { return Math.max(0, c.high - c.low); }
-function body(c) { return Math.abs(c.close - c.open); }
-function direction(c) { return c.close > c.open ? 1 : c.close < c.open ? -1 : 0; }
-
-function slope(values) {
-  const n = values.length;
-  if (n < 2) return 0;
-  const xMean = (n - 1) / 2;
-  const yMean = average(values);
-  let num = 0;
-  let den = 0;
-  for (let i = 0; i < n; i++) {
-    const dx = i - xMean;
-    num += dx * (values[i] - yMean);
-    den += dx * dx;
-  }
-  return den ? num / den : 0;
-}
-
-function findPivots(candles, wing = 2) {
-  const highs = [];
-  const lows = [];
-  for (let i = wing; i < candles.length - wing; i++) {
-    let high = true;
-    let low = true;
-    for (let j = 1; j <= wing; j++) {
-      high = high && candles[i].high >= candles[i - j].high && candles[i].high >= candles[i + j].high;
-      low = low && candles[i].low <= candles[i - j].low && candles[i].low <= candles[i + j].low;
-    }
-    if (high) highs.push({ index: i, price: candles[i].high, datetime: candles[i].datetime });
-    if (low) lows.push({ index: i, price: candles[i].low, datetime: candles[i].datetime });
-  }
-  return { highs, lows };
-}
-
-function classifyStructure(pivots) {
-  const highs = pivots.highs.slice(-4);
-  const lows = pivots.lows.slice(-4);
-  if (highs.length < 2 || lows.length < 2) return { label: "Developing", bias: 0 };
-
-  const hh = highs[highs.length - 1].price > highs[highs.length - 2].price;
-  const hl = lows[lows.length - 1].price > lows[lows.length - 2].price;
-  const lh = highs[highs.length - 1].price < highs[highs.length - 2].price;
-  const ll = lows[lows.length - 1].price < lows[lows.length - 2].price;
-
-  if (hh && hl) return { label: "Higher highs / higher lows", bias: 1 };
-  if (lh && ll) return { label: "Lower highs / lower lows", bias: -1 };
-  return { label: "Range / mixed structure", bias: 0 };
-}
-
-function levels(candles, pivots, lastPrice) {
-  const supports = pivots.lows.map((p) => p.price).filter((p) => p < lastPrice).sort((a, b) => b - a);
-  const resistances = pivots.highs.map((p) => p.price).filter((p) => p > lastPrice).sort((a, b) => a - b);
-  const lookback = candles.slice(-30);
-  const fallbackSupport = Math.min(...lookback.map((c) => c.low));
-  const fallbackResistance = Math.max(...lookback.map((c) => c.high));
-  return {
-    support: supports[0] ?? fallbackSupport,
-    resistance: resistances[0] ?? fallbackResistance
-  };
-}
-
-function analyze(candles) {
-  const data = normalizeCandles(candles).slice(-200);
-  if (data.length < 30) {
-    return { ready: false, reason: "At least 30 valid candles are required.", candles: data.length };
-  }
-
-  const closes = data.map((c) => c.close);
-  const last = data[data.length - 1];
-  const recent = data.slice(-20);
-  const short = average(closes.slice(-8));
-  const long = average(closes.slice(-21));
-  const recentSlope = slope(closes.slice(-12));
-  const ranges = recent.map(range).filter((v) => v > 0);
-  const atrProxy = average(ranges);
-  const currentRange = range(last);
-  const currentBody = body(last);
-  const bodyRatio = currentRange ? currentBody / currentRange : 0;
-  const pivots = findPivots(data, 2);
-  const structure = classifyStructure(pivots);
-  const { support, resistance } = levels(data, pivots, last.close);
-
-  const momentumScore = (short > long ? 1 : short < long ? -1 : 0) +
-    (recentSlope > atrProxy * 0.03 ? 1 : recentSlope < -atrProxy * 0.03 ? -1 : 0) +
-    (direction(last));
-
-  const trendScore = structure.bias * 2 + (short > long ? 1 : short < long ? -1 : 0);
-  const trend = trendScore >= 2 ? "Bullish" : trendScore <= -2 ? "Bearish" : "Sideways";
-  const momentum = momentumScore >= 2 ? "Strong bullish" : momentumScore <= -2 ? "Strong bearish" : momentumScore > 0 ? "Bullish" : momentumScore < 0 ? "Bearish" : "Neutral";
-
-  const distanceToSupport = last.close - support;
-  const distanceToResistance = resistance - last.close;
-  const nearSupport = distanceToSupport >= 0 && distanceToSupport <= atrProxy * 0.8;
-  const nearResistance = distanceToResistance >= 0 && distanceToResistance <= atrProxy * 0.8;
-  const quality = Math.max(0, Math.min(100,
-    50 + trendScore * 10 + momentumScore * 7 + (bodyRatio >= 0.55 ? 8 : 0) - (nearSupport && nearResistance ? 15 : 0)
-  ));
-
-  let action = "WAIT";
-  let reason = "Structure and location are not aligned strongly enough for a clean setup.";
-  if (trend === "Bullish" && momentumScore > 0 && !nearResistance) {
-    action = "BUY";
-    reason = nearSupport ? "Bullish structure with price holding near support." : "Bullish structure and momentum are aligned.";
-  } else if (trend === "Bearish" && momentumScore < 0 && !nearSupport) {
-    action = "SELL";
-    reason = nearResistance ? "Bearish structure with price rejecting near resistance." : "Bearish structure and momentum are aligned.";
-  }
-
-  return {
-    ready: true,
-    price: last.close,
-    trend,
-    structure: structure.label,
-    momentum,
-    action,
-    reason,
-    setupQuality: Math.round(quality),
-    support,
-    resistance,
-    volatility: atrProxy,
-    candle: { direction: direction(last), bodyRatio: Number(bodyRatio.toFixed(3)), range: currentRange },
-    pivots: { highs: pivots.highs.slice(-6), lows: pivots.lows.slice(-6) },
-    dataPoints: data.length,
-    asOf: last.datetime
-  };
-}
-
-module.exports = { analyze, normalizeCandles };
+function sma(v,p){return avg(v.slice(-p));}
+function atr(data,p=14){const d=data.slice(-(p+1));if(!d.length)return 0;const trs=d.map((c,i)=>!i?range(c):Math.max(c.high-c.low,Math.abs(c.high-d[i-1].close),Math.abs(c.low-d[i-1].close)));return avg(trs.slice(-p));}
+function pivots(data,wing=2){const highs=[],lows=[];for(let i=wing;i<data.length-wing;i++){let hi=true,lo=true;for(let j=1;j<=wing;j++){hi=hi&&data[i].high>=data[i-j].high&&data[i].high>=data[i+j].high;lo=lo&&data[i].low<=data[i-j].low&&data[i].low<=data[i+j].low;}if(hi)highs.push({index:i,price:data[i].high,datetime:data[i].datetime});if(lo)lows.push({index:i,price:data[i].low,datetime:data[i].datetime});}return{highs,lows};}
+function structure(data){const p=pivots(data),h=p.highs.slice(-4),l=p.lows.slice(-4);if(h.length<2||l.length<2)return{label:"Developing",bias:0,pivots:p};const hh=h.at(-1).price>h.at(-2).price,hl=l.at(-1).price>l.at(-2).price,lh=h.at(-1).price<h.at(-2).price,ll=l.at(-1).price<l.at(-2).price;if(hh&&hl)return{label:"HH / HL",bias:1,pivots:p};if(lh&&ll)return{label:"LH / LL",bias:-1,pivots:p};return{label:"Range / mixed",bias:0,pivots:p};}
+function candlePattern(c){const r=range(c);if(!r)return"None";const b=body(c),u=c.high-Math.max(c.open,c.close),l=Math.min(c.open,c.close)-c.low;if(b/r<.35&&l>b*2&&u<b)return"Bullish pin bar";if(b/r<.35&&u>b*2&&l<b)return"Bearish pin bar";return"None";}
+function engulfing(data){if(data.length<2)return"None";const a=data.at(-2),b=data.at(-1);if(a.close<a.open&&b.close>b.open&&b.open<=a.close&&b.close>=a.open)return"Bullish engulfing";if(a.close>a.open&&b.close<b.open&&b.open>=a.close&&b.close<=a.open)return"Bearish engulfing";return"None";}
+function insideBar(data){if(data.length<2)return false;const a=data.at(-2),b=data.at(-1);return b.high<=a.high&&b.low>=a.low;}
+function levels(data){const p=pivots(data),price=data.at(-1).close,s=p.lows.map(x=>x.price).filter(x=>x<price).sort((a,b)=>b-a),r=p.highs.map(x=>x.price).filter(x=>x>price).sort((a,b)=>a-b),recent=data.slice(-50),day=data.slice(-288),week=data.slice(-2016),month=data.slice(-8928);return{support:s[0]??Math.min(...recent.map(x=>x.low)),resistance:r[0]??Math.max(...recent.map(x=>x.high)),dailyHigh:Math.max(...day.map(x=>x.high)),dailyLow:Math.min(...day.map(x=>x.low)),weeklyHigh:Math.max(...week.map(x=>x.high)),weeklyLow:Math.min(...week.map(x=>x.low)),monthlyHigh:Math.max(...month.map(x=>x.high)),monthlyLow:Math.min(...month.map(x=>x.low))};}
+function analyze(candles){const data=normalizeCandles(candles).slice(-300);if(data.length<40)return{ready:false,reason:"At least 40 candles are required.",candles:data.length};const closes=data.map(c=>c.close),last=data.at(-1),s8=sma(closes,8),s21=sma(closes,21),s50=sma(closes,50),st=structure(data),a=atr(data),lv=levels(data),momentum=(s8>s21?1:s8<s21?-1:0)+(s21>s50?1:s21<s50?-1:0)+dir(last),trendScore=st.bias*2+(s8>s21?1:s8<s21?-1:0)+(s21>s50?1:s21<s50?-1:0),trend=trendScore>=2?"Bullish":trendScore<=-2?"Bearish":"Sideways",mom=momentum>=2?"Bullish":momentum<=-2?"Bearish":"Neutral",pattern=candlePattern(last),engulf=engulfing(data),inside=insideBar(data),nearSupport=a>0&&last.close-lv.support<=a*.8,nearResistance=a>0&&lv.resistance-last.close<=a*.8,sweepLow=last.low<lv.support&&last.close>lv.support,sweepHigh=last.high>lv.resistance&&last.close<lv.resistance,quality=clamp(Math.round(50+trendScore*8+momentum*6+(pattern!=="None"||engulf!=="None"?7:0)+(sweepLow||sweepHigh?7:0)),0,100);return{ready:true,price:last.close,trend,structure:st.label,structureBias:st.bias,momentum:mom,momentumScore:momentum,atr:a,setupQuality:quality,candle:{pattern,engulfing:engulf,insideBar:inside,direction:dir(last),bodyRatio:range(last)?body(last)/range(last):0},liquidity:{sweepLow,sweepHigh},levels:lv,nearSupport,nearResistance,pivots:{highs:st.pivots.highs.slice(-8),lows:st.pivots.lows.slice(-8)},asOf:last.datetime};}
+function multiTimeframe(series){const analyses={};for(const tf of TIMEFRAMES)analyses[tf]=analyze(series[tf]||[]);const usable=TIMEFRAMES.filter(tf=>analyses[tf].ready),dirs=usable.map(tf=>analyses[tf].trend),bullish=dirs.filter(x=>x==="Bullish").length,bearish=dirs.filter(x=>x==="Bearish").length,h4=analyses["4h"],d1=analyses["1day"],h4d1Aligned=!!h4?.ready&&!!d1?.ready&&h4.trend===d1.trend&&["Bullish","Bearish"].includes(h4.trend),confluenceCount=Math.max(bullish,bearish),direction=bullish>bearish?"Bullish":bearish>bullish?"Bearish":"Sideways";let action="WAIT",reason="Wait for at least three aligned timeframes and a confirmed candle close.";if(confluenceCount>=3&&h4d1Aligned){action=direction==="Bullish"?"BUY WATCH":"SELL WATCH";reason=`${confluenceCount}/5 timeframes align ${direction.toLowerCase()} and H4 + D1 agree.`;}return{analyses,direction,confluenceCount,h4d1Aligned,confidence:Math.round(confluenceCount/5*100),action,reason};}
+function positionSize({balance,riskPercent=1,entry,stop,contractSize=100}){const riskAmount=balance*riskPercent/100,stopDistance=Math.abs(entry-stop);if(![balance,riskPercent,entry,stop,contractSize].every(finite)||balance<=0||riskPercent<=0||stopDistance<=0||contractSize<=0)return null;const units=riskAmount/(stopDistance*contractSize);return{riskAmount,stopDistance,units,lots:units};}
+module.exports={analyze,multiTimeframe,positionSize,normalizeCandles,TIMEFRAMES};
