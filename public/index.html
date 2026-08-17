@@ -39,7 +39,49 @@ async function loadTrades(){if(!token)return;const r=await fetch("/api/trades",{
 async function saveTrade(){if(!token)return alert("Log in first.");const body={pair:$("jp").value,side:$("js").value,entry:+$("je").value,stop:+$("jstop").value,target:+$("jt").value,result:+$("jr").value,notes:$("jn").value};const r=await fetch("/api/trades",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)return alert(d.error);$("jn").value="";loadTrades();}
 function calcRisk(){const b=+$('rb').value,p=+$('rp').value,e=+$('re').value,s=+$('rs').value,c=+$('rc').value;if(p>2)return $('riskout').textContent='Risk cannot exceed 2%.';const risk=b*p/100,dist=Math.abs(e-s);if(!b||!e||!s||dist<=0)return $('riskout').textContent='Enter valid balance, entry and stop.';const units=risk/(dist*c);$('riskout').innerHTML=`Risk amount: <b>$${risk.toFixed(2)}</b><br>Stop distance: <b>${dist.toFixed(2)}</b><br>Approx. units: <b>${units.toFixed(4)}</b><br><span class="muted">Verify broker contract size before trading.</span>`;}
 async function loadCandles(){try{const r=await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&interval=${tf}&size=300`,{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error);candles=d.values||[];forming=null;offset=0;draw();applyBasic(d.values||[]);}catch(e){$("signal").innerHTML=`<h3>DATA UNAVAILABLE</h3><span class="muted">${esc(e.message)}</span>`;}}
-function applyBasic(data){if(data.length<20)return;const a=analyzeLocal(data);$("price").textContent='$'+a.price.toFixed(2);$("change").textContent=(a.delta>=0?'+':'')+a.delta.toFixed(2)+' · '+a.trend;$("change").className=a.delta>=0?'priceup':'pricedown';$("bias").textContent=a.trend;$("bias").className=a.trend==='Bullish'?'green':a.trend==='Bearish'?'red':'gold';$("trend").textContent=a.trend;$("structure").textContent=a.structure;$("momentum").textContent=a.momentum;$("quality").textContent=a.quality+'%';$("support").textContent=a.support.toFixed(2);$("resistance").textContent=a.resistance.toFixed(2);$("d1h").textContent='—';$("d1l").textContent='—';draw();}
+function applyBasic(data){
+if(data.length<20){
+  $("signal").innerHTML='<h3>WAIT</h3><span class="muted">Collecting enough candles for market structure…</span>';
+  return;
+}
+const a=analyzeLocal(data);
+$("price").textContent='$'+a.price.toFixed(2);
+$("change").textContent=(a.delta>=0?'+':'')+a.delta.toFixed(2)+' · '+a.trend;
+$("change").className=a.delta>=0?'priceup':'pricedown';
+$("bias").textContent=a.trend;
+$("bias").className=a.trend==='Bullish'?'green':a.trend==='Bearish'?'red':'gold';
+$("trend").textContent=a.trend;
+$("structure").textContent=a.structure;
+$("momentum").textContent=a.momentum;
+$("quality").textContent=a.quality+'%';
+$("confluence").textContent=a.confluence;
+$("support").textContent=a.support.toFixed(2);
+$("resistance").textContent=a.resistance.toFixed(2);
+$("d1h").textContent='—';
+$("d1l").textContent='—';
+$("w1h").textContent='—';
+$("w1l").textContent='—';
+
+let action='WAIT', reason='Market structure is not strong enough for a directional setup.';
+if(a.trend==='Bullish' && a.structure==='HH / HL' && a.momentum==='Strong' && a.quality>=70){
+  action='BUY';
+  reason='Bullish HH / HL structure with strong momentum and sufficient setup quality.';
+}else if(a.trend==='Bearish' && a.structure==='LH / LL' && a.momentum==='Strong' && a.quality>=70){
+  action='SELL';
+  reason='Bearish LH / LL structure with strong momentum and sufficient setup quality.';
+}else if(a.trend==='Sideways'){
+  reason='Market is ranging; wait for a clean breakout and retest before considering direction.';
+}else if(a.momentum!=='Strong'){
+  reason='Trend is present, but momentum is not strong enough yet.';
+}else{
+  reason='Directional bias exists, but confluence is below the strict entry threshold.';
+}
+
+const signal=$("signal");
+signal.className='signal '+(action==='BUY'?'buy':action==='SELL'?'sell':'');
+signal.innerHTML=`<h3>${action}</h3><span class="muted">${esc(reason)}</span>`;
+draw();
+}
 function analyzeLocal(d){const c=d.map(x=>+x.close),n=c.length,short=c.slice(-8).reduce((a,b)=>a+b,0)/8,long=c.slice(-21).reduce((a,b)=>a+b,0)/21,trend=short>long?'Bullish':short<long?'Bearish':'Sideways',last=d.at(-1),prev=d.at(-2),hi=Math.max(...d.slice(-50).map(x=>+x.high)),lo=Math.min(...d.slice(-50).map(x=>+x.low)),mom=Math.abs(short-long)/Math.max(long,.0001),structure=trend==='Bullish'?'HH / HL':trend==='Bearish'?'LH / LL':'Range / mixed';return{price:+last.close,delta:+last.close-+prev.close,trend,structure,momentum:mom>.001?'Strong':'Moderate',quality:Math.min(100,Math.round(50+Math.min(30,mom*10000))),support:lo,resistance:hi};}
 function connectWS(){try{const proto=location.protocol==='https:'?'wss':'ws';ws=new WebSocket(`${proto}://${location.host}/ws/live`);ws.onopen=()=>setStream(true,'LIVE TICK STREAM');ws.onclose=()=>{setStream(false,'RECONNECTING…');setTimeout(connectWS,2500)};ws.onerror=()=>setStream(false,'STREAM ERROR');ws.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch(_){return}if(d.type==='status'){setStream(d.status==='connected',d.message);return}if(d.type==='tick'&&d.symbol===symbol){tick=d;updateForming(d);}}}catch(e){setStream(false,'STREAM UNAVAILABLE');}}
 function setStream(on,text){$("stream").textContent=text;$("stream").className='status '+(on?'':'off');$("dot").className='dot '+(on?'':'off');}
