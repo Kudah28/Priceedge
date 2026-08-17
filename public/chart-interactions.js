@@ -1,22 +1,32 @@
-/* PriceEdge chart controls: LEFT = newer, RIGHT = older, pinch/wheel = zoom. */
+/* PriceEdge chart interactions
+   LEFT = newer/live data
+   RIGHT = older data
+   Pinch/wheel/buttons = zoom
+   Live candle panel = real-time OHLC + correct candle countdown
+*/
 (function(){
   let chart=document.getElementById("chart");
   if(!chart||typeof window.draw!=="function")return;
 
   window.visible=70;
 
-  /* Make the existing renderer respect the zoom level without replacing the app's analysis code. */
-  const source=window.draw.toString();
-  const patched=source.replace("Math.min(70,candles.length)","Math.min(window.visible,candles.length)");
-  try{window.draw=eval("("+patched+")");}catch(_){}
+  /* Make the existing renderer respect the zoom level. */
+  try{
+    const source=window.draw.toString();
+    const patched=source.replace("Math.min(70,candles.length)","Math.min(window.visible,candles.length)");
+    window.draw=eval("("+patched+")");
+  }catch(_){}
 
-  /* Remove the old gesture listeners by replacing the canvas node. */
+  /* Remove the original gesture listeners from the inline renderer. */
   const fresh=chart.cloneNode(true);
   chart.replaceWith(fresh);
   chart=fresh;
 
   const MIN_VISIBLE=20,MAX_VISIBLE=160;
-  const clamp=()=>{offset=Math.max(0,Math.min(Math.max(0,candles.length-window.visible),offset));return offset;};
+  const clamp=()=>{
+    offset=Math.max(0,Math.min(Math.max(0,candles.length-window.visible),offset));
+    return offset;
+  };
 
   function zoom(next,ratio=.5){
     const old=window.visible;
@@ -25,24 +35,92 @@
     const end=candles.length-clamp();
     const start=Math.max(0,end-old);
     const r=Math.max(0,Math.min(1,ratio));
-    const anchor=start+Math.round((Math.max(1,end-start-1))*r);
+    const anchor=start+Math.round(Math.max(0,end-start-1)*r);
     let newStart=anchor-Math.round((n-1)*r);
     newStart=Math.max(0,Math.min(Math.max(0,candles.length-n),newStart));
     window.visible=n;
     offset=Math.max(0,candles.length-(newStart+n));
-    clamp();draw();show();
+    clamp();
+    draw();
+    showZoom();
   }
-  function show(){const el=document.getElementById("zoomLevel");if(el)el.textContent=window.visible+" candles";}
+
+  function showZoom(){
+    const el=document.getElementById("zoomLevel");
+    if(el)el.textContent=window.visible+" candles";
+  }
 
   window.zoomIn=()=>zoom(window.visible*.8);
   window.zoomOut=()=>zoom(window.visible/0.8);
-  window.resetZoom=()=>{window.visible=70;offset=0;draw();show();};
+  window.resetZoom=()=>{window.visible=70;offset=0;draw();showZoom();};
 
-  /* Button navigation uses the same direction as touch navigation. */
+  /* Button direction matches touch direction. */
   window.older=()=>{offset=clamp()+Math.max(10,Math.round(window.visible*.28));clamp();draw();};
   window.newer=()=>{offset=clamp()-Math.max(10,Math.round(window.visible*.28));clamp();draw();};
   window.live=()=>{offset=0;draw();};
 
+  /* ---------- Live candle / tick panel ---------- */
+  function ensureLivePanel(){
+    let panel=document.getElementById("peLiveCandle");
+    if(panel)return panel;
+    const wrap=chart.closest(".chartwrap");
+    if(!wrap)return null;
+    panel=document.createElement("div");
+    panel.id="peLiveCandle";
+    panel.style.cssText="margin-top:10px;padding:10px 12px;background:#0c1322;border:1px solid #31405f;border-radius:10px;color:#dce5fa;";
+    panel.innerHTML='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:left"><div><span style="display:block;color:#8e9cb7;font-size:10px">TICK</span><b id="peTick">—</b></div><div><span style="display:block;color:#8e9cb7;font-size:10px">OPEN</span><b id="peOpen">—</b></div><div><span style="display:block;color:#8e9cb7;font-size:10px">HIGH</span><b id="peHigh">—</b></div><div><span style="display:block;color:#8e9cb7;font-size:10px">LOW</span><b id="peLow">—</b></div><div><span style="display:block;color:#8e9cb7;font-size:10px">CLOSE</span><b id="peClose">—</b></div></div><div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:10px"><span id="peTickState" style="color:#8e9cb7">WAITING FOR LIVE TICK</span><span id="peCandleCountdown" style="color:#f5c451;font-weight:800">CANDLE CLOSES —</span></div>';
+    wrap.insertAdjacentElement("afterend",panel);
+    return panel;
+  }
+
+  function num(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toFixed(2):"—";
+  }
+
+  function intervalMs(){
+    const map={"5min":300000,"15min":900000,"1h":3600000,"4h":14400000,"1day":86400000};
+    return map[tf]||300000;
+  }
+
+  function updateLivePanel(){
+    const panel=ensureLivePanel();
+    if(!panel)return;
+
+    const t=typeof tick!=="undefined"?tick:null;
+    const f=typeof forming!=="undefined"?forming:null;
+    const livePrice=t&&Number.isFinite(Number(t.price))?Number(t.price):(f?Number(f.close):NaN);
+
+    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+    set("peTick",num(livePrice));
+    set("peOpen",f?num(f.open):"—");
+    set("peHigh",f?num(f.high):"—");
+    set("peLow",f?num(f.low):"—");
+    set("peClose",f?num(f.close):"—");
+
+    if(t&&t.time){
+      const age=Math.max(0,Math.floor((Date.now()-new Date(t.time).getTime())/1000));
+      set("peTickState",age<=3?"LIVE TICK RECEIVED":"LAST TICK "+age+"s AGO");
+      const state=document.getElementById("peTickState");
+      if(state)state.style.color=age<=3?"#4ade80":"#8e9cb7";
+    }else{
+      set("peTickState","WAITING FOR LIVE TICK");
+    }
+
+    /* Correct countdown: always counts down to the next timeframe boundary.
+       It can never show a value longer than the selected candle duration. */
+    const ms=intervalMs();
+    const now=Date.now();
+    const next=Math.floor(now/ms+1)*ms;
+    const remaining=Math.max(0,next-now);
+    const totalSec=Math.ceil(remaining/1000);
+    const mins=Math.floor(totalSec/60);
+    const secs=totalSec%60;
+    const label=(mins>0?mins+":"+String(secs).padStart(2,"0"):"0:"+String(secs).padStart(2,"0"));
+    set("peCandleCountdown","CANDLE CLOSES "+label);
+  }
+
+  /* ---------- Gestures ---------- */
   const pointers=new Map();
   let startX=0,startOffset=0,pinchStart=0,pinchVisible=70,pinchRatio=.5;
 
@@ -50,7 +128,8 @@
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{chart.setPointerCapture(e.pointerId);}catch(_){}
     if(pointers.size===1){
-      startX=e.clientX;startOffset=offset;
+      startX=e.clientX;
+      startOffset=offset;
     }else if(pointers.size===2){
       const p=[...pointers.values()];
       pinchStart=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);
@@ -68,14 +147,18 @@
       const p=[...pointers.values()];
       const dist=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y);
       if(pinchStart>0)zoom(pinchVisible*(pinchStart/Math.max(1,dist)),pinchRatio);
-      e.preventDefault();return;
+      e.preventDefault();
+      return;
     }
 
     const dx=e.clientX-startX;
     if(Math.abs(dx)>5){
-      /* dx < 0 = finger moves LEFT = NEWER. dx > 0 = RIGHT = OLDER. */
+      /* Finger LEFT (dx<0) => offset decreases => NEWER.
+         Finger RIGHT (dx>0) => offset increases => OLDER. */
       offset=startOffset+Math.round(dx/Math.max(4,Math.min(12,window.visible/8)));
-      clamp();draw();e.preventDefault();
+      clamp();
+      draw();
+      e.preventDefault();
     }
   },{passive:false});
 
@@ -103,5 +186,9 @@
     }
   }
 
-  show();draw();
+  ensureLivePanel();
+  showZoom();
+  updateLivePanel();
+  setInterval(updateLivePanel,1000);
+  draw();
 })();
