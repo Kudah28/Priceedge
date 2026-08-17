@@ -52,4 +52,5 @@ async function loadMacro(){try{const r=await fetch('/api/macro'),d=await r.json(
 async function checkout(){if(!token)return alert('Create an account first.');const r=await fetch('/api/billing/checkout',{method:'POST',headers:{Authorization:'Bearer '+token}}),d=await r.json();if(!r.ok)return alert(d.error);location.href=d.url;}
 async function portal(){const r=await fetch('/api/billing/portal',{method:'POST',headers:{Authorization:'Bearer '+token}}),d=await r.json();if(r.ok)location.href=d.url;else alert(d.error);}
 (async()=>{await updateAccount();loadCandles();loadTrades();connectWS();loadMacro();setInterval(loadCandles,60000);setInterval(loadMacro,300000);})();
-</script></body></html>
+</script>
+<script src="/chart-interactions.js"></script></body></html>
