@@ -1,0 +1,34 @@
+name: Install PriceEdge chart tools
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject chart tools
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('public/index.html')
+          if not p.exists(): raise SystemExit('public/index.html not found')
+          s=p.read_text()
+          tag='<script src="/chart-tools.js"></script>'
+          if tag not in s:
+              marker='</body>'
+              if marker not in s: raise SystemExit('body closing tag not found')
+              s=s.replace(marker,tag+'\n'+marker,1)
+              p.write_text(s)
+          PY
+      - name: Commit injection
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html
+          git diff --cached --quiet || git commit -m "Enable PriceEdge professional chart tools"
+          git push
