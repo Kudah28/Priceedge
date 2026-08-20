@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "PriceEdge Trading Assistant",
   "short_name": "PriceEdge",
   "description": "Price action trading assistant for XAU/USD.",
@@ -8,6 +9,7 @@
   "background_color": "#080d19",
   "theme_color": "#0b1020",
   "orientation": "portrait",
+  "categories": ["finance", "business", "productivity"],
   "icons": [
     {
       "src": "/icon.svg",

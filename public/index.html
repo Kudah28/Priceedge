@@ -96,4 +96,4 @@ async function portal(){const r=await fetch('/api/billing/portal',{method:'POST'
 (async()=>{await updateAccount();loadCandles();loadTrades();connectWS();loadMacro();setInterval(loadCandles,60000);setInterval(loadMacro,300000);})();
 </script>
 <script src="/chart-interactions.js"></script><script src="/chart-tools.js"></script>
-</body></html>
+<script src="/ui-polish.js"></script></body></html>
