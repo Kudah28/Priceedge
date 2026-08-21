@@ -36,17 +36,54 @@ async function marketMiddleware(req,res,next){
   }
   next();
 }
+
+const resetDb=new (require("better-sqlite3"))(path.join(__dirname,"priceedge.db"));
+resetDb.exec("CREATE TABLE IF NOT EXISTS password_resets(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,token_hash TEXT NOT NULL UNIQUE,expires_at INTEGER NOT NULL,used_at INTEGER)");
+const resetMailer=process.env.SMTP_HOST?require("nodemailer").createTransport({host:process.env.SMTP_HOST,port:Number(process.env.SMTP_PORT||587),secure:process.env.SMTP_SECURE==="true",auth:{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}}):null;
+const resetAttempts=new Map();
+function resetBody(req){return new Promise(resolve=>{let raw="";req.on("data",c=>{raw+=c.toString();if(raw.length>50000)req.destroy()});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"))}catch(_){resolve({})}});req.on("error",()=>resolve({}))})}
+function resetHash(t){return require("crypto").createHash("sha256").update(t).digest("hex")}
+function resetMiddleware(req,res,next){
+  if(req.method==="POST"&&req.path==="/api/forgot-password")return resetBody(req).then(async body=>{
+    const email=String(body.email||"").trim().toLowerCase();
+    const ip=req.ip||"unknown",now=Date.now(),prev=resetAttempts.get(ip)||0;
+    if(now-prev<3000)return res.status(429).json({error:"Please wait a moment and try again."});
+    resetAttempts.set(ip,now);
+    const generic={ok:true,message:"If an account exists for that email, a password reset link has been sent."};
+    if(!/^\S+@\S+\.\S+$/.test(email))return res.json(generic);
+    const user=resetDb.prepare("SELECT id,email FROM users WHERE email=?").get(email);
+    if(!user||!resetMailer)return res.json(generic);
+    const token=require("crypto").randomBytes(32).toString("hex");
+    resetDb.prepare("UPDATE password_resets SET used_at=? WHERE user_id=? AND used_at IS NULL").run(now,user.id);
+    resetDb.prepare("INSERT INTO password_resets(user_id,token_hash,expires_at) VALUES(?,?,?)").run(user.id,resetHash(token),now+30*60*1000);
+    const base=(process.env.APP_URL||`${req.protocol}://${req.get("host")}`).replace(/\/$/,"");
+    const url=`${base}/?reset_token=${encodeURIComponent(token)}`;
+    try{await resetMailer.sendMail({from:process.env.MAIL_FROM||process.env.SMTP_USER,to:user.email,subject:"Reset your PriceEdge password",text:`Reset your PriceEdge password: ${url}\n\nThis link expires in 30 minutes and can only be used once.`,html:`<p>We received a request to reset your PriceEdge password.</p><p><a href="${url}">Reset password</a></p><p>This link expires in 30 minutes and can only be used once.</p>`})}catch(e){console.error("PASSWORD RESET EMAIL",e.message)}
+    return res.json(generic);
+  });
+  if(req.method==="POST"&&req.path==="/api/reset-password")return resetBody(req).then(async body=>{
+    const token=String(body.token||""),password=String(body.password||"");
+    if(token.length<40||password.length<8)return res.status(400).json({error:"A valid reset token and a password of at least 8 characters are required."});
+    const row=resetDb.prepare("SELECT id,user_id FROM password_resets WHERE token_hash=? AND expires_at>? AND used_at IS NULL").get(resetHash(token),Date.now());
+    if(!row)return res.status(400).json({error:"This reset link is invalid or expired. Request a new one."});
+    const hash=await require("bcryptjs").hash(password,12);
+    resetDb.prepare("UPDATE users SET password_hash=? WHERE id=?").run(hash,row.user_id);
+    resetDb.prepare("UPDATE password_resets SET used_at=? WHERE id=?").run(Date.now(),row.id);
+    return res.json({ok:true,message:"Password reset successfully. You can now log in with your new password."});
+  });
+  next();
+}
 function polishMiddleware(req,res,next){
   if(req.method!=="GET"||(req.path!=="/"&&req.path!=="/index.html"))return next();
   const file=path.join(__dirname,"public","index.html");
   fs.readFile(file,"utf8",(err,html)=>{
     if(err)return next();
-    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>'];
+    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>','<script src="/password-reset.js" defer></script>'];
     let out=html;
     for(const tag of tags){const src=tag.match(/src="([^"]+)/)?.[1];if(src&&!out.includes(src))out=out.includes("</body>")?out.replace("</body>",`${tag}</body>`):out+tag;}
     res.type("html").send(out);
   });
 }
 function attach(server){if(attached)return;attached=true;browserWss=new WebSocket.Server({server,path:"/ws/live"});browserWss.on("connection",client=>{client.send(JSON.stringify({type:"status",status:upstream?.readyState===WebSocket.OPEN?"connected":"reconnecting",message:upstream?.readyState===WebSocket.OPEN?"LIVE TICK STREAM":"WAITING FOR LIVE TICK STREAM"}));for(const t of latestBySymbol.values())client.send(JSON.stringify(t))});connect()}
-function patch(){if(patched)return;patched=true;function patchedExpress(...args){const app=originalExpress(...args);const use=app.use.bind(app),listen=app.listen.bind(app);let injected=false;app.use=function(...args){if(!injected){injected=true;use(marketMiddleware);use(polishMiddleware)}return use(...args)};app.listen=function(...a){const server=listen(...a);attach(server);return server};return app}Object.assign(patchedExpress,originalExpress);patchedExpress.static=originalExpress.static;const p=require.resolve("express");if(require.cache[p])require.cache[p].exports=patchedExpress}
+function patch(){if(patched)return;patched=true;function patchedExpress(...args){const app=originalExpress(...args);const use=app.use.bind(app),listen=app.listen.bind(app);let injected=false;app.use=function(...args){if(!injected){injected=true;use(marketMiddleware);use(resetMiddleware);use(polishMiddleware)}return use(...args)};app.listen=function(...a){const server=listen(...a);attach(server);return server};return app}Object.assign(patchedExpress,originalExpress);patchedExpress.static=originalExpress.static;const p=require.resolve("express");if(require.cache[p])require.cache[p].exports=patchedExpress}
 patch();
