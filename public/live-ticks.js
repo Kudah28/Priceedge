@@ -1,8 +1,7 @@
 /* PriceEdge live XAU/USD tick client.
-   Twelve Data stays server-side. The browser receives real ticks over
-   the same-origin /ws/live socket and uses them to continuously form the
-   current 5-minute candle without inventing market prices.
-   The chart-interactions module owns the single live OHLC panel.
+   The server remains the source of live ticks; Twelve Data candle history is
+   used as a periodic OHLC baseline. The current 5-minute candle is then
+   reconciled from the same UTC bucket, with the live tick as its close.
 */
 (function () {
   "use strict";
@@ -11,9 +10,9 @@
   let reconnectTimer = null;
   let frameQueued = false;
   let analysisTimer = null;
+  let candleSyncTimer = null;
   let lastTick = 0;
   let lastTickTime = 0;
-  let previousTick = null;
 
   const $id = id => document.getElementById(id);
 
@@ -62,7 +61,6 @@
     const bucket = candleStartMs(list[list.length - 1]);
     if (!Number.isFinite(bucket)) return;
     const remaining = secondsRemaining(bucket);
-
     const meta = $id("liveTickMeta");
     if (meta && lastTick) {
       meta.textContent = `LIVE TICK • ${lastTick.toFixed(2)} • NEW 5M CANDLE IN ${formatClock(remaining)}`;
@@ -96,6 +94,22 @@
     }
   }
 
+  function renderChartAndScheduleAnalysis() {
+    if (!frameQueued) {
+      frameQueued = true;
+      requestAnimationFrame(() => {
+        frameQueued = false;
+        if (typeof window.drawChart === "function") window.drawChart();
+      });
+    }
+    if (!analysisTimer) {
+      analysisTimer = setTimeout(() => {
+        analysisTimer = null;
+        if (typeof window.analyze === "function") window.analyze();
+      }, 1000);
+    }
+  }
+
   function updateFormingCandle(price, time) {
     const list = getCandles();
     if (!list) return;
@@ -105,14 +119,7 @@
     const lastBucket = candleStartMs(last);
 
     if (!Number.isFinite(lastBucket) || bucket > lastBucket) {
-      last = {
-        datetime: new Date(bucket).toISOString(),
-        open: price,
-        high: price,
-        low: price,
-        close: price,
-        live: true
-      };
+      last = { datetime: new Date(bucket).toISOString(), open: price, high: price, low: price, close: price, live: true };
       list.push(last);
       while (list.length > 300) list.shift();
     } else if (bucket < lastBucket) {
@@ -126,21 +133,66 @@
 
     ensureTickMeta();
     updateCountdown();
+    renderChartAndScheduleAnalysis();
+  }
 
-    if (!frameQueued) {
-      frameQueued = true;
-      requestAnimationFrame(() => {
-        frameQueued = false;
-        if (typeof window.drawChart === "function") window.drawChart();
-      });
-    }
+  // Reconcile the browser's candle series against Twelve Data periodically.
+  // The historical candle supplies the authoritative open/high/low baseline;
+  // the most recent live tick remains the current candle close so the chart
+  // cannot display a candle whose close disagrees with the live price.
+  async function syncCandleBaseline() {
+    const list = getCandles();
+    if (!list) return;
+    try {
+      const r = await fetch("/api/candles?symbol=XAU%2FUSD&interval=5min&size=300", { cache: "no-store" });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!Array.isArray(d.values) || !d.values.length) return;
 
-    // Do not run the heavier analysis on every tick. Once per second is enough.
-    if (!analysisTimer) {
-      analysisTimer = setTimeout(() => {
-        analysisTimer = null;
-        if (typeof window.analyze === "function") window.analyze();
-      }, 1000);
+      const incoming = d.values.map(c => ({
+        datetime: c.datetime,
+        open: Number(c.open),
+        high: Number(c.high),
+        low: Number(c.low),
+        close: Number(c.close)
+      })).filter(c => [c.open,c.high,c.low,c.close].every(Number.isFinite));
+      if (!incoming.length) return;
+
+      const latest = incoming[incoming.length - 1];
+      const latestBucket = candleStartMs(latest);
+      const nowBucket = candleBucket(lastTickTime || Date.now());
+      const current = list[list.length - 1];
+      const currentBucket = candleStartMs(current);
+
+      if (Number.isFinite(currentBucket) && Number.isFinite(latestBucket) && latestBucket < currentBucket) return;
+
+      if (lastTick && Number.isFinite(nowBucket)) {
+        if (!Number.isFinite(currentBucket) || nowBucket > currentBucket) {
+          const baseline = latestBucket === nowBucket ? latest : null;
+          const c = baseline
+            ? { ...baseline, live: true, close: lastTick, high: Math.max(baseline.high, lastTick), low: Math.min(baseline.low, lastTick) }
+            : { datetime: new Date(nowBucket).toISOString(), open: lastTick, high: lastTick, low: lastTick, close: lastTick, live: true };
+          list.push(c);
+        } else if (nowBucket === currentBucket) {
+          const c = current;
+          if (latestBucket === nowBucket) {
+            c.open = latest.open;
+            c.high = Math.max(latest.high, c.high, lastTick);
+            c.low = Math.min(latest.low, c.low, lastTick);
+          }
+          c.close = lastTick;
+          c.live = true;
+        }
+      } else {
+        // Before the first live tick, keep the provider's historical series intact.
+        list.splice(0, list.length, ...incoming);
+      }
+
+      while (list.length > 300) list.shift();
+      updateCountdown();
+      renderChartAndScheduleAnalysis();
+    } catch (_) {
+      // The live tick stream remains usable if the historical reconciliation request fails.
     }
   }
 
@@ -150,7 +202,6 @@
     if (!Number.isFinite(price) || price <= 0) return;
 
     const previousPrice = lastTick || null;
-    previousTick = previousPrice;
     lastTick = price;
     lastTickTime = Number(msg.time) || Date.now();
 
@@ -158,12 +209,9 @@
     updateFormingCandle(price, lastTickTime);
 
     const received = $id("dataReceived");
-    if (received) {
-      received.textContent = `Live tick received • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
-    }
+    if (received) received.textContent = `Live tick received • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
     const updated = $id("lastUpdated");
     if (updated) updated.textContent = "LIVE TICK STREAM";
-
     setStatus("LIVE TICK STREAM", "live");
   }
 
@@ -172,7 +220,10 @@
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(`${protocol}//${location.host}/ws/live`);
 
-    socket.addEventListener("open", () => setStatus("LIVE TICK STREAM", "live"));
+    socket.addEventListener("open", () => {
+      setStatus("LIVE TICK STREAM", "live");
+      syncCandleBaseline();
+    });
     socket.addEventListener("message", event => {
       let msg;
       try { msg = JSON.parse(event.data); } catch (_) { return; }
@@ -193,7 +244,9 @@
     socket.addEventListener("error", () => setStatus("LIVE TICK ERROR", "error"));
   }
 
-  // Keep the small live metadata countdown alive without rebuilding any dashboard cards.
   setInterval(updateCountdown, 1000);
+  clearInterval(candleSyncTimer);
+  candleSyncTimer = setInterval(syncCandleBaseline, 30000);
+  syncCandleBaseline();
   connect();
 })();
