@@ -1,41 +1,41 @@
-name: PriceEdge UI polish
+name: PriceEdge UI stability
 
 on:
   push:
-    branches: [pwa-install-ready]
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
-  inject-ui-polish:
+  inject-ui-fixes:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add UI polish script to app shell
+      - name: Add dashboard stability scripts to app shell
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('public/index.html')
           s = p.read_text()
-          tag = '<script src="/ui-polish.js"></script>'
-          if tag not in s:
-              s = s.replace('</body>', tag + '</body>')
-              p.write_text(s)
+          for tag in ('<script src="/ui-polish.js"></script>', '<script src="/dashboard-fix.js"></script>'):
+              if tag not in s:
+                  s = s.replace('</body>', tag + '</body>')
+          p.write_text(s)
           PY
 
       - name: Commit UI shell change
         shell: bash
         run: |
           if git diff --quiet; then
-            echo "UI polish already injected"
+            echo "Dashboard fixes already injected"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
-          git commit -m "fix: load PriceEdge mobile UI polish"
+          git commit -m "fix: load dashboard stability fixes"
           git push
