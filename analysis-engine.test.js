@@ -52,14 +52,13 @@ test("returns WAIT for a low-direction range", () => {
   assert.equal(result.action, "WAIT");
 });
 
-test("requires strict confirmation before multi-timeframe BUY", () => {
+test("keeps a strongly trending market in WATCH until entry location is confirmed", () => {
   const bullish = Array.from({ length: 80 }, (_, i) => 100 + i * 0.8);
   const result = multiTimeframe(seriesFromCloses(bullish));
   assert.equal(result.direction, "Bullish");
   assert.equal(result.confluenceCount, 5);
   assert.equal(result.h4d1Aligned, true);
-  assert.equal(result.action, "BUY");
-  assert.equal(result.setup.valid, true);
-  assert.ok(result.setup.checks.qualityConfirmed);
-  assert.ok(result.setup.checks.m5Aligned);
+  assert.equal(result.action, "BUY WATCH");
+  assert.equal(result.setup.valid, false);
+  assert.ok(result.setup.missing.includes("entry location near a key level or liquidity sweep"));
 });
