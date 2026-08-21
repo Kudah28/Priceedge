@@ -14,32 +14,15 @@
   function removeDuplicateLivePanels() {
     const home = $('#home');
     if (!home) return;
-
-    // Both live-ticks.js and the server-injected live-ticks-v2.js use
-    // #liveTickPanel. Invalid duplicate IDs can survive if the second
-    // script runs after the initial dashboard pass, so explicitly collapse
-    // every matching panel and then run the structural fallback below.
     const byId = [...home.querySelectorAll('#liveTickPanel')];
     if (byId.length > 1) byId.slice(1).forEach(el => el.remove());
-
     const all = [...home.querySelectorAll('div,section')].filter(isLivePanel);
     const outer = all.filter(el => !all.some(other => other !== el && other.contains(el)));
     if (outer.length > 1) {
-      const canonical = outer.find(el => el.id === 'liveTickPanel' || el.id === 'peLiveCandle') || outer[0];
+      const canonical = outer.find(el => el.id === 'peLiveCandle') || outer[0];
       outer.forEach(el => { if (el !== canonical) el.remove(); });
+      canonical.id = 'peLiveCandle';
       canonical.setAttribute('aria-label', 'Live candle information');
-    }
-
-    // If a second live panel is injected after this function runs, observe
-    // the dashboard briefly and collapse it immediately rather than waiting
-    // for the next periodic pass.
-    if (!home.dataset.peLiveObserver) {
-      const observer = new MutationObserver(() => {
-        const panels = [...home.querySelectorAll('#liveTickPanel')];
-        if (panels.length > 1) panels.slice(1).forEach(el => el.remove());
-      });
-      observer.observe(home, { childList: true, subtree: true });
-      home.dataset.peLiveObserver = '1';
     }
   }
 
@@ -47,8 +30,10 @@
     const wrap = document.querySelector('.chartwrap');
     const canvas = $('#chart');
     if (!wrap || !canvas) return;
-    wrap.style.height = window.innerWidth <= 500 ? '320px' : (window.innerWidth <= 800 ? '340px' : '390px');
-    wrap.style.minHeight = window.innerWidth <= 500 ? '320px' : '';
+    const height = window.innerWidth <= 500 ? '320px' : (window.innerWidth <= 800 ? '340px' : '390px');
+    if (wrap.style.height !== height) wrap.style.height = height;
+    if (window.innerWidth <= 500 && wrap.style.minHeight !== '320px') wrap.style.minHeight = '320px';
+    if (window.innerWidth > 500 && wrap.style.minHeight) wrap.style.minHeight = '';
     wrap.style.position = 'relative';
     wrap.style.overflow = 'hidden';
     canvas.style.width = '100%';
@@ -59,6 +44,9 @@
   function setSignal(kind, title, message, detail) {
     const el = $('signal');
     if (!el) return;
+    const signature = [kind, title, message, detail].join('|');
+    if (el.dataset.peSignalSignature === signature) return;
+    el.dataset.peSignalSignature = signature;
     el.classList.remove('buy', 'sell');
     if (kind === 'buy') el.classList.add('buy');
     if (kind === 'sell') el.classList.add('sell');
@@ -152,7 +140,6 @@
   function run() {
     removeDuplicateLivePanels();
     stabilizeChart();
-    normalizeDecision();
     ensureContextCard();
     patchMobileLayout();
   }
@@ -160,7 +147,7 @@
   run();
   setTimeout(run, 250);
   setTimeout(run, 900);
-  setInterval(run, 2500);
+  setInterval(run, 5000);
   setInterval(syncPhase2Analysis, 15000);
   setTimeout(syncPhase2Analysis, 1200);
   window.addEventListener('resize', stabilizeChart);
