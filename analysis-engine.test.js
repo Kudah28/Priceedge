@@ -18,9 +18,7 @@ function candlesFromCloses(closes, hour=12) {
 }
 
 function seriesFromCloses(closes) {
-  return Object.fromEntries([
-    "5min", "15min", "1h", "4h", "1day"
-  ].map(tf => [tf, candlesFromCloses(closes)]));
+  return Object.fromEntries(["5min", "15min", "1h", "4h", "1day"].map(tf => [tf, candlesFromCloses(closes)]));
 }
 
 test("rejects insufficient candle history", () => {
@@ -38,6 +36,7 @@ test("detects a sustained bullish move", () => {
   assert.ok(["Normal","High","Compressed"].includes(result.volatility.regime));
   assert.equal(result.session, "London/New York overlap");
   assert.equal(result.dataQuality.sufficient, true);
+  assert.equal(result.confirmation.closedCandle, true);
 });
 
 test("detects a sustained bearish move", () => {
@@ -63,8 +62,9 @@ test("keeps a strongly trending market in WATCH until entry location is confirme
   assert.equal(result.confluenceCount, 5);
   assert.equal(result.h4d1Aligned, true);
   assert.equal(result.action, "BUY WATCH");
+  assert.equal(result.decision.stage, "WATCH");
   assert.equal(result.setup.valid, false);
-  assert.ok(result.setup.missing.includes("entry location near a key level, retest or liquidity sweep"));
+  assert.ok(result.setup.missing.includes("entry location near a key level, retest, breakout or liquidity sweep"));
   assert.equal(result.setup.gate.total, 8);
   assert.ok(result.setup.gate.score < 100);
 });
@@ -75,6 +75,24 @@ test("does not produce an actionable setup when any required gate is missing", (
   assert.equal(result.setup.valid, false);
   assert.equal(result.setup.gate.ready, false);
   assert.ok(result.setup.gate.passed < result.setup.gate.total);
+});
+
+test("uses the last closed candle for confirmation rather than the live forming candle", () => {
+  const base = candlesFromCloses(Array.from({ length: 70 }, (_, i) => 100 + i * 0.3));
+  const live = { ...base.at(-1), open: base.at(-1).close, high: base.at(-1).close + 5, low: base.at(-1).close - 5, close: base.at(-1).close };
+  const result = analyze([...base.slice(0, -1), live]);
+  assert.equal(result.confirmation.datetime, base.at(-2).datetime);
+  assert.equal(result.candle.datetime, base.at(-2).datetime);
+  assert.equal(result.dataQuality.confirmationCandle, base.at(-2).datetime);
+});
+
+test("exposes a precision decision object with stage, gate and trigger", () => {
+  const result = multiTimeframe(seriesFromCloses(Array.from({ length: 80 }, (_, i) => 100 + i * 0.8)));
+  assert.ok(result.decision);
+  assert.ok(["WAIT","WATCH","READY"].includes(result.decision.stage));
+  assert.equal(result.decision.gate.total, 8);
+  assert.ok(result.decision.explanation.nextStep);
+  assert.ok(result.decision.explanation.trigger);
 });
 
 test("exposes price-action, liquidity and volatility context", () => {
