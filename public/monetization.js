@@ -19,6 +19,31 @@
     document.head.appendChild(s);
   }
 
+  async function checkout() {
+    if (!token()) { alert('Please create an account or log in before upgrading to Premium.'); document.querySelector('[data-page="account"]')?.click(); return; }
+    const button = $('peUpgrade');
+    if (button) { button.disabled = true; button.textContent = 'Opening secure checkout…'; }
+    try {
+      const r = await fetch('/api/billing/checkout', {method:'POST',headers:{Authorization:`Bearer ${token()}`,'Content-Type':'application/json'},body:'{}'});
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || 'Unable to start checkout.');
+      window.location.assign(d.url);
+    } catch (e) {
+      alert(e.message || 'Unable to start checkout.');
+      if (button) { button.disabled = false; button.textContent = 'Upgrade with Stripe — $19.99/mo'; }
+    }
+  }
+
+  async function portal() {
+    if (!token()) { alert('Please log in to manage your subscription.'); document.querySelector('[data-page="account"]')?.click(); return; }
+    try {
+      const r = await fetch('/api/billing/portal', {method:'POST',headers:{Authorization:`Bearer ${token()}`,'Content-Type':'application/json'},body:'{}'});
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || 'Unable to open billing portal.');
+      window.location.assign(d.url);
+    } catch (e) { alert(e.message || 'Unable to open billing portal.'); }
+  }
+
   function premiumCard() {
     const billing = $('billing');
     if (!billing || $('pePremiumCard')) return;
@@ -71,18 +96,13 @@
       const d = await r.json();
       const active = d.premium || d.status === 'active';
       if (plan) plan.textContent = active ? 'PREMIUM' : 'FREE';
-      if (out) out.innerHTML = active ? '<div class="notice success">Premium is active on this account.</div>' : `<div class="notice">Your account is on Free. Upgrade to unlock the complete decision-support layer.</div>`;
+      if (out) out.innerHTML = active ? '<div class="notice success">Premium is active on this account.</div>' : '<div class="notice">Your account is on Free. Upgrade to unlock the complete decision-support layer.</div>';
       const buy = $('peUpgrade'); if (buy) buy.textContent = active ? 'Premium Active' : 'Upgrade with Stripe — $19.99/mo';
       if (buy) buy.disabled = active;
     } catch (_) {}
   }
 
-  function run() {
-    style();
-    premiumCard();
-    dashboardUpsell();
-    refreshStatus();
-  }
+  function run() { style(); premiumCard(); dashboardUpsell(); refreshStatus(); }
   run();
   setTimeout(run, 300);
   setTimeout(run, 1200);
