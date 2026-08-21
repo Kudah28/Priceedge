@@ -6,7 +6,10 @@ const ALLOWED=["1min","5min","15min","1h","4h","1day"];
 const INTERVAL_MS={"1min":60e3,"5min":5*60e3,"15min":15*60e3,"1h":60*60e3,"4h":4*60*60e3,"1day":24*60*60e3};
 const cache=new Map();
 const inflight=new Map();
+const health=new Map();
 const CACHE_MS=10e3;
+const REQUEST_TIMEOUT_MS=9000;
+const RETRIES=2;
 
 function validSymbol(symbol){return SYMBOLS.includes(symbol);}
 function validInterval(interval){return ALLOWED.includes(interval);}
@@ -44,20 +47,45 @@ function quality(values,interval,requestedSize){
   const valid=values.length>0&&chronological&&sufficient;
   return {valid,sufficient,fresh,chronological,count:values.length,lastCandleAt:lastTime?new Date(lastTime).toISOString():null,ageMs:Number.isFinite(ageMs)?Math.round(ageMs):null,freshnessLimitMs:freshnessLimit,status:!valid?"invalid":!fresh?"stale":"fresh"};
 }
-async function fetchTwelveData(symbol,interval,size=300){
-  if(!API_KEY)throw new Error("Twelve Data API key is not configured.");
+function markHealth(key,ok,error){
+  const h=health.get(key)||{requests:0,failures:0,consecutiveFailures:0,lastError:null,lastSuccessAt:null,lastLatencyMs:null};
+  h.requests++;
+  if(ok){h.consecutiveFailures=0;h.lastError=null;h.lastSuccessAt=new Date().toISOString();}
+  else{h.failures++;h.consecutiveFailures++;h.lastError=String(error?.message||error||"Unknown market-data error").slice(0,240);}
+  health.set(key,h);
+  return h;
+}
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+async function fetchOnce(symbol,interval,size){
   const url=new URL("https://api.twelvedata.com/time_series");
   url.searchParams.set("symbol",symbol);url.searchParams.set("interval",interval);url.searchParams.set("outputsize",String(Math.min(Math.max(Number(size)||300,40),500)));url.searchParams.set("order","asc");
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);const started=Date.now();
   try{
     const r=await fetch(url,{headers:{Authorization:`apikey ${API_KEY}`},cache:"no-store",signal:controller.signal});
-    const d=await r.json();
+    let d;try{d=await r.json();}catch(_){throw new Error(`Market-data provider returned invalid JSON (${r.status}).`);}
     if(!r.ok||d.status==="error"||!Array.isArray(d.values))throw new Error(d.message||`Market-data request failed (${r.status}).`);
-    const values=normalize(d.values);
-    const q=quality(values,interval,size);
+    const values=normalize(d.values),q=quality(values,interval,size);
     if(!q.valid)throw new Error("Twelve Data returned invalid or insufficient candle data.");
-    return {values,quality:q,source:"Twelve Data"};
+    return {values,quality:q,source:"Twelve Data",latencyMs:Date.now()-started};
   }finally{clearTimeout(timer);}
+}
+async function fetchTwelveData(symbol,interval,size=300){
+  if(!API_KEY)throw new Error("Twelve Data API key is not configured.");
+  const key=`${symbol}|${interval}|${size}`;
+  let lastError;
+  for(let attempt=0;attempt<=RETRIES;attempt++){
+    try{
+      const data=await fetchOnce(symbol,interval,size);
+      const h=markHealth(key,true);
+      h.lastLatencyMs=data.latencyMs;
+      return data;
+    }catch(e){
+      lastError=e;
+      markHealth(key,false,e);
+      if(attempt<RETRIES)await sleep(400*(attempt+1));
+    }
+  }
+  throw lastError||new Error("Market-data request failed.");
 }
 async function getMarket(symbol,interval,size=300){
   if(!validSymbol(symbol)||!validInterval(interval))throw new Error("Unsupported symbol or timeframe.");
@@ -70,6 +98,11 @@ async function getMarket(symbol,interval,size=300){
   inflight.set(key,p);return p;
 }
 function snapshot(){
-  return [...cache.entries()].map(([key,v])=>{const [symbol,interval,size]=key.split("|");return {symbol,interval,size,fetchedAt:new Date(v.fetchedAt).toISOString(),...v.quality};});
+  const keys=new Set([...cache.keys(),...health.keys()]);
+  return [...keys].map(key=>{
+    const [symbol,interval,size]=key.split("|");
+    const v=cache.get(key),h=health.get(key)||{};
+    return {symbol,interval,size,fetchedAt:v?new Date(v.fetchedAt).toISOString():null,...(v?.quality||{status:"unavailable"}),requests:h.requests||0,failures:h.failures||0,consecutiveFailures:h.consecutiveFailures||0,lastError:h.lastError||null,lastSuccessAt:h.lastSuccessAt||null,lastLatencyMs:h.lastLatencyMs??null};
+  });
 }
 module.exports={API_KEY,SYMBOLS,ALLOWED,INTERVAL_MS,parseTime,normalize,quality,getMarket,snapshot};
