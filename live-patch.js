@@ -78,7 +78,7 @@ function polishMiddleware(req,res,next){
   const file=path.join(__dirname,"public","index.html");
   fs.readFile(file,"utf8",(err,html)=>{
     if(err)return next();
-    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>','<script src="/password-reset.js" defer></script>'];
+    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>','<script src="/password-reset.js" defer></script>','<script src="/priceedge-logo.js" defer></script>'];
     let out=html;
     for(const tag of tags){const src=tag.match(/src="([^"]+)/)?.[1];if(src&&!out.includes(src))out=out.includes("</body>")?out.replace("</body>",`${tag}</body>`):out+tag;}
     res.type("html").send(out);
