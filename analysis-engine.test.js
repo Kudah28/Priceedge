@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { analyze, multiTimeframe } = require("./analysis-engine");
+const { analyze, multiTimeframe, riskPlan } = require("./analysis-engine");
 
 function candlesFromCloses(closes, hour=12) {
   return closes.map((close, i) => {
@@ -18,9 +18,7 @@ function candlesFromCloses(closes, hour=12) {
 }
 
 function seriesFromCloses(closes) {
-  return Object.fromEntries([
-    "5min", "15min", "1h", "4h", "1day"
-  ].map(tf => [tf, candlesFromCloses(closes)]));
+  return Object.fromEntries(["5min", "15min", "1h", "4h", "1day"].map(tf => [tf, candlesFromCloses(closes)]));
 }
 
 test("rejects insufficient candle history", () => {
@@ -75,6 +73,34 @@ test("does not produce an actionable setup when any required gate is missing", (
   assert.equal(result.setup.valid, false);
   assert.equal(result.setup.gate.ready, false);
   assert.ok(result.setup.gate.passed < result.setup.gate.total);
+});
+
+test("risk plan sizes a trade and preserves the daily loss budget", () => {
+  const result = riskPlan({ balance: 1000, riskPercent: 1, entry: 100, stop: 95, target: 110, dailyLossUsed: 0, dailyLossLimit: 20 });
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "OK");
+  assert.equal(result.riskAmount, 10);
+  assert.equal(result.stopDistance, 5);
+  assert.equal(result.rr, 2);
+  assert.equal(result.remainingDailyLoss, 10);
+});
+
+test("blocks a trade that would exceed the daily loss limit", () => {
+  const result = riskPlan({ balance: 1000, riskPercent: 1, entry: 100, stop: 95, target: 110, dailyLossUsed: 15, dailyLossLimit: 20 });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "DAILY_LIMIT");
+});
+
+test("blocks risk above the configured maximum", () => {
+  const result = riskPlan({ balance: 1000, riskPercent: 2.5, entry: 100, stop: 95, target: 110 });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "INVALID_INPUT");
+});
+
+test("blocks setups below the minimum risk reward", () => {
+  const result = riskPlan({ balance: 1000, riskPercent: 1, entry: 100, stop: 95, target: 108, minRR: 2 });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "RR_TOO_LOW");
 });
 
 test("exposes price-action, liquidity and volatility context", () => {
