@@ -36,7 +36,8 @@ test("detects a sustained bullish move", () => {
   assert.ok(result.support < result.price);
   assert.ok(result.resistance >= result.price);
   assert.ok(["Normal","High","Compressed"].includes(result.volatility.regime));
-  assert.equal(result.session, "New York");
+  assert.equal(result.session, "London/New York overlap");
+  assert.equal(result.dataQuality.sufficient, true);
 });
 
 test("detects a sustained bearish move", () => {
@@ -64,6 +65,16 @@ test("keeps a strongly trending market in WATCH until entry location is confirme
   assert.equal(result.action, "BUY WATCH");
   assert.equal(result.setup.valid, false);
   assert.ok(result.setup.missing.includes("entry location near a key level, retest or liquidity sweep"));
+  assert.equal(result.setup.gate.total, 8);
+  assert.ok(result.setup.gate.score < 100);
+});
+
+test("does not produce an actionable setup when any required gate is missing", () => {
+  const bullish = Array.from({ length: 80 }, (_, i) => 100 + i * 0.8);
+  const result = multiTimeframe(seriesFromCloses(bullish));
+  assert.equal(result.setup.valid, false);
+  assert.equal(result.setup.gate.ready, false);
+  assert.ok(result.setup.gate.passed < result.setup.gate.total);
 });
 
 test("exposes price-action, liquidity and volatility context", () => {
