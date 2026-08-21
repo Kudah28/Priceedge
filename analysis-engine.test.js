@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { analyze } = require("./analysis-engine");
+const { analyze, multiTimeframe } = require("./analysis-engine");
 
 function candlesFromCloses(closes) {
   return closes.map((close, i) => {
@@ -15,6 +15,12 @@ function candlesFromCloses(closes) {
       close
     };
   });
+}
+
+function seriesFromCloses(closes) {
+  return Object.fromEntries([
+    "5min", "15min", "1h", "4h", "1day"
+  ].map(tf => [tf, candlesFromCloses(closes)]));
 }
 
 test("rejects insufficient candle history", () => {
@@ -44,4 +50,16 @@ test("returns WAIT for a low-direction range", () => {
   const result = analyze(candlesFromCloses(closes));
   assert.equal(result.ready, true);
   assert.equal(result.action, "WAIT");
+});
+
+test("requires strict confirmation before multi-timeframe BUY", () => {
+  const bullish = Array.from({ length: 80 }, (_, i) => 100 + i * 0.8);
+  const result = multiTimeframe(seriesFromCloses(bullish));
+  assert.equal(result.direction, "Bullish");
+  assert.equal(result.confluenceCount, 5);
+  assert.equal(result.h4d1Aligned, true);
+  assert.equal(result.action, "BUY");
+  assert.equal(result.setup.valid, true);
+  assert.ok(result.setup.checks.qualityConfirmed);
+  assert.ok(result.setup.checks.m5Aligned);
 });
