@@ -41,8 +41,10 @@ function polishMiddleware(req,res,next){
   const file=path.join(__dirname,"public","index.html");
   fs.readFile(file,"utf8",(err,html)=>{
     if(err)return next();
-    const tag='<script src="/product-polish.js" defer></script>';
-    res.type("html").send(html.includes("/product-polish.js")?html:html.includes("</body>")?html.replace("</body>",`${tag}</body>`):html+tag);
+    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>'];
+    let out=html;
+    for(const tag of tags){const src=tag.match(/src="([^"]+)/)?.[1];if(src&&!out.includes(src))out=out.includes("</body>")?out.replace("</body>",`${tag}</body>`):out+tag;}
+    res.type("html").send(out);
   });
 }
 function attach(server){if(attached)return;attached=true;browserWss=new WebSocket.Server({server,path:"/ws/live"});browserWss.on("connection",client=>{client.send(JSON.stringify({type:"status",status:upstream?.readyState===WebSocket.OPEN?"connected":"reconnecting",message:upstream?.readyState===WebSocket.OPEN?"LIVE TICK STREAM":"WAITING FOR LIVE TICK STREAM"}));for(const t of latestBySymbol.values())client.send(JSON.stringify(t))});connect()}
