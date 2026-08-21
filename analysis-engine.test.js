@@ -4,11 +4,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { analyze, multiTimeframe } = require("./analysis-engine");
 
-function candlesFromCloses(closes) {
+function candlesFromCloses(closes, hour=12) {
   return closes.map((close, i) => {
     const open = i === 0 ? close - 0.2 : closes[i - 1];
     return {
-      datetime: `2026-01-01T00:${String(i).padStart(2, "0")}:00Z`,
+      datetime: `2026-01-01T${String(hour).padStart(2,"0")}:${String(i%60).padStart(2,"0")}:00Z`,
       open,
       high: Math.max(open, close) + 0.5,
       low: Math.min(open, close) - 0.5,
@@ -35,6 +35,8 @@ test("detects a sustained bullish move", () => {
   assert.equal(result.action, "BUY");
   assert.ok(result.support < result.price);
   assert.ok(result.resistance >= result.price);
+  assert.ok(["Normal","High","Compressed"].includes(result.volatility.regime));
+  assert.equal(result.session, "New York");
 });
 
 test("detects a sustained bearish move", () => {
@@ -43,6 +45,7 @@ test("detects a sustained bearish move", () => {
   assert.equal(result.trend, "Bearish");
   assert.equal(result.action, "SELL");
   assert.ok(result.resistance > result.price);
+  assert.equal(result.priceAction.breakoutBear, false);
 });
 
 test("returns WAIT for a low-direction range", () => {
@@ -60,5 +63,15 @@ test("keeps a strongly trending market in WATCH until entry location is confirme
   assert.equal(result.h4d1Aligned, true);
   assert.equal(result.action, "BUY WATCH");
   assert.equal(result.setup.valid, false);
-  assert.ok(result.setup.missing.includes("entry location near a key level or liquidity sweep"));
+  assert.ok(result.setup.missing.includes("entry location near a key level, retest or liquidity sweep"));
+});
+
+test("exposes price-action, liquidity and volatility context", () => {
+  const result = analyze(candlesFromCloses(Array.from({ length: 100 }, (_, i) => 100 + i * 0.45), 8));
+  assert.equal(result.ready, true);
+  assert.ok(result.priceAction);
+  assert.ok(result.liquidity);
+  assert.ok(result.volatility);
+  assert.ok(Number.isFinite(result.momentumQuality));
+  assert.equal(result.session, "London");
 });
