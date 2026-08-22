@@ -3,7 +3,7 @@
   "version":"2.0.0",
   "private":true,
   "description":"PriceEdge XAU/USD and major USD-pair trading assistant",
-  "scripts":{"start":"node -r ./live-patch.js server.js","dev":"node -r ./live-patch.js server.js","test:analysis":"node --test analysis-engine.test.js"},
+  "scripts":{"start":"node -r dotenv/config -r ./live-patch.js server.js","dev":"node -r dotenv/config -r ./live-patch.js server.js","test:analysis":"node --test analysis-engine.test.js"},
   "dependencies":{
     "bcryptjs":"^2.4.3",
     "better-sqlite3":"^11.8.1",
