@@ -66,4 +66,16 @@
   start();
   window.addEventListener('priceedge:market-updated', refreshDecision);
   document.addEventListener('change', e => { if (e.target?.id === 'symbol') refreshDecision(); });
+
+  // Cybertruck safeguard: guarantee the professional live-tick client is loaded.
+  // If index.html already loads it, this does nothing; otherwise it injects it once.
+  function ensureLiveTicks() {
+    if (document.querySelector('script[src="/live-ticks.js"]')) return;
+    const s = document.createElement('script');
+    s.src = '/live-ticks.js?v=cybertruck1';
+    s.async = false;
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureLiveTicks, { once:true });
+  else ensureLiveTicks();
 })();
