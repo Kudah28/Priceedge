@@ -53,4 +53,18 @@
   chart.addEventListener('pointermove',e=>{if(!draft)return;draft.b=pt(e);overlay()});
   chart.addEventListener('pointerup',e=>{if(!draft)return;draft.b=pt(e);if(draft.type==='text'){const text=prompt('Chart note:');if(text)draft.text=text;else{draft=null;overlay();return}}if(draft.type==='rr'){draft.rr='drag';}if(draft.type==='hline')draft.price='LEVEL';drawings.push(draft);draft=null;save();redraw()});
   window.addEventListener('resize',overlay);setInterval(overlay,1500);overlay();
+
+  // Load the real live-chart renderer only after the existing interaction layer is ready.
+  // This keeps zoom/pan, the live candle panel and drawing tools intact while replacing
+  // only the candle renderer that was producing the stretched-looking candles.
+  function loadProfessionalRenderer(){
+    if(window.__priceEdgeProChartLoaded)return;
+    window.__priceEdgeProChartLoaded=true;
+    const s=document.createElement('script');s.src='/pro-chart.js?v=1';s.async=true;document.head.appendChild(s);
+  }
+  let tries=0;
+  const waitForInteractions=setInterval(()=>{
+    tries++;
+    if(document.getElementById('zoomLevel')||tries>20){clearInterval(waitForInteractions);loadProfessionalRenderer()}
+  },250);
 })();
