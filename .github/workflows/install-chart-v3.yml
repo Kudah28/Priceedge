@@ -1,0 +1,45 @@
+name: Install PriceEdge chart renderer v3
+
+on:
+  push:
+    paths:
+      - 'public/chart-renderer-v3.js'
+      - '.github/workflows/install-chart-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install renderer script in live app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('public/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="/chart-renderer-v3.js?v=3"></script>'
+          if tag not in s:
+              marker='</body>'
+              if marker not in s:
+                  raise SystemExit('Could not find </body> in public/index.html')
+              s=s.replace(marker, tag+'\n'+marker, 1)
+              p.write_text(s, encoding='utf-8')
+              print('Renderer installed.')
+          else:
+              print('Renderer already installed.')
+          PY
+
+      - name: Commit live chart wiring
+        run: |
+          git config user.name "PriceEdge Bot"
+          git config user.email "actions@github.com"
+          git add public/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Wire live chart renderer v3 into public app"
+          git push
