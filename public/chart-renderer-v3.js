@@ -1,13 +1,13 @@
-/* PriceEdge Chart Renderer V3
-   Owns the actual candle drawing. Uses the live `candles` array and never reuses
-   a shared high/low for every candle. This is intentionally dependency-free.
+/* PriceEdge Chart Renderer V4
+   Professional candle spacing: fewer visible candles, wider bodies,
+   clean grid/scale, and responsive spacing on mobile.
 */
 (function(){
   'use strict';
   const canvas=document.getElementById('chart');
   if(!canvas)return;
   const ctx=canvas.getContext('2d');
-  let visible=60;
+  let visible=40;
   let start=0;
   let dragging=false;
   let dragX=0;
@@ -25,7 +25,7 @@
     const count=Math.min(visible,src.length);
     const maxStart=Math.max(0,src.length-count);
     start=clamp(start,0,maxStart);
-    return src.slice(start,start+count).map((c,i)=>{
+    return src.slice(start,start+count).map(c=>{
       const o=num(c.open),h=num(c.high),l=num(c.low),x=num(c.close);
       if(![o,h,l,x].every(Number.isFinite))return null;
       return {open:o,high:Math.max(h,o,x),low:Math.min(l,o,x),close:x,datetime:c.datetime||c.timestamp||''};
@@ -50,7 +50,7 @@
       ctx.fillStyle='#71809d';ctx.font='12px system-ui';ctx.fillText('Waiting for candle data…',16,24);return;
     }
 
-    const pad={left:12,right:58,top:28,bottom:22};
+    const pad={left:12,right:62,top:28,bottom:22};
     const cw=Math.max(1,w-pad.left-pad.right), ch=Math.max(1,h-pad.top-pad.bottom);
     const highs=d.map(c=>c.high), lows=d.map(c=>c.low);
     let lo=Math.min(...lows), hi=Math.max(...highs);
@@ -58,8 +58,11 @@
     if(!Number.isFinite(range)||range<=0)range=Math.max(Math.abs(hi)*0.0005,0.5);
     const extra=range*0.10;lo-=extra;hi+=extra;range=hi-lo;
     const y=v=>pad.top+(hi-v)/range*ch;
+
+    // Fewer candles + a deliberately wider body gives each candle room to breathe.
     const step=cw/d.length;
-    const body=Math.max(2,Math.min(10,step*0.62));
+    const body=Math.max(4,Math.min(12,step*0.68));
+    const wickWidth=Math.max(1.2,Math.min(2,step*0.16));
 
     // Grid and price scale.
     ctx.font='10px system-ui,-apple-system,sans-serif';
@@ -69,24 +72,23 @@
       const py=pad.top+(ch*i/gridN), pv=hi-range*i/gridN;
       ctx.strokeStyle=i===gridN?'#20304a':'#16253a';ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(pad.left,py);ctx.lineTo(pad.left+cw,py);ctx.stroke();
-      ctx.fillStyle='#71809d';ctx.fillText(fmt(pv),pad.left+cw+8,py);
+      ctx.fillStyle='#71809d';ctx.fillText(fmt(pv),pad.left+cw+9,py);
     }
     for(let i=0;i<5;i++){
-      const px=pad.left+(cw*i/4);ctx.strokeStyle='#101d31';
+      const px=pad.left+(cw*i/4);ctx.strokeStyle='#101d31';ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(px,pad.top);ctx.lineTo(px,pad.top+ch);ctx.stroke();
     }
 
-    // Candles: every candle gets its own OHLC values.
+    // Candles: every candle uses its own OHLC values.
     d.forEach((c,i)=>{
       const x=pad.left+(i+.5)*step;
       const yo=y(c.open),yc=y(c.close),yh=y(c.high),yl=y(c.low);
       const up=c.close>=c.open;
       const col=up?'#43e39a':'#ff5f7d';
-      ctx.strokeStyle=col;ctx.lineWidth=Math.max(1,Math.min(2,step*.18));
+      ctx.strokeStyle=col;ctx.lineWidth=wickWidth;
       ctx.beginPath();ctx.moveTo(x,yh);ctx.lineTo(x,yl);ctx.stroke();
-      const top=Math.min(yo,yc), bh=Math.max(1.5,Math.abs(yc-yo));
+      const top=Math.min(yo,yc),bh=Math.max(2,Math.abs(yc-yo));
       ctx.fillStyle=col;ctx.fillRect(x-body/2,top,body,bh);
-      // Crisp edge for very small bodies.
       if(bh<=2.1){ctx.strokeStyle=col;ctx.strokeRect(x-body/2,top,body,bh);}
     });
 
@@ -94,10 +96,10 @@
     const last=d[d.length-1].close,py=y(last);
     ctx.strokeStyle='#f5c451';ctx.lineWidth=1;ctx.setLineDash([5,4]);
     ctx.beginPath();ctx.moveTo(pad.left,py);ctx.lineTo(pad.left+cw,py);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#f5c451';ctx.fillRect(pad.left+cw+3,py-10,55,20);
-    ctx.fillStyle='#17130a';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(fmt(last),pad.left+cw+30,py);
+    ctx.fillStyle='#f5c451';ctx.fillRect(pad.left+cw+3,py-10,59,20);
+    ctx.fillStyle='#17130a';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(fmt(last),pad.left+cw+32,py);
 
-    // Small header.
+    // Header.
     ctx.fillStyle='#71809d';ctx.font='bold 10px system-ui';ctx.textAlign='left';ctx.fillText('XAU/USD · LIVE',pad.left,14);
     ctx.textAlign='right';ctx.fillText((typeof tf!=='undefined'?String(tf).toUpperCase():'5MIN'),w-pad.right,14);
 
@@ -114,10 +116,10 @@
     const info=document.getElementById('zoomLevel');if(info)info.textContent=d.length+' candles';
   }
 
-  function setVisible(n,anchor=.5){
+  function setVisible(n){
     const src=typeof candles!=='undefined'?candles:(window.candles||[]);
     const total=src.length;const old=visible;
-    visible=clamp(Math.round(n),25,Math.max(25,Math.min(160,total||160)));
+    visible=clamp(Math.round(n),25,Math.max(25,Math.min(120,total||120)));
     const maxOld=Math.max(0,total-old),maxNew=Math.max(0,total-visible);
     const pos=maxOld?start/maxOld:.5;
     start=clamp(Math.round(pos*maxNew),0,maxNew);
@@ -125,12 +127,12 @@
   }
   window.zoomIn=()=>setVisible(visible*.8);
   window.zoomOut=()=>setVisible(visible/0.8);
-  window.resetZoom=()=>{visible=60;start=Math.max(0,(typeof candles!=='undefined'?candles.length:0)-visible);draw();};
+  window.resetZoom=()=>{visible=40;start=Math.max(0,(typeof candles!=='undefined'?candles.length:0)-visible);draw();};
   window.live=()=>{start=Math.max(0,(typeof candles!=='undefined'?candles.length:0)-visible);draw();};
   window.older=()=>{start+=Math.max(8,Math.round(visible*.25));draw();};
   window.newer=()=>{start-=Math.max(8,Math.round(visible*.25));if(start<0)start=0;draw();};
   window.draw=draw;
-  window.__priceEdgeChartV3={draw,resize};
+  window.__priceEdgeChartV4={draw,resize};
 
   canvas.addEventListener('pointerdown',e=>{
     if(e.pointerType==='touch'){
