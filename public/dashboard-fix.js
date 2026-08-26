@@ -58,11 +58,37 @@
   function patchStyles() {
     if ($('#peDecisionFixStyle')) return;
     const s = document.createElement('style'); s.id = 'peDecisionFixStyle';
-    s.textContent = `.pe-decision-detail{margin:8px 0 0;font-size:11px;line-height:1.45}.signal.buy{border-color:#4ade80}.signal.sell{border-color:#fb7185}#peDecisionIntel{margin-top:9px}#peDecisionIntel .metric b{white-space:normal;line-height:1.35}`;
+    s.textContent = `.pe-decision-detail{margin:8px 0 0;font-size:11px;line-height:1.45}.signal.buy{border-color:#4ade80}.signal.sell{border-color:#fb7185}`;
     document.head.appendChild(s);
   }
 
-  function start() { patchStyles(); ensureIntelCard(); refreshDecision(); if (decisionTimer) clearInterval(decisionTimer); decisionTimer = setInterval(refreshDecision, 15000); }
+  function removeHeaderArtifact() {
+    const clean = () => {
+      document.querySelectorAll('header img').forEach(img => {
+        const bad = !img.getAttribute('src') || img.complete && img.naturalWidth === 0;
+        if (bad) img.remove();
+      });
+      document.querySelectorAll('header button, header a').forEach(el => {
+        const label = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '').trim();
+        if (label === '?' || label === '❓' || label.toLowerCase() === 'help') el.remove();
+      });
+    };
+    clean();
+    window.addEventListener('load', clean, {once:true});
+    setTimeout(clean, 300);
+    setTimeout(clean, 1200);
+    const header = document.querySelector('header');
+    if (header) new MutationObserver(clean).observe(header, {childList:true,subtree:true});
+  }
+
+  function start() {
+    patchStyles();
+    ensureIntelCard();
+    removeHeaderArtifact();
+    refreshDecision();
+    if (decisionTimer) clearInterval(decisionTimer);
+    decisionTimer = setInterval(refreshDecision, 15000);
+  }
   start();
   window.addEventListener('priceedge:market-updated', refreshDecision);
   document.addEventListener('change', e => { if (e.target?.id === 'symbol') refreshDecision(); });
