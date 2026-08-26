@@ -28,7 +28,7 @@
     text('bias', a.trend); text('trend', a.trend); text('structure', a.structure); text('momentum', a.momentum); text('quality', `${a.setupQuality}%`); text('support', Number(a.support).toFixed(2)); text('resistance', Number(a.resistance).toFixed(2));
     if (a.action === 'BUY') setSignal('buy','BUY WATCH','Bullish market conditions detected.',`${a.structure} · ${a.momentum} momentum · ${a.setupQuality}% quality. Waiting for full entry confirmation.`);
     else if (a.action === 'SELL') setSignal('sell','SELL WATCH','Bearish market conditions detected.',`${a.structure} · ${a.momentum} momentum · ${a.setupQuality}% quality. Waiting for full entry confirmation.`);
-    else setSignal('','WAIT','No clear directional edge is confirmed yet.',`${a.structure} · ${a.momentum} momentum · ${a.setupQuality}% quality.`);
+    else setSignal('','WAIT','No clear directional edge is confirmed yet.',`${a.structure} · ${a.momentum} · ${a.setupQuality}% quality.`);
   }
 
   function renderIntel(m) {
@@ -94,7 +94,6 @@
   document.addEventListener('change', e => { if (e.target?.id === 'symbol') refreshDecision(); });
 
   // Cybertruck safeguard: guarantee the professional live-tick client is loaded.
-  // If index.html already loads it, this does nothing; otherwise it injects it once.
   function ensureLiveTicks() {
     if (document.querySelector('script[src="/live-ticks.js"]')) return;
     const s = document.createElement('script');
@@ -104,4 +103,73 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureLiveTicks, { once:true });
   else ensureLiveTicks();
+
+  // CYBERTRUCK CHART RESUME GUARD
+  // Returning to the PWA/browser can restore a canvas with stale dimensions.
+  // Repaint after visibility/focus/pageshow and after layout changes, without
+  // creating a second render loop or changing the user's candle position.
+  let resumeTimer = null;
+  let resumeBusy = false;
+  let lastCanvasW = 0;
+  let lastCanvasH = 0;
+
+  function stableChartResume(forceData = false) {
+    if (resumeBusy) return;
+    resumeBusy = true;
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(async () => {
+      try {
+        const chart = $('chart');
+        if (!chart) return;
+        const wrap = chart.closest('.chartwrap');
+        if (!wrap || wrap.clientWidth < 1 || wrap.clientHeight < 1) return;
+
+        // Repaint only after the browser has restored the layout.
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (typeof draw === 'function') draw();
+
+        // If the app was backgrounded long enough for the market to advance,
+        // refresh once. loadCandles() resets the data cleanly instead of appending
+        // duplicate candles, preventing clustered candles after resume.
+        if (forceData && typeof loadCandles === 'function') await loadCandles();
+      } finally {
+        resumeBusy = false;
+      }
+    }, 80);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') stableChartResume(true);
+  });
+  window.addEventListener('pageshow', () => stableChartResume(true));
+  window.addEventListener('focus', () => stableChartResume(false));
+
+  if ('ResizeObserver' in window) {
+    const observeChart = () => {
+      const wrap = $('chart')?.closest('.chartwrap');
+      if (!wrap) return;
+      new ResizeObserver(() => {
+        const w = wrap.clientWidth, h = wrap.clientHeight;
+        if (w !== lastCanvasW || h !== lastCanvasH) {
+          lastCanvasW = w; lastCanvasH = h;
+          stableChartResume(false);
+        }
+      }).observe(wrap);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observeChart, {once:true});
+    else observeChart();
+  }
+
+  // Keep the chart state usable when iOS suspends/resumes the standalone PWA.
+  // The view position is preserved; market data is refreshed only on resume.
+  const originalDraw = window.draw;
+  if (typeof originalDraw === 'function') {
+    window.draw = function() {
+      try { return originalDraw.apply(this, arguments); }
+      finally {
+        const c = $('chart');
+        if (c) { lastCanvasW = c.clientWidth; lastCanvasH = c.clientHeight; }
+      }
+    };
+  }
 })();
