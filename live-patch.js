@@ -15,8 +15,10 @@ function reconnect(){if(reconnectTimer||!API_WS_KEY)return;reconnectTimer=setTim
 function heartbeat(){clearInterval(heartbeatTimer);heartbeatTimer=setInterval(()=>{if(upstream?.readyState===WebSocket.OPEN){try{upstream.send(JSON.stringify({action:"heartbeat"}))}catch(_){}}},10000)}
 function parse(raw){let d;try{d=JSON.parse(raw)}catch(_){return null}if(d.event==="price"){const price=Number(d.price);if(!Number.isFinite(price)||price<=0)return null;const ts=Number(d.timestamp);return{type:"tick",symbol:d.symbol||"XAU/USD",price,time:Number.isFinite(ts)?ts*1000:Date.now(),receivedAt:Date.now()}}if(d.event==="subscribe-status"){const status=String(d.status||"").toLowerCase();const symbols=d.params?.symbols||d.symbols||"";return{type:"subscription",status,message:d.message||`${status||"subscription"} ${symbols}`.trim()}}if(d.status==="error"||d.event==="error"||d.code>=400)return{type:"status",status:"error",message:d.message||"Twelve Data WebSocket error"};return null}
 function connect(){if(!API_WS_KEY){broadcast({type:"status",status:"disabled",message:"Twelve Data WebSocket API key is not configured."});return}if(upstream&&(upstream.readyState===WebSocket.OPEN||upstream.readyState===WebSocket.CONNECTING))return;try{upstream=new WebSocket(UPSTREAM);upstream.on("open",()=>{heartbeat();upstream.send(JSON.stringify({action:"subscribe",params:{symbols:SYMBOL_LIST}}));broadcast({type:"status",status:"connecting",message:"Subscribing to live prices…"})});upstream.on("message",raw=>{const d=parse(raw.toString());if(!d)return;if(d.type==="tick"){latestBySymbol.set(d.symbol,d);broadcast(d)}else if(d.type==="subscription"){const ok=d.status.includes("success")||d.status.includes("ok")||d.status.includes("partial");broadcast({type:"status",status:ok?"connected":"error",message:d.message||"Subscription status received"})}else broadcast(d)});upstream.on("error",e=>broadcast({type:"status",status:"error",message:`Live tick stream error: ${e.message||"connection error"}`}));upstream.on("close",()=>{clearInterval(heartbeatTimer);heartbeatTimer=null;upstream=null;broadcast({type:"status",status:"reconnecting",message:"LIVE TICK STREAM RECONNECTING"});reconnect()})}catch(e){upstream=null;broadcast({type:"status",status:"error",message:e.message||"Unable to start live tick stream"});reconnect()}}
+async function livePrice(symbol){if(!API_KEY)throw new Error("Twelve Data API key is not configured.");const url=new URL("https://api.twelvedata.com/price");url.searchParams.set("symbol",symbol);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8000);try{const r=await fetch(url,{headers:{Authorization:`apikey ${API_KEY}`},cache:"no-store",signal:controller.signal});const d=await r.json();if(!r.ok||d.status==="error"||d.price==null)throw new Error(d.message||`Price request failed (${r.status}).`);const price=Number(d.price);if(!Number.isFinite(price)||price<=0)throw new Error("Invalid live price returned by Twelve Data.");return{price,time:Date.now(),symbol,source:"Twelve Data",mode:"poll"};}finally{clearTimeout(timer)}}
 async function marketMiddleware(req,res,next){
   if(req.path==="/api/market-status")return res.json({configured:Boolean(API_KEY),websocketConfigured:Boolean(API_WS_KEY),websocketConnected:upstream?.readyState===WebSocket.OPEN,cache:snapshot(),serverTime:new Date().toISOString()});
+  if(req.path==="/api/price"){const symbol=String(req.query.symbol||"XAU/USD");if(!SYMBOLS.includes(symbol))return res.status(400).json({error:"Unsupported symbol."});try{return res.json(await livePrice(symbol));}catch(e){return res.status(503).json({error:e.message,retryable:true});}}
   if(req.path==="/api/candles"){
     const symbol=String(req.query.symbol||"XAU/USD"),interval=String(req.query.interval||"5min"),size=Math.min(Number(req.query.size)||300,500);
     if(!SYMBOLS.includes(symbol)||!ALLOWED.includes(interval))return res.status(400).json({error:"Unsupported symbol or timeframe."});
@@ -26,13 +28,7 @@ async function marketMiddleware(req,res,next){
   if(req.path==="/api/analysis"){
     const symbol=String(req.query.symbol||"XAU/USD");
     if(!SYMBOLS.includes(symbol))return res.status(400).json({error:"Unsupported symbol."});
-    try{
-      const [m5,d1]=await Promise.all([getMarket(symbol,"5min",300),getMarket(symbol,"1day",100)]);
-      const a=analyze(m5.values),daily=analyze(d1.values);
-      const marketQuality={m5:m5.quality,d1:d1.quality,overall:m5.quality.status==="fresh"&&d1.quality.status==="fresh"?"fresh":"stale"};
-      if(marketQuality.overall!=="fresh")return res.status(503).json({symbol,m5:a,d1:daily,marketQuality,error:"Market data is stale. PriceEdge will not treat stale data as actionable."});
-      return res.json({symbol,m5:a,d1:daily,marketQuality,disclaimer:"Educational and analytical information only. Not financial advice."});
-    }catch(e){return res.status(503).json({error:e.message,retryable:true})}
+    try{const [m5,d1]=await Promise.all([getMarket(symbol,"5min",300),getMarket(symbol,"1day",100)]);const a=analyze(m5.values),daily=analyze(d1.values);const marketQuality={m5:m5.quality,d1:d1.quality,overall:m5.quality.status==="fresh"&&d1.quality.status==="fresh"?"fresh":"stale"};if(marketQuality.overall!=="fresh")return res.status(503).json({symbol,m5:a,d1:daily,marketQuality,error:"Market data is stale. PriceEdge will not treat stale data as actionable."});return res.json({symbol,m5:a,d1:daily,marketQuality,disclaimer:"Educational and analytical information only. Not financial advice."});}catch(e){return res.status(503).json({error:e.message,retryable:true})}
   }
   next();
 }
@@ -44,46 +40,11 @@ const resetAttempts=new Map();
 function resetBody(req){return new Promise(resolve=>{let raw="";req.on("data",c=>{raw+=c.toString();if(raw.length>50000)req.destroy()});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"))}catch(_){resolve({})}});req.on("error",()=>resolve({}))})}
 function resetHash(t){return require("crypto").createHash("sha256").update(t).digest("hex")}
 function resetMiddleware(req,res,next){
-  if(req.method==="POST"&&req.path==="/api/forgot-password")return resetBody(req).then(async body=>{
-    const email=String(body.email||"").trim().toLowerCase();
-    const ip=req.ip||"unknown",now=Date.now(),prev=resetAttempts.get(ip)||0;
-    if(now-prev<3000)return res.status(429).json({error:"Please wait a moment and try again."});
-    resetAttempts.set(ip,now);
-    const generic={ok:true,message:"If an account exists for that email, a password reset link has been sent."};
-    if(!/^\S+@\S+\.\S+$/.test(email))return res.json(generic);
-    const user=resetDb.prepare("SELECT id,email FROM users WHERE email=?").get(email);
-    if(!user||!resetMailer)return res.json(generic);
-    const token=require("crypto").randomBytes(32).toString("hex");
-    resetDb.prepare("UPDATE password_resets SET used_at=? WHERE user_id=? AND used_at IS NULL").run(now,user.id);
-    resetDb.prepare("INSERT INTO password_resets(user_id,token_hash,expires_at) VALUES(?,?,?)").run(user.id,resetHash(token),now+30*60*1000);
-    const base=(process.env.APP_URL||`${req.protocol}://${req.get("host")}`).replace(/\/$/,"");
-    const url=`${base}/?reset_token=${encodeURIComponent(token)}`;
-    try{await resetMailer.sendMail({from:process.env.MAIL_FROM||process.env.SMTP_USER,to:user.email,subject:"Reset your PriceEdge password",text:`Reset your PriceEdge password: ${url}\n\nThis link expires in 30 minutes and can only be used once.`,html:`<p>We received a request to reset your PriceEdge password.</p><p><a href="${url}">Reset password</a></p><p>This link expires in 30 minutes and can only be used once.</p>`})}catch(e){console.error("PASSWORD RESET EMAIL",e.message)}
-    return res.json(generic);
-  });
-  if(req.method==="POST"&&req.path==="/api/reset-password")return resetBody(req).then(async body=>{
-    const token=String(body.token||""),password=String(body.password||"");
-    if(token.length<40||password.length<8)return res.status(400).json({error:"A valid reset token and a password of at least 8 characters are required."});
-    const row=resetDb.prepare("SELECT id,user_id FROM password_resets WHERE token_hash=? AND expires_at>? AND used_at IS NULL").get(resetHash(token),Date.now());
-    if(!row)return res.status(400).json({error:"This reset link is invalid or expired. Request a new one."});
-    const hash=await require("bcryptjs").hash(password,12);
-    resetDb.prepare("UPDATE users SET password_hash=? WHERE id=?").run(hash,row.user_id);
-    resetDb.prepare("UPDATE password_resets SET used_at=? WHERE id=?").run(Date.now(),row.id);
-    return res.json({ok:true,message:"Password reset successfully. You can now log in with your new password."});
-  });
+  if(req.method==="POST"&&req.path==="/api/forgot-password")return resetBody(req).then(async body=>{const email=String(body.email||"").trim().toLowerCase(),ip=req.ip||"unknown",now=Date.now(),prev=resetAttempts.get(ip)||0;if(now-prev<3000)return res.status(429).json({error:"Please wait a moment and try again."});resetAttempts.set(ip,now);const generic={ok:true,message:"If an account exists for that email, a password reset link has been sent."};if(!/^\S+@\S+\.\S+$/.test(email))return res.json(generic);const user=resetDb.prepare("SELECT id,email FROM users WHERE email=?").get(email);if(!user||!resetMailer)return res.json(generic);const token=require("crypto").randomBytes(32).toString("hex");resetDb.prepare("UPDATE password_resets SET used_at=? WHERE user_id=? AND used_at IS NULL").run(now,user.id);resetDb.prepare("INSERT INTO password_resets(user_id,token_hash,expires_at) VALUES(?,?,?)").run(user.id,resetHash(token),now+30*60*1000);const base=(process.env.APP_URL||`${req.protocol}://${req.get("host")}`).replace(/\/$/,"");const url=`${base}/?reset_token=${encodeURIComponent(token)}`;try{await resetMailer.sendMail({from:process.env.MAIL_FROM||process.env.SMTP_USER,to:user.email,subject:"Reset your PriceEdge password",text:`Reset your PriceEdge password: ${url}\n\nThis link expires in 30 minutes and can only be used once.`,html:`<p>We received a request to reset your PriceEdge password.</p><p><a href="${url}">Reset password</a></p><p>This link expires in 30 minutes and can only be used once.</p>`})}catch(e){console.error("PASSWORD RESET EMAIL",e.message)}return res.json(generic)});
+  if(req.method==="POST"&&req.path==="/api/reset-password")return resetBody(req).then(async body=>{const token=String(body.token||""),password=String(body.password||"");if(token.length<40||password.length<8)return res.status(400).json({error:"A valid reset token and a password of at least 8 characters are required."});const row=resetDb.prepare("SELECT id,user_id FROM password_resets WHERE token_hash=? AND expires_at>? AND used_at IS NULL").get(resetHash(token),Date.now());if(!row)return res.status(400).json({error:"This reset link is invalid or expired. Request a new one."});const hash=await require("bcryptjs").hash(password,12);resetDb.prepare("UPDATE users SET password_hash=? WHERE id=?").run(hash,row.user_id);resetDb.prepare("UPDATE password_resets SET used_at=? WHERE id=?").run(Date.now(),row.id);return res.json({ok:true,message:"Password reset successfully. You can now log in with your new password."})});
   next();
 }
-function polishMiddleware(req,res,next){
-  if(req.method!=="GET"||(req.path!=="/"&&req.path!=="/index.html"))return next();
-  const file=path.join(__dirname,"public","index.html");
-  fs.readFile(file,"utf8",(err,html)=>{
-    if(err)return next();
-    const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>','<script src="/password-reset.js" defer></script>','<script src="/priceedge-logo.js" defer></script>'];
-    let out=html;
-    for(const tag of tags){const src=tag.match(/src="([^"]+)/)?.[1];if(src&&!out.includes(src))out=out.includes("</body>")?out.replace("</body>",`${tag}</body>`):out+tag;}
-    res.type("html").send(out);
-  });
-}
+function polishMiddleware(req,res,next){if(req.method!=="GET"||(req.path!=="/"&&req.path!=="/index.html"))return next();const file=path.join(__dirname,"public","index.html");fs.readFile(file,"utf8",(err,html)=>{if(err)return next();const tags=['<script src="/product-polish.js" defer></script>','<script src="/monetization.js" defer></script>','<script src="/password-reset.js" defer></script>','<script src="/priceedge-logo.js" defer></script>'];let out=html;for(const tag of tags){const src=tag.match(/src="([^"]+)/)?.[1];if(src&&!out.includes(src))out=out.includes("</body>")?out.replace("</body>",`${tag}</body>`):out+tag;}res.type("html").send(out);});}
 function attach(server){if(attached)return;attached=true;browserWss=new WebSocket.Server({server,path:"/ws/live"});browserWss.on("connection",client=>{client.send(JSON.stringify({type:"status",status:upstream?.readyState===WebSocket.OPEN?"connected":"reconnecting",message:upstream?.readyState===WebSocket.OPEN?"LIVE TICK STREAM":"WAITING FOR LIVE TICK STREAM"}));for(const t of latestBySymbol.values())client.send(JSON.stringify(t))});connect()}
 function patch(){if(patched)return;patched=true;function patchedExpress(...args){const app=originalExpress(...args);const use=app.use.bind(app),listen=app.listen.bind(app);let injected=false;app.use=function(...args){if(!injected){injected=true;use(marketMiddleware);use(resetMiddleware);use(polishMiddleware)}return use(...args)};app.listen=function(...a){const server=listen(...a);attach(server);return server};return app}Object.assign(patchedExpress,originalExpress);patchedExpress.static=originalExpress.static;const p=require.resolve("express");if(require.cache[p])require.cache[p].exports=patchedExpress}
 patch();
