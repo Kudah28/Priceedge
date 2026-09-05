@@ -1,6 +1,4 @@
-/* PriceEdge stable professional chart renderer
-   Single-owner canvas renderer. No timer redraw loop and no canvas replacement.
-*/
+/* PriceEdge stable professional chart renderer — mobile density locked to a readable default. */
 (function(){
   'use strict';
   if(!document.getElementById('chart'))return;
@@ -11,32 +9,19 @@
   const fmt=v=>finite(v)?n(v).toFixed(2):'—';
   const niceStep=(range,target)=>{const raw=range/target,p=Math.pow(10,Math.floor(Math.log10(raw||1))),x=raw/p;return (x<=1?1:x<=2?2:x<=5?5:10)*p;};
   const candle=k=>{const close=n(k.close),open=finite(k.open)?n(k.open):close,high=finite(k.high)?n(k.high):Math.max(open,close),low=finite(k.low)?n(k.low):Math.min(open,close);return{open,close,high:Math.max(high,open,close),low:Math.min(low,open,close),time:k.datetime||k.timestamp||k.time};};
-
+  const mobile=()=>window.matchMedia&&window.matchMedia('(max-width:600px)').matches;
+  const MOBILE_DEFAULT=24;
   let raf=0;
-  function currentCanvas(){return document.getElementById('chart');}
-  function resizeCanvas(canvas,w,h,d){
-    const W=Math.round(w*d),H=Math.round(h*d);
-    if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}
-  }
   function render(){
-    raf=0;
-    const canvas=currentCanvas();
-    if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    const w=canvas.clientWidth,h=canvas.clientHeight;
-    if(!ctx||!w||!h)return;
-    const d=dpr();resizeCanvas(canvas,w,h,d);ctx.setTransform(d,0,0,d,0,0);
-    const list=Array.isArray(window.candles)?window.candles:[];
-    if(!list.length){ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);return;}
-    const visible=Math.max(20,Math.min(Number(window.visible)||70,list.length));
-    const maxStart=Math.max(0,list.length-visible),off=clamp(Number(window.offset)||0,0,maxStart);
-    const start=Math.max(0,list.length-visible-off),data=list.slice(start,start+visible).map(candle);
-    if(!data.length)return;
-    let lo=Math.min(...data.map(x=>x.low)),hi=Math.max(...data.map(x=>x.high));
-    const range=Math.max(.01,hi-lo),pad=range*.10;lo-=pad;hi+=pad;
-    const left=10,right=72,top=20,bottom=28,pw=Math.max(10,w-left-right),ph=Math.max(10,h-top-bottom),y=v=>top+(hi-v)/(hi-lo)*ph;
-    const step=pw/data.length,body=Math.max(2,Math.min(12,step*.62));
-    ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);
+    raf=0;const canvas=document.getElementById('chart');if(!canvas)return;const ctx=canvas.getContext('2d');const w=canvas.clientWidth,h=canvas.clientHeight;if(!ctx||!w||!h)return;
+    const d=dpr(),W=Math.round(w*d),H=Math.round(h*d);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}ctx.setTransform(d,0,0,d,0,0);
+    const list=Array.isArray(window.candles)?window.candles:[];if(!list.length){ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);return;}
+    const isMob=mobile();if(!Number.isFinite(Number(window.visible))||Number(window.visible)<=0)window.visible=isMob?MOBILE_DEFAULT:70;
+    const minVisible=isMob?MOBILE_DEFAULT:20;const visible=Math.max(minVisible,Math.min(Number(window.visible)||70,list.length));
+    const maxStart=Math.max(0,list.length-visible),off=clamp(Number(window.offset)||0,0,maxStart),start=Math.max(0,list.length-visible-off),data=list.slice(start,start+visible).map(candle);if(!data.length)return;
+    let lo=Math.min(...data.map(x=>x.low)),hi=Math.max(...data.map(x=>x.high));const range=Math.max(.01,hi-lo),pad=range*.10;lo-=pad;hi+=pad;
+    const left=10,right=72,top=20,bottom=36,pw=Math.max(10,w-left-right),ph=Math.max(10,h-top-bottom),y=v=>top+(hi-v)/(hi-lo)*ph,step=pw/data.length;
+    const body=Math.max(isMob?5:2,Math.min(isMob?10:12,step*.62));ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);
     ctx.fillStyle=C.muted;ctx.font='700 10px system-ui,-apple-system,Segoe UI,sans-serif';ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.fillText('XAU/USD · '+(window.tf||'5min').toUpperCase(),left,12);ctx.textAlign='right';ctx.fillText('LIVE',left+pw,12);
     const ts=niceStep(hi-lo,7),first=Math.ceil(lo/ts)*ts;ctx.font='10px system-ui,-apple-system,Segoe UI,sans-serif';ctx.textBaseline='middle';
     for(let p=first;p<=hi+ts*.01;p+=ts){const yy=y(p);ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(left+pw,yy);ctx.stroke();ctx.fillStyle=C.axis;ctx.textAlign='left';ctx.fillText(fmt(p),left+pw+9,yy);}
@@ -48,14 +33,13 @@
     if(sh.length){const level=Math.max(...sh.map(i=>data[i].high)),yy=y(level);ctx.fillStyle='rgba(255,92,120,.055)';ctx.fillRect(left,yy-5,pw,10);ctx.strokeStyle=C.down;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(left+pw,yy);ctx.stroke();ctx.setLineDash([]);label(left+pw-35,yy-9,'RES',C.down);}
     if(sl.length){const level=Math.min(...sl.map(i=>data[i].low)),yy=y(level);ctx.fillStyle='rgba(53,226,139,.055)';ctx.fillRect(left,yy-5,pw,10);ctx.strokeStyle=C.up;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(left+pw,yy);ctx.stroke();ctx.setLineDash([]);label(left+pw-35,yy+9,'SUP',C.up);}
     const last=data[data.length-1].close,py=y(last);ctx.strokeStyle=C.gold;ctx.lineWidth=1.3;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(left,py);ctx.lineTo(left+pw,py);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=C.gold;ctx.fillRect(left+pw+3,py-10,64,20);ctx.fillStyle='#17130a';ctx.font='800 10px system-ui,-apple-system,Segoe UI,sans-serif';ctx.textAlign='left';ctx.fillText(fmt(last),left+pw+8,py+3);
-    ctx.fillStyle=C.axis;ctx.font='9px system-ui,-apple-system,Segoe UI,sans-serif';ctx.textAlign='center';ctx.textBaseline='alphabetic';[0,.33,.66,1].forEach(r=>{const idx=Math.min(data.length-1,Math.round((data.length-1)*r)),k=data[idx];const dt=new Date(k.time);const lab=Number.isNaN(dt.getTime())?'':dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});ctx.fillText(lab,left+(idx+.5)*step,h-9);});
-    ctx.textAlign='left';ctx.fillStyle=C.muted;ctx.fillText(`${data.length} candles · ${start+1}-${start+data.length}`,left,h-9);
+    ctx.fillStyle=C.axis;ctx.font='9px system-ui,-apple-system,Segoe UI,sans-serif';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    const labelCount=isMob?3:4;for(let i=0;i<labelCount;i++){const r=labelCount===1?0:i/(labelCount-1),idx=Math.min(data.length-1,Math.round((data.length-1)*r)),k=data[idx],dt=new Date(k.time),lab=Number.isNaN(dt.getTime())?'':dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});ctx.fillText(lab,left+(idx+.5)*step,h-10);}
   }
   function schedule(){if(!raf)raf=requestAnimationFrame(render);}
-  window.draw=schedule;
-  window.addEventListener('resize',schedule,{passive:true});
+  window.draw=schedule;window.addEventListener('resize',schedule,{passive:true});
   if(window.ResizeObserver){const wrap=document.querySelector('.chartwrap');if(wrap)new ResizeObserver(schedule).observe(wrap);}
-  ['pe:tick','pe:candle','market:update'].forEach(ev=>window.addEventListener(ev,schedule));
-  window.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
+  ['pe:tick','pe:candle','market:update'].forEach(ev=>window.addEventListener(ev,schedule));window.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
+  if(mobile()){window.visible=MOBILE_DEFAULT;window.offset=0;}
   schedule();
 })();
