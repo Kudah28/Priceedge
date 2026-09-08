@@ -1,4 +1,4 @@
-/* PriceEdge chart controls — single owner for zoom/pan on the canvas. */
+/* PriceEdge chart controls — single owner for zoom/pan, never covering candles or time axis. */
 (function(){
   'use strict';
   const chart=document.getElementById('chart');
@@ -7,22 +7,19 @@
   const MOBILE_DEFAULT=24,DESKTOP_DEFAULT=70,MIN_VISIBLE=20,MAX_VISIBLE=160;
   const candles=()=>Array.isArray(window.candles)?window.candles:[];
   function clamp(){
-    const a=candles();
-    let v=Number(window.visible);
+    const a=candles(); let v=Number(window.visible);
     if(!Number.isFinite(v)||v<MIN_VISIBLE)v=isMobile()?MOBILE_DEFAULT:DESKTOP_DEFAULT;
-    if(isMobile())v=Math.min(v,MAX_VISIBLE);
-    window.visible=Math.min(v,Math.max(MIN_VISIBLE,a.length||MIN_VISIBLE));
+    window.visible=Math.min(Math.max(v,MIN_VISIBLE),Math.max(MIN_VISIBLE,a.length||MIN_VISIBLE));
     window.offset=Math.max(0,Math.min(Math.max(0,a.length-window.visible),Number(window.offset)||0));
   }
   function label(){const e=document.getElementById('zoomLevel');if(e)e.textContent=(window.visible||MOBILE_DEFAULT)+' candles';}
   function draw(){clamp();if(typeof window.draw==='function')window.draw();label();}
-  window.visible=isMobile()?MOBILE_DEFAULT:DESKTOP_DEFAULT;
-  window.offset=0;
+  window.visible=isMobile()?MOBILE_DEFAULT:DESKTOP_DEFAULT; window.offset=0;
   function zoom(next,ratio=.5){
     const a=candles(),old=window.visible||MOBILE_DEFAULT;if(!a.length)return;
     let n=Math.round(next);n=Math.max(MIN_VISIBLE,Math.min(MAX_VISIBLE,n));if(isMobile())n=Math.max(MOBILE_DEFAULT,n);if(n===old)return;
-    const end=a.length-clamp(),start=Math.max(0,end-old),r=Math.max(0,Math.min(1,ratio));
-    const anchor=start+Math.round(Math.max(0,end-start-1)*r);
+    const maxStart=Math.max(0,a.length-old),oldStart=Math.max(0,a.length-old-(Number(window.offset)||0));
+    const r=Math.max(0,Math.min(1,ratio)),anchor=oldStart+Math.round(Math.max(0,old-1)*r);
     let ns=anchor-Math.round((n-1)*r);ns=Math.max(0,Math.min(Math.max(0,a.length-n),ns));
     window.visible=n;window.offset=Math.max(0,a.length-(ns+n));draw();
   }
@@ -40,9 +37,17 @@
     if(!tools){
       tools=document.createElement('div');tools.id='chartTools';
       tools.innerHTML='<button type="button" onclick="zoomOut()">−</button><button type="button" onclick="resetZoom()">Reset</button><button type="button" onclick="zoomIn()">+</button><span id="zoomLevel">24 candles</span>';
-      wrap.appendChild(tools);
+      /* IMPORTANT: controls live OUTSIDE the canvas so they can never hide
+         the last candle, price line, or time labels. */
+      wrap.insertAdjacentElement('afterend',tools);
     }
-    const style=document.createElement('style');style.textContent='#chartTools{position:absolute;right:8px;bottom:7px;display:flex;gap:4px;align-items:center;z-index:5}#chartTools button,#chartTools span{border:1px solid #31405f;background:rgba(10,18,32,.96);color:#dce5fa;border-radius:7px;padding:6px 9px;font:800 11px system-ui}#chartTools span{color:#8e9cb7;font-weight:500}@media(max-width:600px){#chartTools{right:6px;bottom:6px}#chartTools button,#chartTools span{padding:6px 8px;font-size:10px}}';document.head.appendChild(style);
+    const style=document.createElement('style');style.id='peChartControlsStyle';style.textContent=`
+      #chartTools{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:8px 2px 0;min-height:38px}
+      #chartTools button,#chartTools span{border:1px solid #31405f;background:#0c1322;color:#dce5fa;border-radius:8px;padding:7px 11px;font:800 12px system-ui,-apple-system,Segoe UI,sans-serif}
+      #chartTools button:active{transform:translateY(1px)}
+      #chartTools span{color:#8e9cb7;font-weight:600;min-width:78px;text-align:center}
+      @media(max-width:600px){#chartTools{justify-content:flex-end;margin:7px 0 0;gap:5px}#chartTools button,#chartTools span{min-height:38px;padding:7px 9px;font-size:11px}}
+    `;document.head.appendChild(style);
   }
 
   const pointers=new Map();let sx=0,so=0,pinchStart=0,pinchVisible=24,pinchRatio=.5;
